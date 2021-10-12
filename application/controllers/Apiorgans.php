@@ -1,0 +1,135 @@
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
+
+require_once APPPATH . 'core/WebController.php';
+
+class Apiorgans extends WebController
+{
+    /**
+     * This is default constructor of the class
+     */
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->load->model('staff_model');
+        $this->load->model('organ_model');
+        $this->load->model('staff_organ_model');
+        $this->load->model('organ_setting_model');
+    }
+
+    public function loadOrganList(){
+        $company_id = $this->input->post('company_id');
+
+        $organs = $this->organ_model->getListByCond(['company_id'=>$company_id]);
+
+        $results['isLoad'] = true;
+        $results['organs'] = $organs;
+        echo(json_encode($results));
+
+    }
+
+    public function loadOrganInfo(){
+        $organ_id = $this->input->post('organ_id');
+        $organ = $this->organ_model->getFromId($organ_id);
+
+        //$bosses = $this->staff_organ_model->getBossessByOrgan($organ_id);
+
+        $results['isLoad'] = true;
+        $results['organ'] = $organ;
+        //$results['staffs'] = $bosses;
+        echo(json_encode($results));
+
+    }
+    public function deleteOrgan(){
+        $organ_id = $this->input->post('organ_id');
+
+        if (empty($organ_id)){
+            $results['isDelete'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $this->organ_model->delete_force($organ_id, 'organ_id');
+        $this->staff_organ_model->delete_force($organ_id, 'organ_id');
+
+        $results['isDelete'] = true;
+        echo(json_encode($results));
+
+    }
+
+    public function saveOrgan(){
+        $company_id = $this->input->post('company_id');
+        if (empty($company_id)){
+            $results['isSave'] = false;
+            echo(json_encode($results));
+            return;
+        }
+        $organ_id = $this->input->post('organ_id');
+        $organ_name = $this->input->post('organ_name');
+
+        if (empty($organ_id)){
+            $organ['organ_name'] = $organ_name;
+            $organ['company_id'] = $company_id;
+            $organ['zip_code'] = empty($this->input->post('zip_code')) ? null : $this->input->post('zip_code');
+            $organ['address'] = empty($this->input->post('address')) ? null : $this->input->post('address');
+            $organ['phone'] = empty($this->input->post('phone')) ? null : $this->input->post('phone');
+            $organ['comment'] = empty($this->input->post('comment')) ? null : $this->input->post('comment');
+            $organ['image'] = empty($this->input->post('image')) ? null : $this->input->post('image');
+            $organ['visible'] = 1;
+
+            $organ_id = $this->organ_model->insertRecord($organ);
+        }else{
+            $organ = $this->organ_model->getFromId($organ_id);
+            $organ['organ_name'] = $organ_name;
+            $organ['zip_code'] = empty($this->input->post('zip_code')) ? null : $this->input->post('zip_code');
+            $organ['address'] = empty($this->input->post('address')) ? null : $this->input->post('address');
+            $organ['phone'] = empty($this->input->post('phone')) ? null : $this->input->post('phone');
+            $organ['comment'] = empty($this->input->post('comment')) ? null : $this->input->post('comment');
+            $organ['image'] = empty($this->input->post('image')) ? null : $this->input->post('image');
+
+            $this->organ_model->updateRecord($organ, 'organ_id');
+        }
+
+        $results['isSave'] = true;
+        $results['organ_id'] = $organ_id;
+
+        echo(json_encode($results));
+
+    }
+
+
+    function uploadPicture() {
+
+        $results = array();
+
+        // user photo
+        $image_path = "assets/images/organs/";
+        if(!is_dir($image_path)) {
+            mkdir($image_path);
+        }
+        $image_url  = base_url().$image_path;
+        $fileName = $_FILES['picture']['name'];
+        $config = array(
+            'upload_path'   => $image_path,
+            'allowed_types' => '*',
+            'overwrite'     => 1,
+            'file_name' 	=> $fileName
+        );
+        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
+
+        $results['isUpload'] = false;
+        if (!empty($_FILES['picture']['name'])) {
+            if ($this->upload->do_upload('picture')) {
+                $file_url = $image_url.$this->upload->file_name;
+                $results['isUpload'] = true;
+                $results['picture'] = $file_url;
+            }
+        }
+
+        echo json_encode($results);
+
+    }
+
+}
+?>

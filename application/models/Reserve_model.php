@@ -1,0 +1,130 @@
+<?php //if (!defined('BASEPATH')) exit('No direct script access allowed');
+
+require_once APPPATH . '/models/Base_model.php';
+
+class Reserve_model extends Base_model
+{
+    public function __construct()
+    {
+        parent::__construct();
+        $this->table = 'reserves';
+        $this->primary_key = 'reserve_id';
+    }
+
+    public function isExistMyReserve($user_id, $organ_id, $time){
+    	$this->db->select('*');
+    	$this->db->from($this->table);
+
+    	$this->db->where('user_id', $user_id);
+    	$this->db->where('organ_id', $organ_id);
+
+    	$this->db->where("start_time<='".$time."' and end_time>'".$time."'");
+
+    	$query = $this->db->get();
+    	$result = $query->row_array();
+
+    	return !empty($result);
+    }
+
+    public function getReserveCount($organ_id, $time){
+    	$this->db->select('count(reserve_id) as count');
+    	$this->db->from($this->table);
+
+    	$this->db->where('organ_id', $organ_id);
+
+    	$this->db->where("start_time<='".$time."' and end_time>'".$time."'");
+
+    	$query = $this->db->get();
+    	$result = $query->row_array();
+
+    	$count=0;
+    	if (!empty($result['count'])) $count = $result['count'];
+
+    	return $count;
+    }
+
+    public function isExistStaff($staff_id, $time){
+    	$this->db->select('*');
+    	$this->db->from($this->table);
+
+    	$this->db->where('staff_id', $staff_id);
+
+    	$this->db->where("start_time<='".$time."' and end_time>'".$time."'");
+
+    	$query = $this->db->get();
+    	$result = $query->row_array();
+
+    	return !empty($result);
+    }
+
+    public function getListByCond($cond){
+        $this->db->select($this->table.'.*, organs.organ_name, users.user_first_name, users.user_last_name');
+        $this->db->from($this->table);
+        $this->db->join('organs', 'organs.organ_id = reserves.organ_id');
+        $this->db->join('users', 'users.user_id = reserves.user_id');
+
+        if (!empty($cond['staff_id'])){
+            $this->db->where('staff_id', $cond['staff_id']);
+        }
+
+        if (!empty($cond['from_time'])){
+            $this->db->where("reserve_time>='". $cond['from_time']."'");
+        }
+        if (!empty($cond['to_time'])){
+            $this->db->where("reserve_time<='". $cond['to_time']."'");
+        }
+
+        if (!empty($cond['reserve_time'])){
+            $this->db->where("reserve_time", $cond['reserve_time']);
+        }
+        if (!empty($cond['user_id'])){
+            $this->db->where("reserves.user_id", $cond['user_id']);
+        }
+        if (!empty($cond['organ_ids'])){
+            $this->db->where("reserves.organ_id in (". $cond['organ_ids'] .")");
+        }
+
+        if (!empty($cond['company_id'])){
+            $this->db->where("organs.company_id",  $cond['company_id']);
+        }
+        if (!empty($cond['organ_ids'])){
+            $this->db->where("reserves.organ_id in (". $cond['organ_ids'] .")");
+        }
+
+
+        $this->db->order_by($this->table.'.update_date', 'desc');
+        $query = $this->db->get();
+        $result = $query->result_array();
+
+        return $result;
+    }
+
+    public function getOtherReserveCount($cond){
+        $this->db->select('reserve_time, count(reserve_id) as count');
+        $this->db->from($this->table);
+
+        if (!empty($cond['from_time'])){
+            $this->db->where("reserve_time>='". $cond['from_time']."'");
+        }
+        if (!empty($cond['to_time'])){
+            $this->db->where("reserve_time<='". $cond['to_time']."'");
+        }
+
+        if (!empty($cond['staff_id'])){
+            $this->db->where('staff_id', $cond['staff_id']);
+        }
+        if (!empty($cond['user_id'])){
+            $this->db->where('user_id<>'.$cond['user_id']);
+        }
+
+        $this->db->group_by('reserve_time');
+
+        $query = $this->db->get();
+        $result = $query->result_array();
+
+        return $result;
+    }
+
+
+
+}
