@@ -16,8 +16,34 @@ class Apicoupons extends WebController
 
         parent::__construct();
 
+        $this->load->model('staff_model');
         $this->load->model('coupon_model');
         $this->load->model('user_coupon_model');
+    }
+
+    public function loadCouponList(){
+        $staff_id = $this->input->post('staff_id');
+
+        if (empty($staff_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $staff = $this->staff_model->getFromId($staff_id);
+
+        $cond = [];
+        if ($staff['staff_auth']==3){
+            $cond['company_id'] = $staff['company_id'];
+        }
+
+        $coupons = $this->coupon_model->getListByCondition($cond);
+
+        $results['isLoad'] = true;
+        $results['coupons'] = $coupons;
+
+        echo json_encode($results);
+
     }
 
     public function loadUserCouponList(){

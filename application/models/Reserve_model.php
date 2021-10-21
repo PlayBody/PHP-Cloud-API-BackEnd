@@ -80,9 +80,6 @@ class Reserve_model extends Base_model
         if (!empty($cond['user_id'])){
             $this->db->where("reserves.user_id", $cond['user_id']);
         }
-        if (!empty($cond['organ_ids'])){
-            $this->db->where("reserves.organ_id in (". $cond['organ_ids'] .")");
-        }
 
         if (!empty($cond['company_id'])){
             $this->db->where("organs.company_id",  $cond['company_id']);

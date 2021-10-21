@@ -30,10 +30,20 @@ class Menu_model extends Base_model
     }
 
     public function getAdminMenuList($cond){
+        $this->db->select($this->table.'.*');
         $this->db->from($this->table);
+        $this->db->join('organs', 'organs.organ_id = menus.organ_id');
 
        // $this->db->where('oragn_id in (1,3)');
-        $this->db->where('visible', '1');
+        $this->db->where($this->table.'.visible', '1');
+
+        if (!empty($cond['organ_ids'])){
+            $this->db->where("organs.organ_id in (". $cond['organ_ids'] .")");
+        }
+
+        if (!empty($cond['company_id'])){
+            $this->db->where("organs.company_id",  $cond['company_id']);
+        }
 
         $this->db->order_by('sort_no', 'desc');
 

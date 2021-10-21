@@ -18,9 +18,21 @@ class Apiorgans extends WebController
     }
 
     public function loadOrganList(){
-        $company_id = $this->input->post('company_id');
+        $staff_id = $this->input->post('staff_id');
 
-        $organs = $this->organ_model->getListByCond(['company_id'=>$company_id]);
+        $staff = $this->staff_model->getFromId($staff_id);
+
+        $cond = [];
+        $organs = [];
+        if ($staff['staff_auth']==2){
+            $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
+        }else{
+            if ($staff['staff_auth']==3){
+                $cond['company_id'] = $staff['company_id'];
+            }
+            $organs = $this->organ_model->getListByCond($cond);
+        }
+
 
         $results['isLoad'] = true;
         $results['organs'] = $organs;
@@ -129,6 +141,33 @@ class Apiorgans extends WebController
 
         echo json_encode($results);
 
+    }
+
+    public function loadOrganListByStaff(){
+        $staff_id = $this->input->post('staff_id');
+        if (empty($staff_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $staff = $this->staff_model->getFromId($staff_id);
+
+        if ($staff['staff_auth']>2){
+            $cond = [];
+
+            if ($staff['staff_auth']=='3'){
+                $cond['company_id'] = $staff['company_id'];
+            }
+            $organs = $this->organ_model->getListByCond($cond);
+        }else{
+            $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
+        }
+
+        $results['isLoad'] = true;
+        $results['organs'] = $organs;
+
+        echo json_encode($results);
     }
 
 }

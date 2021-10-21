@@ -24,7 +24,6 @@ class Apishifts extends WebController
     }
 
     public function loadShifts(){
-
         $mode = $this->input->post('mode');
         $staff_id = $this->input->post('staff_id');
         $organ_id = $this->input->post('organ_id');
@@ -53,92 +52,8 @@ class Apishifts extends WebController
             return;
         }
 
-        $count_shift = [];
-        $tmp_list = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_date'=>$to_date. ' 23:59:59']);
-        foreach ($tmp_list as $item) {
-            $tmp = [];
-            $tmp['from'] = $item['from_time'];
-            $tmp['to'] = $item['to_time'];
-            $tmp['count'] = $item['count'];
-
-            $count_shift[] = $tmp;
-        }
-
         $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
-        $organ_active_end = empty($organ['active_end_time']) ? '24:00' : $organ['active_end_time'];
-
-        $shift_inactive = [];
-        $init_shift_list = [];
-        $cur_date = $from_date;
-        while($cur_date<=$to_date){
-            $parseDate = date_parse($cur_date);
-            $weekday = date('D', mktime(null, null, null, $parseDate['month'], $parseDate['day'], $parseDate['year']));
-
-            if ($organ_active_start>$organ_active_end){
-                $tmp = [];
-                $tmp['from'] = $cur_date. ' ' .$organ_active_end;
-                $tmp['to'] = $cur_date. ' ' .$organ_active_start;
-                $tmp['type'] = '5';
-
-                $shift_inactive[] = $tmp;
-            }else{
-                $tmp = [];
-                $tmp['from'] = $cur_date. ' 00:00:00';
-                $tmp['to'] = $cur_date. ' ' .$organ_active_start;
-                $tmp['type'] = '5';
-
-                $shift_inactive[] = $tmp;
-
-                $tmp = [];
-                $tmp['from'] = $cur_date. ' ' .$organ_active_end;
-                $tmp['to'] = $cur_date. ' 23:59:59';
-                $tmp['type'] = '5';
-
-                $shift_inactive[] = $tmp;
-
-            }
-
-            $cond = [];
-            $cond['organ_id'] = $organ_id;
-            $cond['staff_id'] = $staff_id;
-            $cond['weekday'] = $weekday;
-//            if ($from_date>=date('Y-m-d') || $mode=='init'){
-            if ($mode=='init'){
-                $tmp_list = $this->setting_init_shift_model->getListByCond($cond);
-
-                $shift_area = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$cur_date. ' 00:00:00', 'to_date'=>$cur_date. ' 23:59:59']);
-                if (!empty($shift_area)){
-
-                    foreach ($tmp_list as $item) {
-                        $tmp = [];
-                        $tmp['shift_type'] = '1';
-                        foreach ($shift_area as $tmp_area){
-                            if ($cur_date. ' ' . $item['from_time']>=$tmp_area['from_time'] && $cur_date. ' ' . $item['to_time']<=$tmp_area['to_time'] ){
-                                $tmp['from_time'] = $cur_date. ' ' .$item['from_time'];
-                                $tmp['to_time'] = $cur_date. ' ' .$item['to_time'];
-                            }
-                            if ($cur_date. ' ' . $item['from_time']<$tmp_area['from_time'] && $cur_date. ' ' . $item['to_time']>$tmp_area['from_time'] && $cur_date. ' ' . $item['to_time']<=$tmp_area['to_time'] ){
-                                $tmp['from_time'] = $tmp_area['from_time'];
-                                $tmp['to_time'] = $cur_date. ' ' .$item['to_time'];
-                            }
-                            if ($cur_date. ' ' . $item['from_time']>=$tmp_area['from_time'] && $cur_date. ' ' . $item['from_time']<$tmp_area['to_time'] && $cur_date. ' ' . $item['to_time']>$tmp_area['to_time'] ){
-                                $tmp['from_time'] = $cur_date. ' ' .$item['from_time'];
-                                $tmp['to_time'] = $tmp_area['to_time'];
-                            }
-                        }
-                        if (!empty($tmp['from_time']))
-                        $init_shift_list[] = $tmp;
-                    }
-                }
-            }
-
-            $diff1Day = new DateInterval('P1D');
-
-            $curDateTime = new DateTime($cur_date);
-
-            $curDateTime->add($diff1Day);
-            $cur_date = $curDateTime->format("Y-m-d");
-        }
+        $organ_active_end = empty($organ['active_end_time']) ? '23:59' : $organ['active_end_time'];
 
         $cond = array();
         $cond['staff_id'] = $staff_id;
@@ -146,49 +61,67 @@ class Apishifts extends WebController
         $cond['from_time'] = $from_date.' 00:00:00';
         $cond['to_time'] = $to_date.' 23:59:59';
 
-        $staff_shift_list = $this->shift_model->getListByCond($cond);
+        $shifts = $this->shift_model->getListByCond($cond);
+        if (empty($shifts)){
+//            $condInit['staff_id'] = $staff_id;
+//            $condInit['organ_id'] = $organ_id;
+//            $initData = $this->setting_init_shift_model->getListByCond($condInit);
+//            foreach ($initData as $item){
+//                $diff1Day = new DateInterval('P'.$item['weekday'].'D');
+//                $curDateTime = new DateTime($from_date);
+//                $curDateTime->add($diff1Day);
+//                $sel_date = $curDateTime->format("Y-m-d");
+//
+//                $add_shift = array(
+//                    'from_time'=>$sel_date . ' ' . $item['from_time'],
+//                    'to_time' => $sel_date . ' ' . $item['to_time'],
+//                    'staff_id' => $staff_id,
+//                    'organ_id' => $organ_id,
+//                    'visible' => 1,
+//                    'shift_type' => 1,
+//                );
+//                $this->shift_model->insertRecord($add_shift);
+//            }
+//            $shifts = $this->shift_model->getListByCond($cond);
+        }
         if ($mode == 'init'){
-            foreach ($staff_shift_list as $item) {
+            foreach ($shifts as $item) {
                 $this->shift_model->delete_force($item['shift_id'], 'shift_id');
             }
 
-            $staff_shift_list = [];
-            if (empty($staff_shift_list)){
-                foreach ($init_shift_list as $item){
-                    $add_shift = array(
-                        'from_time'=>$item['from_time'],
-                        'to_time' => $item['to_time'],
-                        'staff_id' => $staff_id,
-                        'organ_id' => $organ_id,
-                        'visible' => 1,
-                        'shift_type' => 1,
-                    );
+            $condInit['staff_id'] = $staff_id;
+            $condInit['organ_id'] = $organ_id;
+            $initData = $this->setting_init_shift_model->getListByCond($condInit);
+            foreach ($initData as $item){
+                $diff1Day = new DateInterval('P'.$item['weekday'].'D');
+                $curDateTime = new DateTime($from_date);
+                $curDateTime->add($diff1Day);
+                $sel_date = $curDateTime->format("Y-m-d");
 
-                    $this->shift_model->insertRecord($add_shift);
-                }
-                $staff_shift_list = $init_shift_list;
+                $add_shift = array(
+                    'from_time'=>$sel_date . ' ' . $item['from_time'],
+                    'to_time' => $sel_date . ' ' . $item['to_time'],
+                    'staff_id' => $staff_id,
+                    'organ_id' => $organ_id,
+                    'visible' => 1,
+                    'shift_type' => 1,
+                );
+                $this->shift_model->insertRecord($add_shift);
             }
+            $shifts = $this->shift_model->getListByCond($cond);
 
         }
 
-
-        $shift = [];
-
-        foreach ($staff_shift_list as $item) {
-            $tmp = [];
-            $tmp['from'] = $item['from_time'];
-            $tmp['to'] = $item['to_time'];
-            $tmp['type'] = $item['shift_type'];
-
-            $shift[] = $tmp;
-        }
+        $count_shift = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_date'=>$to_date. ' 23:59:59']);
 
         $results['isLoad'] = true;
-        $results['shift'] = $shift;
         $results['organ_id'] = $organ_id;
         $results['organ_list'] = $organ_list;
-        $results['count_shift'] = $count_shift;
-        $results['shift_inactive'] = $shift_inactive;
+
+        $results['active_time']['from'] = $organ_active_start;
+        $results['active_time']['to'] = $organ_active_end;
+        $results['count_shifts'] = $count_shift;
+        $results['shifts'] = $shifts;
 
         echo(json_encode($results));
     }
@@ -249,7 +182,7 @@ class Apishifts extends WebController
                 'shift_type' => 1,
                 'visible' => 1,
             );
-            $insert = $this->shift_model->insertRecord($shift);
+            $shift_id = $this->shift_model->insertRecord($shift);
         }else{
             $shift = $this->shift_model->getFromId($shift_id);
 
@@ -260,12 +193,23 @@ class Apishifts extends WebController
             $this->shift_model->updateRecord($shift, 'shift_id');
         }
 
+        $prev_shift = $this->shift_model->getReleationShift($organ_id, $staff_id, $from_time, 'prev');
+        if (!empty($prev_shift)){
+            $shift['shift_id'] = $shift_id;
+            $shift['from_time'] = $prev_shift['from_time'];
+            $this->shift_model->updateRecord($shift, 'shift_id');
+            $this->shift_model->delete_force($prev_shift['shift_id'], 'shift_id');
+        }
+
+        $next_shift = $this->shift_model->getReleationShift($organ_id, $staff_id, $to_time, 'next');
+        if (!empty($next_shift)){
+            $shift['shift_id'] = $shift_id;
+            $shift['to_time'] = $next_shift['to_time'];
+            $this->shift_model->updateRecord($shift, 'shift_id');
+            $this->shift_model->delete_force($next_shift['shift_id'], 'shift_id');
+        }
+
         $results=[];
-//        if (!$insert){
-//            $results['isUpdate'] = false;
-//            echo json_encode($results);
-//            return;
-//        }
 
         $results['isUpdate'] = true;
         echo json_encode($results);
@@ -335,40 +279,14 @@ class Apishifts extends WebController
 
         $organ = $this->organ_model->getFromId($organ_id);
 
-
         $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
-        $organ_active_end = empty($organ['active_end_time']) ? '24:00' : $organ['active_end_time'];
+        $organ_active_end = empty($organ['active_end_time']) ? '23:59' : $organ['active_end_time'];
 
         $shift_inactive = [];
         $cur_date = $from_date;
 
         $divide_shift = [];
         while($cur_date<=$to_date){
-
-            if ($organ_active_start>$organ_active_end){
-                $tmp = [];
-                $tmp['from'] = $cur_date. ' ' .$organ_active_end;
-                $tmp['to'] = $cur_date. ' ' .$organ_active_start;
-                $tmp['type'] = '5';
-
-                $shift_inactive[] = $tmp;
-            }else{
-                $tmp = [];
-                $tmp['from'] = $cur_date. ' 00:00:00';
-                $tmp['to'] = $cur_date. ' ' .$organ_active_start;
-                $tmp['type'] = '5';
-
-                $shift_inactive[] = $tmp;
-
-                $tmp = [];
-                $tmp['from'] = $cur_date. ' ' .$organ_active_end;
-                $tmp['to'] = $cur_date. ' 23:59:59';
-                $tmp['type'] = '5';
-
-                $shift_inactive[] = $tmp;
-
-            }
-
             $area_list = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$cur_date. ' 00:00:00', 'to_time'=>$cur_date. ' 23:59:59']);
 
             foreach ($area_list as $area){
@@ -405,25 +323,11 @@ class Apishifts extends WebController
             $cur_date = $curDateTime->format("Y-m-d");
         }
 
-//        $cond = array();
-//        $cond['organ_id'] = $organ_id;
-//        $cond['from_time'] = $from_date.' 00:00:00';
-//        $cond['to_time'] = $to_date.' 23:59:59';
-
-//        $staff_shift_list = $this->shift_model->getListByCond($cond);
-
-//        $shift = [];
-//
-//        foreach ($staff_shift_list as $item) {
-//            $tmp = [];
-//            $tmp['from'] = $item['from_time'];
-//            $tmp['to'] = $item['to_time'];
-//            $tmp['type'] = $item['shift_type'];
-//
-//            $shift[] = $tmp;
-//        }
 
         $results['isLoad'] = true;
+        $results['active_time']['from'] = $organ_active_start;
+        $results['active_time']['to'] = $organ_active_end;
+
         $results['divide_shift'] = $divide_shift;
 //        $results['shift'] = $shift;
         $results['organ_list'] = $organ_list;

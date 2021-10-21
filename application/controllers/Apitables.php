@@ -13,6 +13,7 @@ class Apitables extends WebController
 
         $this->load->model('table_model');
         $this->load->model('organ_model');
+        $this->load->model('stamp_model');
 
         $this->load->model('table_menu_model');
         $this->load->model('history_table_model');
@@ -143,6 +144,7 @@ class Apitables extends WebController
         $organ_id = $this->input->post('organ_id');
         $update_value = $this->input->post('update_value');
         $user_id = $this->input->post('user_id');
+        $staff_id = $this->input->post('$staff_id');
         $pay_method = $this->input->post('pay_method');
         $person_count = $this->input->post('person_count');
 
@@ -238,6 +240,22 @@ class Apitables extends WebController
                 $this->history_table_menu_model->insertRecord($histoty_table_menu);
             }
         }
+        // add stamp
+        if ($update_value == 1 && $user_id != '1') {
+            $organ = $this->organ_model->getFromId($organ_id);
+            $stamp = array(
+                'date' => date('Y-m-d'),
+                'user_id'=>$user_id,
+                'company_id' =>$organ['company_id'],
+                'organ_id' => $organ_id,
+                'staff_id' => $staff_id,
+                'use_flag' => 1,
+            );
+
+            $this->stamp_model->insertRecord($stamp);
+
+        }
+
         $results['isUpdate'] = true;
 
         echo(json_encode($results));

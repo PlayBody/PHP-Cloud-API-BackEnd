@@ -33,6 +33,8 @@ class Staff_model extends Base_model
 
         if (!empty($cond['staff_mail']))
             $this->db->where("staff_mail", $cond['staff_mail']);
+        if (!empty($cond['company_id']))
+            $this->db->where("company_id", $cond['company_id']);
 
         return $this->db->get()->result_array();
     }

@@ -61,6 +61,7 @@ class Apiadvises extends WebController
         $question = $this->input->post('question');
         $answer = $this->input->post('answer');
         $movie_file = $this->input->post('movie');
+        $answer_movie_file = $this->input->post('answer_movie_file');
 
         if (empty($advise_id)){
             $advise = array(
@@ -68,6 +69,7 @@ class Apiadvises extends WebController
                 'teacher_id'=>$teacher_id,
                 'question' => $question,
                 'movie_file'=>$movie_file,
+                'answer_movie_file'=>empty($answer_movie_file)? null : $answer_movie_file,
                 'visible'=>'1'
             );
 
@@ -76,6 +78,7 @@ class Apiadvises extends WebController
         }else{
             $advise = $this->advise_model->getFromId($advise_id);
             $advise['answer'] = $answer;
+            $advise['answer_movie_file'] = empty($answer_movie_file)? null : $answer_movie_file;
 
             $this->advise_model->updateRecord($advise, 'advise_id');
         }

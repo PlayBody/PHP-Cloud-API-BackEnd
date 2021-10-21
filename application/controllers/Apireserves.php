@@ -259,7 +259,7 @@ class Apireserves extends WebController
                 $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
                 $cond['organ_ids'] = join(',' , array_column($organs,'organ_id'));
             }
-            if ($staff['staff_auth']>2){
+            if ($staff['staff_auth']==3){
                 $cond['company_id'] = $company_id;
             }
         }

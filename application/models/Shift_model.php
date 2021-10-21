@@ -30,7 +30,7 @@ class Shift_model extends Base_model
         }
         if (!empty($cond['select_datetime'])){
             $this->db->where("from_time <='". $cond['select_datetime'] ."'");
-            $this->db->where("to_time >='". $cond['select_datetime'] ."'");
+            $this->db->where("to_time >'". $cond['select_datetime'] ."'");
         }
 
         $this->db->where('visible', '1');
@@ -113,5 +113,25 @@ order by tmp.time
 
         $query = $this->db->get();
         return $query->result_array();
+    }
+
+
+    public function getReleationShift($organ_id, $staff_id, $time, $type){
+        $this->db->select('*');
+        $this->db->from($this->table);
+
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where('staff_id', $staff_id);
+        if ($type=='prev'){
+            $this->db->where('to_time', $time);
+        }
+        if ($type=='next'){
+            $this->db->where('from_time', $time);
+        }
+
+        $this->db->where('shift_type', 1);
+
+        $query = $this->db->get();
+        return $query->row_array();
     }
 }

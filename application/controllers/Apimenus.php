@@ -446,9 +446,20 @@ class Apimenus extends WebController
     }
 
     public function loadAdminMenuList(){
-        $company_id = $this->input->post('company_id');
+        $staff_id = $this->input->post('staff_id');
 
-        $menus = $this->menu_model->getAdminMenuList([]);
+        $staff = $this->staff_model->getFromId($staff_id);
+
+        $cond = [];
+        if ($staff['staff_auth']==2){
+            $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
+            $cond['organ_ids'] = join(',' , array_column($organs,'organ_id'));
+        }
+        if ($staff['staff_auth']==3){
+            $cond['company_id'] = $staff['company_id'];
+        }
+
+        $menus = $this->menu_model->getAdminMenuList($cond);
 
         $results['isLoad'] = true;
         $results['menus'] = $menus;
