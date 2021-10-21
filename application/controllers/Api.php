@@ -31,6 +31,7 @@ class Api extends WebController
         $results['isLoad'] = true;
         $results['version'] = $data['version_no'];
         $results['build'] = $data['build_no'];
+        $results['test_flag'] = $data['test_flag'];
 
         echo json_encode($results);
     }
