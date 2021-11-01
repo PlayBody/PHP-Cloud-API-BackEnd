@@ -40,6 +40,34 @@ class Shift_model extends Base_model
         return $query->result_array();
     }
 
+    public function getRecordByCond($cond){
+
+        $this->db->from($this->table);
+
+        if (!empty($cond['staff_id'])){
+            $this->db->where('staff_id', $cond['staff_id']);
+        }
+
+        if (!empty($cond['organ_id'])){
+            $this->db->where('organ_id', $cond['organ_id']);
+        }
+        if (!empty($cond['from_time'])){
+            $this->db->where("from_time >='". $cond['from_time'] ."'");
+        }
+        if (!empty($cond['to_time'])){
+            $this->db->where("to_time <='". $cond['to_time'] ."'");
+        }
+        if (!empty($cond['select_datetime'])){
+            $this->db->where("from_time <='". $cond['select_datetime'] ."'");
+            $this->db->where("to_time >'". $cond['select_datetime'] ."'");
+        }
+
+        $this->db->where('visible', '1');
+
+        $query = $this->db->get();
+
+        return $query->row_array();
+    }
     public function isExist($organ_id, $staff_id, $shift_id, $from_time, $to_time){
 
         $this->db->from($this->table);

@@ -297,6 +297,7 @@ class Apistaffs extends WebController
         $staff_salary_days =  empty($this->input->post('staff_salary_days')) ? null : $this->input->post('staff_salary_days');
         $staff_salary_minutes = empty($this->input->post('staff_salary_minutes')) ? null : $this->input->post('staff_salary_minutes');
         $staff_salary_times = empty($this->input->post('staff_salary_times')) ? null : $this->input->post('staff_salary_times');
+        $staff_shift = empty($this->input->post('staff_shift')) ? null : $this->input->post('staff_shift');
 
         $image_stream = $this->input->post('image_stream');
 
@@ -322,6 +323,7 @@ class Apistaffs extends WebController
             $staff['staff_tel'] = $staff_tel;
             $staff['staff_password'] = sha1('12345');
             $staff['staff_mail'] = $staff_mail;
+            $staff['staff_shift'] = $staff_shift;
             $staff['staff_sex'] = $staff_sex;
             $staff['staff_birthday'] = $staff_birthday;
             $staff['staff_salary_months'] = empty($staff_salary_months) ? null : $staff_salary_months;
@@ -343,6 +345,7 @@ class Apistaffs extends WebController
             $staff['staff_nick'] = empty($staff_nick) ? null : $staff_nick;
             $staff['staff_tel'] = $staff_tel;
             $staff['staff_mail'] = $staff_mail;
+            $staff['staff_shift'] = $staff_shift;
             $staff['staff_sex'] = $staff_sex;
             $staff['staff_birthday'] = $staff_birthday;
             $staff['staff_salary_months'] = empty($staff_salary_months) ? null : $staff_salary_months;

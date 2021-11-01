@@ -19,6 +19,10 @@ class Apicoupons extends WebController
         $this->load->model('staff_model');
         $this->load->model('coupon_model');
         $this->load->model('user_coupon_model');
+        $this->load->model('user_model');
+        $this->load->model('company_model');
+
+        $this->load->model('stamp_model');
     }
 
     public function loadCouponList(){
@@ -45,6 +49,39 @@ class Apicoupons extends WebController
         echo json_encode($results);
 
     }
+
+
+    public function loadUserStampList(){
+        $user_id = $this->input->post('user_id');
+        $company_id = $this->input->post('company_id');
+
+        if (empty($user_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $company = $this->company_model->getFromId($company_id);
+
+        $cond = [];
+        $cond['user_id'] = $user_id;
+        //$cond['use_flag'] = 1;
+        $stamps = $this->stamp_model->getStampList($cond);
+
+//        if (empty($stamps)){
+//
+//            $results['isLoad'] = false;
+//            echo json_encode($results);
+//            return;
+//        }
+        $results['isLoad'] = true;
+        $results['stamp_count'] = $company['stamp_count']==null ? 15: $company['stamp_count'];
+        $results['stamps'] = $stamps;
+
+        echo json_encode($results);
+
+    }
+
 
     public function loadUserCouponList(){
 //        $company_id = $this->input->post('company_id');

@@ -16,6 +16,7 @@ class Apiadvises extends WebController
         parent::__construct();
         $this->load->model('advise_model');
         $this->load->model('teacher_model');
+        $this->load->model('staff_model');
     }
 
 
@@ -44,9 +45,9 @@ class Apiadvises extends WebController
 
         $advise = $this->advise_model->getFromId($advise_id);
 
-        $teacher = $this->teacher_model->getFromId($advise['teacher_id']);
+        $staff = $this->staff_model->getFromId($advise['teacher_id']);
 
-        $advise['teacher_name'] = $teacher['teacher_name'];
+        $advise['teacher_name'] = ($staff['staff_first_name']==null?'':$staff['staff_first_name']) . ' ' . ($staff['staff_last_name']==null?'':$staff['staff_last_name']);
 
         $results['isLoad'] = true;
         $results['advise'] = $advise;

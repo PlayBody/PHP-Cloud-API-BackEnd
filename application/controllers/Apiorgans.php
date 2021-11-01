@@ -15,6 +15,8 @@ class Apiorgans extends WebController
         $this->load->model('organ_model');
         $this->load->model('staff_organ_model');
         $this->load->model('organ_setting_model');
+        $this->load->model('organ_time_model');
+        $this->load->model('organ_shift_time_model');
     }
 
     public function loadOrganList(){
@@ -168,6 +170,137 @@ class Apiorgans extends WebController
         $results['organs'] = $organs;
 
         echo json_encode($results);
+    }
+
+    public function loadOrganTimes(){
+        $organ_id = $this->input->post('organ_id');
+
+        if (empty($organ_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $cond['organ_id'] = $organ_id;
+        $data = $this->organ_time_model->getListByCond($cond);
+
+        $results = [];
+        $results['isLoad'] = true;
+        $results['data'] = $data;
+
+        echo json_encode($results);
+    }
+
+    public function saveOrganTime(){
+        $time_id = $this->input->post('time_id');
+        $organ_id = $this->input->post('organ_id');
+        $week_day = $this->input->post('weekday');
+        $from_time  = $this->input->post('from_time');
+        $to_time  = $this->input->post('to_time');
+
+        if (empty($time_id)){
+            $data = array(
+                'organ_id'=>$organ_id,
+                'weekday' => $week_day,
+                'from_time' => $from_time,
+                'to_time'=>$to_time
+            );
+
+            $time_id = $this->organ_time_model->insertRecord($data);
+        }else{
+            $data  = $this->organ_time_model->getFromId($time_id);
+            $data['from_time'] = $from_time;
+            $data['to_time'] = $to_time;
+
+            $this->organ_time_model->updateRecord($data);
+        }
+
+        $results = [];
+        $results['isSave'] = true;
+        echo json_encode($results);
+    }
+
+    public function deleteOrganTime(){
+        $time_id = $this->input->post('time_id');
+
+        if (empty($time_id)){
+            $results['isDelete'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $this->organ_time_model->delete_force($time_id, 'id');
+
+        $results = [];
+        $results['isDelete'] = true;
+        echo json_encode($results);
+        return;
+    }
+
+    public function loadOrganShiftTimes(){
+        $organ_id = $this->input->post('organ_id');
+
+        if (empty($organ_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $cond['organ_id'] = $organ_id;
+        $data = $this->organ_shift_time_model->getListByCond($cond);
+
+        $results = [];
+        $results['isLoad'] = true;
+        $results['data'] = $data;
+
+        echo json_encode($results);
+    }
+
+
+    public function saveOrganShiftTime(){
+        $time_id = $this->input->post('time_id');
+        $organ_id = $this->input->post('organ_id');
+        $week_day = $this->input->post('weekday');
+        $from_time  = $this->input->post('from_time');
+        $to_time  = $this->input->post('to_time');
+
+        if (empty($time_id)){
+            $data = array(
+                'organ_id'=>$organ_id,
+                'weekday' => $week_day,
+                'from_time' => $from_time,
+                'to_time'=>$to_time
+            );
+
+            $time_id = $this->organ_shift_time_model->insertRecord($data);
+        }else{
+            $data  = $this->organ_shift_time_model->getFromId($time_id);
+            $data['from_time'] = $from_time;
+            $data['to_time'] = $to_time;
+
+            $this->organ_shift_time_model->updateRecord($data);
+        }
+
+        $results = [];
+        $results['isSave'] = true;
+        echo json_encode($results);
+    }
+
+    public function deleteOrganShiftTime(){
+        $time_id = $this->input->post('time_id');
+
+        if (empty($time_id)){
+            $results['isDelete'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $this->organ_shift_time_model->delete_force($time_id, 'id');
+
+        $results = [];
+        $results['isDelete'] = true;
+        echo json_encode($results);
+        return;
     }
 
 }

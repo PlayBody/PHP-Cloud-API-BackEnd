@@ -13,10 +13,10 @@ class Advise_model extends Base_model
 
     public function getListByCond($cond){
 
-        $this->db->select($this->table.'.*, users.user_first_name, users.user_last_name, users.user_nick, teachers.teacher_name');
+        $this->db->select($this->table.'.*, users.user_first_name, users.user_last_name, users.user_nick, staffs.staff_first_name, staffs.staff_last_name');
         $this->db->from($this->table);
         $this->db->join('users', 'users.user_id=advises.user_id', 'left');
-        $this->db->join('teachers', 'teachers.teacher_id=advises.teacher_id', 'left');
+        $this->db->join('staffs', 'staffs.staff_id=advises.teacher_id', 'left');
 
         if (!empty($cond['company_id'])){
             $this->db->where('users.company_id', $cond['company_id']);

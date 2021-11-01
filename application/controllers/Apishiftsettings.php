@@ -20,6 +20,7 @@ class Apishiftsettings extends WebController
         $this->load->model('setting_count_shift_model');
         $this->load->model('staff_model');
         $this->load->model('staff_organ_model');
+        $this->load->model('organ_shift_time_model');
     }
 
     public function loadShift(){
@@ -42,11 +43,13 @@ class Apishiftsettings extends WebController
 
         $organ = $this->organ_model->getFromId($organ_id);
 
-        if (empty($organ) || empty($staff)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
+//        if (empty($organ) || empty($staff)){
+//            $results['isLoad'] = false;
+//            echo json_encode($results);
+//            return;
+//        }
+
+        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=> $organ_id]);
 
         $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
         $organ_active_end = empty($organ['active_end_time']) ? '24:00' : $organ['active_end_time'];
@@ -61,6 +64,7 @@ class Apishiftsettings extends WebController
         $results['organ_list'] = $organ_list;
 
         $results['shifts'] = $initData;
+        $results['shift_times'] = $shift_times;
         $results['active_time']['from'] = $organ_active_start;
         $results['active_time']['to'] = $organ_active_end;
 
@@ -103,12 +107,11 @@ class Apishiftsettings extends WebController
         $weekday = $this->input->post('weekday');
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
+        if ($to_time=='24:00:00')  $to_time =  '23:59:59';
 
-        $organ = $this->organ_model->getFromId($organ_id);
-        $active_start_time = empty($organ['active_start_time'])? '00:00:00' : $organ['active_start_time'];
-        $active_end_time = empty($organ['active_end_time'])? '24:00:00' : $organ['active_end_time'];
+        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id, 'weekday'=>$weekday]);
 
-        $isactive = $this->isActiveTime($active_start_time, $active_end_time, $from_time, $to_time);
+        $isactive = $this->isActiveTime($shift_times, $from_time, $to_time);
 
         if (!$isactive){
             $results['isUpdate'] = false;
@@ -199,13 +202,14 @@ class Apishiftsettings extends WebController
 
         if (empty($organ_id)) $organ_id = $organ_list[0]['organ_id'];
 
+        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=> $organ_id]);
         $organ = $this->organ_model->getFromId($organ_id);
-
-        if (empty($organ) || empty($staff)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
+//
+//        if (empty($organ) || empty($staff)){
+//            $results['isLoad'] = false;
+//            echo json_encode($results);
+//            return;
+//        }
 
         $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
         $organ_active_end = empty($organ['active_end_time']) ? '23:59' : $organ['active_end_time'];
@@ -220,6 +224,7 @@ class Apishiftsettings extends WebController
         $results['isLoad'] = true;
         $results['organ_id'] = $organ_id;
         $results['organ_list'] = $organ_list;
+        $results['shift_times'] = $shift_times;
         $results['shifts'] = $shift_list;
 
         $results['active_time']['from'] = $organ_active_start;
@@ -253,18 +258,26 @@ class Apishiftsettings extends WebController
     }
 
     public function saveShiftCount(){
+
         $organ_id = $this->input->post('organ_id');
         $setting_id = $this->input->post('setting_id');
         $select_date = $this->input->post('select_date');
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
+        if ($to_time=='24:00:00') $to_time = '23:59:59';
         $count = $this->input->post('count');
 
         $organ = $this->organ_model->getFromId($organ_id);
         $active_start_time = empty($organ['active_start_time'])? '00:00:00' : $organ['active_start_time'];
         $active_end_time = empty($organ['active_end_time'])? '23:59:59' : $organ['active_end_time'];
 
-        $isactive = $this->isActiveTime($active_start_time, $active_end_time, $from_time, $to_time);
+        $time = strtotime($select_date);
+        $weekday = date('w',$time);
+
+        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id, 'weekday'=>$weekday]);
+
+        $isactive = $this->isActiveTime($shift_times, $from_time, $to_time);
+//        $isactive = $this->isActiveTime($active_start_time, $active_end_time, $from_time, $to_time);
 
         if (!$isactive){
             $results['isUpdate'] = false;
@@ -325,35 +338,19 @@ class Apishiftsettings extends WebController
         return;
     }
 
-    private function isActiveTime($start_time, $end_time, $from_time, $to_time){
+    private function isActiveTime($shift_times, $from_time, $to_time){
 
-        $inactive = [];
-        if ($start_time>$end_time){
-            $tmp = [];
-            $tmp['from'] = '00:00:00';
-            $tmp['to'] = $end_time;
-            $inactive[] = $tmp;
-
-            $tmp = [];
-            $tmp['from'] = $start_time;
-            $tmp['to'] = '23:59:59';
-            $inactive[] = $tmp;
-        }else{
-            $tmp = [];
-            $tmp['from'] = $start_time;
-            $tmp['to'] = $end_time;
-            $inactive[] = $tmp;
-        }
-
-        $isactive = false;
-        foreach ($inactive as $item){
-            if ($from_time>=$item['from'] && $from_time<=$item['to'] && $to_time>=$item['from'] && $to_time<=$item['to'] ){
-                $isactive = true;
+        $isActive = false;
+        foreach ($shift_times as $record){
+            $_start = $record['from_time'];
+            $_end = $record['to_time'];
+            if ($_start.":00"<=$from_time && $_end.":00">=$to_time){
+                $isActive = true;
                 break;
             }
         }
 
-        return $isactive;
+        return $isActive;
     }
 }
 ?>

@@ -21,6 +21,7 @@ class Apishifts extends WebController
         $this->load->model('setting_count_shift_model');
         $this->load->model('staff_model');
         $this->load->model('staff_organ_model');
+        $this->load->model('organ_shift_time_model');
     }
 
     public function loadShifts(){
@@ -55,6 +56,8 @@ class Apishifts extends WebController
         $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
         $organ_active_end = empty($organ['active_end_time']) ? '23:59' : $organ['active_end_time'];
 
+        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id]);
+
         $cond = array();
         $cond['staff_id'] = $staff_id;
         $cond['organ_id'] = $organ_id;
@@ -84,6 +87,9 @@ class Apishifts extends WebController
 //            }
 //            $shifts = $this->shift_model->getListByCond($cond);
         }
+
+        $count_shift = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_date'=>$to_date. ' 23:59:59']);
+
         if ($mode == 'init'){
             foreach ($shifts as $item) {
                 $this->shift_model->delete_force($item['shift_id'], 'shift_id');
@@ -93,31 +99,32 @@ class Apishifts extends WebController
             $condInit['organ_id'] = $organ_id;
             $initData = $this->setting_init_shift_model->getListByCond($condInit);
             foreach ($initData as $item){
-                $diff1Day = new DateInterval('P'.$item['weekday'].'D');
+                $diff1Day = new DateInterval('P'.($item['weekday']-1).'D');
                 $curDateTime = new DateTime($from_date);
                 $curDateTime->add($diff1Day);
                 $sel_date = $curDateTime->format("Y-m-d");
 
-                $add_shift = array(
-                    'from_time'=>$sel_date . ' ' . $item['from_time'],
-                    'to_time' => $sel_date . ' ' . $item['to_time'],
-                    'staff_id' => $staff_id,
-                    'organ_id' => $organ_id,
-                    'visible' => 1,
-                    'shift_type' => 1,
-                );
-                $this->shift_model->insertRecord($add_shift);
+                if ($this->isCountTime($count_shift, $sel_date, $item['from_time'],  $item['to_time'])){
+                    $add_shift = array(
+                        'from_time'=>$sel_date . ' ' . $item['from_time'],
+                        'to_time' => $sel_date . ' ' . $item['to_time'],
+                        'staff_id' => $staff_id,
+                        'organ_id' => $organ_id,
+                        'visible' => 1,
+                        'shift_type' => 1,
+                    );
+                    $this->shift_model->insertRecord($add_shift);
+                }
             }
             $shifts = $this->shift_model->getListByCond($cond);
 
         }
 
-        $count_shift = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_date'=>$to_date. ' 23:59:59']);
-
         $results['isLoad'] = true;
         $results['organ_id'] = $organ_id;
         $results['organ_list'] = $organ_list;
 
+        $results['shift_times'] = $shift_times;
         $results['active_time']['from'] = $organ_active_start;
         $results['active_time']['to'] = $organ_active_end;
         $results['count_shifts'] = $count_shift;
@@ -279,6 +286,7 @@ class Apishifts extends WebController
 
         $organ = $this->organ_model->getFromId($organ_id);
 
+        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id]);
         $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
         $organ_active_end = empty($organ['active_end_time']) ? '23:59' : $organ['active_end_time'];
 
@@ -323,13 +331,17 @@ class Apishifts extends WebController
             $cur_date = $curDateTime->format("Y-m-d");
         }
 
+        $shift_counts = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_time'=>$to_date. ' 23:59:59']);
+        $shifts = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_time'=>$to_date. ' 23:59:59']);
 
         $results['isLoad'] = true;
         $results['active_time']['from'] = $organ_active_start;
         $results['active_time']['to'] = $organ_active_end;
 
+        $results['shift_counts'] = $shift_counts;
+        $results['shifts'] = $shifts;
         $results['divide_shift'] = $divide_shift;
-//        $results['shift'] = $shift;
+        $results['shift_times'] = $shift_times;
         $results['organ_list'] = $organ_list;
         $results['shift_inactive'] = $shift_inactive;
 
@@ -339,47 +351,32 @@ class Apishifts extends WebController
 
     public function loadStaffManageStatus(){
         $organ_id = $this->input->post('organ_id');
-        $select_time = $this->input->post('select_time');
 
-        $shifts = $this->shift_model->getStaffShiftList($organ_id, $select_time);
+        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 2);
 
-        $results = [];
         $results['isLoad'] = true;
-        $results['shifts'] = $shifts;
+        $results['staffs'] = $staffs;
 
         echo json_encode($results);
 
     }
 
-    private function isActiveTime($start_time, $end_time, $from_time, $to_time){
+    private function isCountTime($count_times, $sel_date, $from_time, $to_time){
 
-        $inactive = [];
-        if ($start_time>$end_time){
-            $tmp = [];
-            $tmp['from'] = '00:00:00';
-            $tmp['to'] = $end_time;
-            $inactive[] = $tmp;
-
-            $tmp = [];
-            $tmp['from'] = $start_time;
-            $tmp['to'] = '23:59:59';
-            $inactive[] = $tmp;
-        }else{
-            $tmp = [];
-            $tmp['from'] = $start_time;
-            $tmp['to'] = $end_time;
-            $inactive[] = $tmp;
-        }
-
-        $isactive = false;
-        foreach ($inactive as $item){
-            if ($from_time>=$item['from'] && $from_time<=$item['to'] && $to_time>=$item['from'] && $to_time<=$item['to'] ){
-                $isactive = true;
+        $isActive = false;
+        foreach ($count_times as $record){
+            $_start = $record['from_time'];
+            $_end = $record['to_time'];
+            $from = $sel_date . ' ' . $from_time;
+            $to = $sel_date . ' ' . $to_time;
+            if ($_start<=$from && $_end>=$to){
+                $isActive = true;
                 break;
             }
         }
 
-        return $isactive;
+        return $isActive;
     }
+
 }
 ?>

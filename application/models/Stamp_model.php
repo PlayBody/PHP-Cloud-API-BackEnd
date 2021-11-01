@@ -11,6 +11,22 @@ class Stamp_model extends Base_model
         $this->primary_key = 'stamp_id';
     }
 
+    public function getStampList($cond){
+        $this->db->from($this->table);
+
+        if (!empty($cond['user_id'])){
+            $this->db->where('user_id', $cond['user_id']);
+        }
+
+        if (!empty($cond['use_flag'])){
+            $this->db->where('use_flag', $cond['use_flag']);
+        }
+
+        $query = $this->db->get();
+
+        return $query->result_array();
+
+    }
 
 
 }

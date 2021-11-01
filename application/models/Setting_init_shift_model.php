@@ -33,7 +33,7 @@ class Setting_init_Shift_model extends Base_model
         }
         if (!empty($cond['select_time'])){
             $this->db->where("from_time <='". $cond['select_time'] ."'");
-            $this->db->where("to_time >='". $cond['select_time'] ."'");
+            $this->db->where("to_time >'". $cond['select_time'] ."'");
         }
 
         if (!empty($setting_id)){
