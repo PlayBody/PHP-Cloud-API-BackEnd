@@ -40,6 +40,29 @@ class Shift_model extends Base_model
         return $query->result_array();
     }
 
+    public function getOtherOrgansShift($cond){
+        $this->db->select('sum( HOUR(TIMEDIFF(to_time, from_time))*60+ MINUTE(TIMEDIFF(to_time, from_time))) as all_time');
+        $this->db->from($this->table);
+
+        if (!empty($cond['staff_id'])){
+            $this->db->where('staff_id', $cond['staff_id']);
+        }
+
+        if (!empty($cond['cur_organ_id'])){
+            $this->db->where('organ_id <> '.$cond['organ_id']);
+        }
+
+        $this->db->where("(from_time >='". $cond['from_time'] ."' and from_time <'". $cond['to_time'] ."') || (to_time >'". $cond['from_time'] ."' and to_time <'". $cond['from_time'] ."')");
+
+        $this->db->where('visible', '1');
+
+        $query = $this->db->get();
+
+        $result = $query->row_array();
+
+        return $result['all_time']==null ? 0 : $result['all_time'];
+    }
+
     public function getRecordByCond($cond){
 
         $this->db->from($this->table);

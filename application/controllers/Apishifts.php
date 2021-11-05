@@ -352,11 +352,44 @@ class Apishifts extends WebController
     public function loadStaffManageStatus(){
         $organ_id = $this->input->post('organ_id');
 
-        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 2);
+        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3);
 
         $results['isLoad'] = true;
         $results['staffs'] = $staffs;
 
+        echo json_encode($results);
+
+    }
+
+    public function saveShiftComplete(){
+        $organ_id = $this->input->post('organ_id');
+        $staff_id = $this->input->post('staff_id');
+        $shift_id = $this->input->post('shift_id');
+        $shift_type = $this->input->post('shift_type');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+
+        $update_value = '4';
+        if ($shift_type=='1') $update_value = '2';
+        if ($shift_type=='-2') $update_value = '-3';
+
+        if (empty($shift_id)){
+            $shift = array(
+                'organ_id' => $organ_id,
+                'staff_id' => $staff_id,
+                'shift_type' => $update_value,
+                'from_time' => $from_time,
+                'to_time' => $to_time,
+                'visible' => '1'
+            );
+            $this->shift_model->insertRecord($shift);
+        }else{
+            $shift = $this->shift_model->getFromId($shift_id);
+            $shift['shift_type'] = $update_value;
+            $this->shift_model->updateRecord($shift, 'shift_id');
+        }
+
+        $results['isSave'] = true;
         echo json_encode($results);
 
     }
@@ -378,5 +411,23 @@ class Apishifts extends WebController
         return $isActive;
     }
 
+    public function loadOtherOrganExist(){
+        $staff_id = $this->input->get('staff_id');
+        $cur_organ_id = $this->input->get('cur_organ_id');
+        $from_time = $this->input->get('from_time');
+        $to_time = $this->input->get('to_time');
+
+        $cond['staff_id'] = $staff_id;
+        $cond['cur_organ_id'] = $cur_organ_id;
+        $cond['from_time'] = $from_time;
+        $cond['to_time'] = $to_time;
+
+        $all_time = $this->shift_model->getOtherOrgansShift($cond);
+
+        $results['all_time'] = $all_time;
+
+        echo json_encode($results);
+
+    }
 }
 ?>

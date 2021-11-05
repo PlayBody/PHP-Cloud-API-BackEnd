@@ -196,6 +196,13 @@ class Apistaffs extends WebController
         echo json_encode($results);
     }
 
+    public function loadStaffInfo(){
+        $staff_id = $this->input->post('staff_id');
+        $staff = $this->staff_model->getFromId($staff_id);
+
+        echo json_encode($staff);
+    }
+
     public function loadStaffDetail(){
         $staff_id = $this->input->post('edit_staff_id');
         $login_id = $this->input->post('login_staff_id');
