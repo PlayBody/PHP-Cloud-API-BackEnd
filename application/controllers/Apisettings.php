@@ -95,9 +95,9 @@ class Apisettings extends WebController
         $organ['table_amount'] = empty($this->input->post('table_amount')) ? null : $this->input->post('table_amount');
         $organ['active_start_time'] = empty($this->input->post('active_start_time')) ? null : $this->input->post('active_start_time');
         $organ['active_end_time'] = empty($this->input->post('active_end_time')) ? null : $this->input->post('active_end_time');
-        $organ['phone'] = $this->input->post('phone');
-        $organ['address'] = $this->input->post('address');
-        $organ['tel_phone'] = $this->input->post('tel_phone');
+        $organ['zip_code'] = empty($this->input->post('zip_code')) ? null : $this->input->post('zip_code');
+        $organ['address'] = empty($this->input->post('address')) ? null : $this->input->post('address');
+        $organ['phone'] = empty($this->input->post('tel_phone')) ? null : $this->input->post('tel_phone');
         $organ['open_balance'] = empty($this->input->post('open_balance')) ? null : $this->input->post('open_balance');
         $organ['lat'] = empty($this->input->post('lat')) ? null : $this->input->post('lat');
         $organ['lon'] = empty($this->input->post('lon')) ? null : $this->input->post('lon');

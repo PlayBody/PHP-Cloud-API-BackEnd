@@ -25,7 +25,7 @@ class Apishifts extends WebController
     }
 
     public function loadShifts(){
-        $mode = $this->input->post('mode');
+        $mode =  $this->input->post('mode');
         $staff_id = $this->input->post('staff_id');
         $organ_id = $this->input->post('organ_id');
         $from_date = $this->input->post('from_date');
@@ -104,10 +104,19 @@ class Apishifts extends WebController
                 $curDateTime->add($diff1Day);
                 $sel_date = $curDateTime->format("Y-m-d");
 
-                if ($this->isCountTime($count_shift, $sel_date, $item['from_time'],  $item['to_time'])){
+                foreach ($count_shift as $record){
+                    $_start = $record['from_time'];
+                    $_end = $record['to_time'];
+                    $from = $sel_date . ' ' . $item['from_time'];
+                    $to = $sel_date . ' ' . $item['to_time'];
+
+                    if ($from>=$_end || $to<=$_start) continue;
+                    if ($from>$_start) $input_from = $from; else $input_from = $_start;
+                    if ($to>$_end) $input_to = $_end; else $input_to = $to;
+
                     $add_shift = array(
-                        'from_time'=>$sel_date . ' ' . $item['from_time'],
-                        'to_time' => $sel_date . ' ' . $item['to_time'],
+                        'from_time'=>$input_from,
+                        'to_time' => $input_to,
                         'staff_id' => $staff_id,
                         'organ_id' => $organ_id,
                         'visible' => 1,
@@ -115,6 +124,9 @@ class Apishifts extends WebController
                     );
                     $this->shift_model->insertRecord($add_shift);
                 }
+
+//                if ($this->isCountTime($count_shift, $sel_date, $item['from_time'],  $item['to_time'])){
+//                }
             }
             $shifts = $this->shift_model->getListByCond($cond);
 
@@ -200,21 +212,21 @@ class Apishifts extends WebController
             $this->shift_model->updateRecord($shift, 'shift_id');
         }
 
-        $prev_shift = $this->shift_model->getReleationShift($organ_id, $staff_id, $from_time, 'prev');
-        if (!empty($prev_shift)){
-            $shift['shift_id'] = $shift_id;
-            $shift['from_time'] = $prev_shift['from_time'];
-            $this->shift_model->updateRecord($shift, 'shift_id');
-            $this->shift_model->delete_force($prev_shift['shift_id'], 'shift_id');
-        }
-
-        $next_shift = $this->shift_model->getReleationShift($organ_id, $staff_id, $to_time, 'next');
-        if (!empty($next_shift)){
-            $shift['shift_id'] = $shift_id;
-            $shift['to_time'] = $next_shift['to_time'];
-            $this->shift_model->updateRecord($shift, 'shift_id');
-            $this->shift_model->delete_force($next_shift['shift_id'], 'shift_id');
-        }
+//        $prev_shift = $this->shift_model->getReleationShift($organ_id, $staff_id, $from_time, 'prev');
+//        if (!empty($prev_shift)){
+//            $shift['shift_id'] = $shift_id;
+//            $shift['from_time'] = $prev_shift['from_time'];
+//            $this->shift_model->updateRecord($shift, 'shift_id');
+//            $this->shift_model->delete_force($prev_shift['shift_id'], 'shift_id');
+//        }
+//
+//        $next_shift = $this->shift_model->getReleationShift($organ_id, $staff_id, $to_time, 'next');
+//        if (!empty($next_shift)){
+//            $shift['shift_id'] = $shift_id;
+//            $shift['to_time'] = $next_shift['to_time'];
+//            $this->shift_model->updateRecord($shift, 'shift_id');
+//            $this->shift_model->delete_force($next_shift['shift_id'], 'shift_id');
+//        }
 
         $results=[];
 
@@ -352,7 +364,7 @@ class Apishifts extends WebController
     public function loadStaffManageStatus(){
         $organ_id = $this->input->post('organ_id');
 
-        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3);
+        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 4);
 
         $results['isLoad'] = true;
         $results['staffs'] = $staffs;

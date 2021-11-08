@@ -20,6 +20,8 @@ class Apistaffs extends WebController
         $this->load->model('organ_model');
         $this->load->model('staff_organ_model');
         $this->load->model('attendance_model');
+        $this->load->model('staff_point_setting_model');
+        $this->load->model('staff_point_add_model');
     }
 
     public function login()
@@ -518,18 +520,31 @@ class Apistaffs extends WebController
 
     public function loadStaffPoint(){
         $staff_id = $this->input->post('staff_id');
+        $setting_year = $this->input->post('setting_year');
+        $setting_month = $this->input->post('setting_month');
 
         $results = [];
-        if (empty($staff_id)){
+        if (empty($staff_id) || empty($setting_year) || empty($setting_month)){
             $results['isLoad'] = false;
             echo json_encode($results);
             return;
         }
 
-        $staff = $this->staff_model->getFromId($staff_id);
+        $cond = [];
+        $cond['staff_id'] = $staff_id;
+        $cond['setting_year'] = $setting_year;
+        $cond['setting_month'] = $setting_month;
+
+        $point_setting = $this->staff_point_setting_model->getSettingData($cond);
+
+        $add_points = [];
+        if (!empty($point_setting)){
+            $add_points = $this->staff_point_add_model->getPointList(['point_setting_id' => $point_setting['id']]);
+        }
 
         $results['isLoad'] = true;
-        $results['staff'] = $staff;
+        $results['point_setting'] = $point_setting;
+        $results['point_add_list'] = $add_points;
 
         echo json_encode($results);
     }
@@ -537,23 +552,86 @@ class Apistaffs extends WebController
 
     public function saveStaffPoint(){
         $staff_id = $this->input->post('staff_id');
+        $setting_year = $this->input->post('setting_year');
+        $setting_month = $this->input->post('setting_month');
+        $setting_id = $this->input->post('setting_id');
 
         $results = [];
-        if (empty($staff_id)){
+        if (empty($staff_id) || empty($setting_year) || empty($setting_month)){
             $results['isSave'] = false;
             echo json_encode($results);
             return;
         }
 
-        $staff = $this->staff_model->getFromId($staff_id);
+//        $staff = $this->staff_model->getFromId($staff_id);
+//
+//        $staff['menu_response'] = empty($this->input->post('menu_response')) ? null : $this->input->post('menu_response');
+//        $staff['test_rate'] = empty($this->input->post('test_rate')) ? null : $this->input->post('test_rate');
+//        $staff['quality_rate'] = empty($this->input->post('quality_rate')) ? null : $this->input->post('quality_rate');
 
-        $staff['staff_all_menu_response'] = empty($this->input->post('all_menu_response')) ? null : $this->input->post('all_menu_response');
-        $staff['staff_test_additional_rate'] = empty($this->input->post('test_additional_rate')) ? null : $this->input->post('test_additional_rate');
-        $staff['staff_quality_additional_rate'] = empty($this->input->post('quality_additional_rate')) ? null : $this->input->post('quality_additional_rate');
+        if (empty($setting_id)){
+            $setting = array(
+                'staff_id' => $staff_id,
+                'setting_year' => $setting_year,
+                'setting_month' => $setting_month,
+                'menu_response' => empty($this->input->post('menu_response')) ? null : $this->input->post('menu_response'),
+                'test_rate' => empty($this->input->post('test_rate')) ? null : $this->input->post('test_rate'),
+                'quality_rate' => empty($this->input->post('quality_rate')) ? null : $this->input->post('quality_rate')
+            );
 
-        $this->staff_model->updateRecord($staff, 'staff_id');
+            $setting_id = $this->staff_point_setting_model->insertRecord($setting);
+        }else{
+            $setting = $this->staff_point_setting_model->getFromId($setting_id);
+            $setting['menu_response'] = empty($this->input->post('menu_response')) ? null : $this->input->post('menu_response');
+            $setting['test_rate'] = empty($this->input->post('test_rate')) ? null : $this->input->post('test_rate');
+            $setting['quality_rate'] = empty($this->input->post('quality_rate')) ? null : $this->input->post('quality_rate');
+            $this->staff_point_setting_model->updateRecord($setting, 'id');
+        }
 
         $results['isSave'] = true;
+        //$results['setting_id'] = true;
+
+        echo json_encode($results);
+    }
+
+
+    public function savePointAdd(){
+        $point_setting_id = $this->input->post('point_setting_id');
+        $comment = $this->input->post('comment');
+        $value = $this->input->post('value');
+
+        $results = [];
+        if (empty($point_setting_id)){
+            $results['isSave'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $point = array(
+            'point_setting_id' => $point_setting_id,
+            'comment' => $comment,
+            'value' => $value,
+        );
+
+        $this->staff_point_add_model->insertRecord($point);
+
+        $results['isSave'] = true;
+
+        echo json_encode($results);
+    }
+    public function deletePointAdd(){
+        $point_add_id = $this->input->post('point_add_id');
+
+        $results = [];
+        if (empty($point_add_id)){
+            $results['isDelete'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $this->staff_point_add_model->delete_force($point_add_id, 'id');
+
+        $results['isDelete'] = true;
 
         echo json_encode($results);
     }
