@@ -15,6 +15,7 @@ class Apimenus extends WebController
         $this->load->model('staff_organ_model');
         $this->load->model('menu_model');
         $this->load->model('menu_variation_model');
+        $this->load->model('menu_variation_back_model');
         $this->load->model('table_menu_model');
         $this->load->model('organ_model');
     }
@@ -184,10 +185,17 @@ class Apimenus extends WebController
 
         $variations = $this->menu_variation_model->getVariationList(['menu_id'=>$menu_id]);
 
+        $variation_data = [];
+        foreach ($variations as $item){
+            $back_list = $this->menu_variation_back_model->getVariationBacks($item['variation_id']);
+            $item['backs'] = $back_list;
+            $variation_data[] = $item;
+        }
+
         $results['isLoad'] = true;
         $results['menu'] = $menu;
         $results['staffs'] = $staffs;
-        $results['variations'] = $variations;
+        $results['variations'] = $variation_data;
 
         echo(json_encode($results));
     }
@@ -281,7 +289,7 @@ class Apimenus extends WebController
         $variation_title = $this->input->post('title');
         $variation_price = $this->input->post('price');
         $variation_back_staff_type = $this->input->post('staff_type');
-        $variation_back_staff = $this->input->post('staff');
+        $back_staffs = $this->input->post('staff');
         $variation_back_amount = $this->input->post('amount');
 
         $results = [];
@@ -296,27 +304,37 @@ class Apimenus extends WebController
                 'menu_id' => $menu_id,
                 'variation_title' => $variation_title,
                 'variation_price' => $variation_price,
-                'variation_back_staff_type' => empty($variation_back_staff) ? null : 'staff',
-                'variation_back_staff' => empty($variation_back_staff) ? null : $variation_back_staff,
                 'variation_back_amount' => empty($variation_back_amount) ? null : $variation_back_amount,
                 'visible'=>'1',
-                'create_date'=>date('Y-m-d H:i:s'),
-                'update_date'=>date('Y-m-d H:i:s'),
             );
 
-            $this->menu_variation_model->add($variation);
+            $variation_id = $this->menu_variation_model->insertRecord($variation);
         }else{
             $variation = $this->menu_variation_model->getFromId($variation_id);
             $variation['variation_title'] = $variation_title;
             $variation['variation_price'] = $variation_price;
-            $variation['variation_back_staff_type'] = empty($variation_back_staff) ? null : 'staff';
-            $variation['variation_back_staff'] = empty($variation_back_staff) ? null : $variation_back_staff;
             $variation['variation_back_amount'] = empty($variation_back_amount) ? null : $variation_back_amount;
-            $variation['update_date'] = date('Y-m-d H:i:s');
 
-            $this->menu_variation_model->edit($variation, 'variation_id');
+            $this->menu_variation_model->updateRecord($variation, 'variation_id');
+        }
+
+        $oldBackStaffs = $this->menu_variation_back_model->getVariationBacks($variation_id);
+        foreach ($oldBackStaffs as $item){
+            $this->menu_variation_back_model->delete_force($item['id'], 'id');
+        }
+        if (!empty($back_staffs)){
+            $backs = json_decode($back_staffs);
+            foreach ($backs as $item){
+                $back_data = array(
+                    'variation_id' => $variation_id,
+                    'type'=> $variation_back_staff_type,
+                    'staff_id' => $item,
+                );
+                $this->menu_variation_back_model->insertRecord($back_data);
+            }
 
         }
+
         $results['isSave'] = true;
 
         echo(json_encode($results));
@@ -333,6 +351,11 @@ class Apimenus extends WebController
             return;
         }
         $this->menu_variation_model->delete_force($variation_id, 'variation_id');
+
+        $BackStaffs = $this->menu_variation_back_model->getVariationBacks($variation_id);
+        foreach ($BackStaffs as $item){
+            $this->menu_variation_back_model->delete_force($item['id'], 'id');
+        }
         $results['isDelete'] = true;
 
         echo(json_encode($results));

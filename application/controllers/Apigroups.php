@@ -45,6 +45,7 @@ class Apigroups extends WebController
         $group_id = $this->input->post('group_id');
         $company_id = $this->input->post('company_id');
         $creator_id = $this->input->post('staff_id');
+        $group_users = $this->input->post('group_users');
 
         $group_name = $this->input->post('group_name');
 
@@ -61,12 +62,26 @@ class Apigroups extends WebController
                 'group_name' => $group_name,
                 'visible' => 1,
             );
-
             $group_id = $this->group_model->insertRecord($group);
         }else{
             $group = $this->group_model->getFromId($group_id);
             $group['group_name'] = $group_name;
             $this->group_model->updateRecord($group, 'group_id');
+        }
+
+        $old_users = $this->group_user_model->getUsersByGroupGroup($group_id);
+        foreach ($old_users as $user){
+            $this->group_user_model->delete_force($user['id'],'id');
+        }
+
+        $users = json_decode($group_users);
+
+        foreach ($users as $user){
+            $data = array(
+                'group_id' =>$group_id,
+                'user_id' => $user,
+            );
+            $this->group_user_model->insertRecord($data);
         }
 
         $results['isSave'] = true;

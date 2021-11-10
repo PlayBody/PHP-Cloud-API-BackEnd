@@ -100,12 +100,12 @@ class Apimessages extends WebController
             }
 
         }
-        foreach ($token_data as $item){
-
-            if (!empty($item)){
-                $this->sendFireBaseMessage('message', 'メセジが受信されました。', $content, $item);
-            }
-        }
+//        foreach ($token_data as $item){
+//
+//            if (!empty($item)){
+//                $this->sendFireBaseMessage('message', 'メセジが受信されました。', $content, $item);
+//            }
+//        }
 
         $results['isSend'] = true;
 

@@ -29,4 +29,12 @@ class Group_user_model extends Base_model
         $query = $this->db->get();
         return $query->row_array();
     }
+
+    public function getUsersByGroupGroup($group_id){
+        $this->db->from($this->table);
+        $this->db->where('group_id', $group_id);
+
+        $query = $this->db->get();
+        return $query->result_array();
+    }
 }

@@ -352,5 +352,58 @@ class Apishiftsettings extends WebController
 
         return $isActive;
     }
+
+    public function copyShiftCounts(){
+        $organ_id = $this->input->post('organ_id');
+        $from_date = $this->input->post('from_date');
+        $to_date = $this->input->post('to_date');
+
+        $old_counts = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date." 00:00:00", 'to_time' =>$to_date ." 23:59:59"]);
+
+        foreach ($old_counts as $item){
+            $this->setting_count_shift_model->delete_force($item['id'], 'id');
+        }
+
+        $from = new DateTime($from_date);
+        $to = new DateTime($to_date);
+
+        $diffDay = new DateInterval('P7D');
+
+        $shift_counts = [];
+        $cnt = 0;
+        while(empty($shift_counts) && $from->format('Y') >= '2021'){
+            $cnt++;
+            $from->sub($diffDay);
+            $to->sub($diffDay);
+
+            $shift_counts = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from->format("Y-m-d 00:00:00"), 'to_time' =>$to->format("Y-m-d 23:59:59")]);
+        }
+
+        $diffDay = new DateInterval('P'.(7*$cnt).'D');
+
+        foreach ($shift_counts as $item){
+            $from = new DateTime($item['from_time']);
+            $to = new DateTime($item['to_time']);
+
+            $from->add($diffDay);
+            $to->add($diffDay);
+
+            $shift_count = array(
+                'organ_id' => $organ_id,
+                'from_time'=> $from->format('Y-m-d H:i:s'),
+                'to_time'=> $to->format('Y-m-d H:i:s'),
+                'count' => $item['count']
+            );
+
+            $this->setting_count_shift_model->insertRecord($shift_count);
+        }
+
+        $results = [];
+        $results['isCopy'] = true;
+
+        echo json_encode($results);
+
+
+    }
 }
 ?>

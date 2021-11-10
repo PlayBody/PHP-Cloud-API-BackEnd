@@ -537,6 +537,22 @@ class Apistaffs extends WebController
 
         $point_setting = $this->staff_point_setting_model->getSettingData($cond);
 
+        if (empty($point_setting)){
+            $last_setting = $this->staff_point_setting_model->getLastSetting($staff_id, $setting_year.'-'.$setting_month);
+            if (!empty($last_setting)){
+                $point_setting = array(
+                    'staff_id' => $staff_id,
+                    'setting_year' => $setting_year,
+                    'setting_month' => $setting_month,
+                    'menu_response' => $last_setting['menu_response'],
+                    'test_rate' => $last_setting['test_rate'],
+                    'quality_rate' => $last_setting['quality_rate'],
+                );
+
+                $point_setting['id'] = $this->staff_point_setting_model->insertRecord($point_setting);
+            }
+        }
+
         $add_points = [];
         if (!empty($point_setting)){
             $add_points = $this->staff_point_add_model->getPointList(['point_setting_id' => $point_setting['id']]);

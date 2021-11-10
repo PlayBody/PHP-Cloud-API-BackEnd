@@ -170,19 +170,13 @@ class Apishifts extends WebController
     }
 
     public function submitShift(){
+
         $shift_id = $this->input->post('shift_id');
         $staff_id = $this->input->post('staff_id');
         $organ_id = $this->input->post('organ_id');
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
 
-        $shift_area = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'submit_from_time'=>$from_time, 'submit_to_time'=>$to_time]);
-        if (empty($shift_area)){
-            $results['isUpdate'] = false;
-            $results['msg'] = 'area_error';
-            echo json_encode($results);
-            return;
-        }
 
         $shift_exist = $this->shift_model->isExist($organ_id, $staff_id, $shift_id, $from_time, $to_time);
         if ($shift_exist){
@@ -192,25 +186,71 @@ class Apishifts extends WebController
             return;
         }
 
-        if (empty($shift_id)){
+        $shift_area = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id,
+            'select_date'=>date('Y-m-d', strtotime($from_time))]);
+
+
+        if (empty($shift_area)){
+            $results['isUpdate'] = false;
+            $results['msg'] = 'area_error';
+            echo json_encode($results);
+            return;
+        }
+
+        $is_add = false;
+        foreach ($shift_area as $record){
+            $_start = $record['from_time'];
+            $_end = $record['to_time'];
+            $from = $from_time;
+            $to = $to_time;
+
+            if ($from>=$_end || $to<=$_start) continue;
+            if ($from>$_start) $input_from = $from; else $input_from = $_start;
+            if ($to>$_end) $input_to = $_end; else $input_to = $to;
+
             $shift = array(
                 'staff_id' => $staff_id,
                 'organ_id' => $organ_id,
-                'from_time' => $from_time,
-                'to_time' => $to_time,
+                'from_time' => $input_from,
+                'to_time' => $input_to,
                 'shift_type' => 1,
                 'visible' => 1,
             );
-            $shift_id = $this->shift_model->insertRecord($shift);
-        }else{
-            $shift = $this->shift_model->getFromId($shift_id);
-
-            $shift['from_time'] = $from_time;
-            $shift['to_time'] = $to_time;
-            $shift['shift_type'] = 1;
-
-            $this->shift_model->updateRecord($shift, 'shift_id');
+            $is_add = true;
+            $this->shift_model->insertRecord($shift);
         }
+
+        if (!$is_add){
+            $results['isUpdate'] = false;
+            $results['msg'] = 'area_error';
+            echo json_encode($results);
+            return;
+        }
+
+        if (!empty($shift_id)){
+            $this->shift_model->delete_force($shift_id, 'shift_id');
+        }
+
+//
+//        if (empty($shift_id)){
+//            $shift = array(
+//                'staff_id' => $staff_id,
+//                'organ_id' => $organ_id,
+//                'from_time' => $from_time,
+//                'to_time' => $to_time,
+//                'shift_type' => 1,
+//                'visible' => 1,
+//            );
+//            $shift_id = $this->shift_model->insertRecord($shift);
+//        }else{
+//            $shift = $this->shift_model->getFromId($shift_id);
+//
+//            $shift['from_time'] = $from_time;
+//            $shift['to_time'] = $to_time;
+//            $shift['shift_type'] = 1;
+//
+//            $this->shift_model->updateRecord($shift, 'shift_id');
+//        }
 
 //        $prev_shift = $this->shift_model->getReleationShift($organ_id, $staff_id, $from_time, 'prev');
 //        if (!empty($prev_shift)){

@@ -50,10 +50,16 @@ class Apiusers extends WebController
             return;
         }
 
-        $users = $this->user_model->getUserListWithSelectGroup($company_id, $group_id);
+        $users = $this->user_model->getUsersByCond(['company_id'=>$company_id]);
+
+        $group_users = [];
+        if (!empty($group_id)){
+            $group_users = $this->group_user_model->getUsersByGroupGroup($group_id);
+        }
 
         $results['isLoad'] = true;
         $results['users'] = $users;
+        $results['group_users'] = $group_users;
 
         echo json_encode($results);
     }

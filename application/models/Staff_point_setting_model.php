@@ -31,5 +31,19 @@ class Staff_point_setting_model extends Base_model
 
     }
 
+    public function getLastSetting($staff_id, $cur_date){
+        $this->db->from($this->table);
+
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where("CONCAT(setting_year, '-' , setting_month) < '$cur_date'");
+
+        $this->db->order_by('setting_year', 'desc');
+        $this->db->order_by('setting_month', 'desc');
+        $query = $this->db->get();
+
+        return $query->row_array();
+
+    }
+
 
 }

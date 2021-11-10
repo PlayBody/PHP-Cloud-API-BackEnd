@@ -22,6 +22,7 @@ class Fitness_model extends Base_model
             $this->db->where('group_id is null');
         }
 
+        $this->db->order_by('create_date', 'desc');
         $this->db->limit(10);
 
         $query = $this->db->get();
