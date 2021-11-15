@@ -14,6 +14,7 @@ class Apitables extends WebController
         $this->load->model('table_model');
         $this->load->model('organ_model');
         $this->load->model('stamp_model');
+        $this->load->model('staff_model');
 
         $this->load->model('table_menu_model');
         $this->load->model('history_table_model');
@@ -22,6 +23,8 @@ class Apitables extends WebController
 
     public function loadTables(){
         $organ_id = $this->input->post('organ_id');
+        $staff_id = $this->input->post('staff_id');
+        $staff = $this->staff_model->getFromId($staff_id);
 
         $results = [];
         if(empty($organ_id)) {
@@ -30,43 +33,65 @@ class Apitables extends WebController
             return;
         }
 
-        $setting = $this->organ_model->getFromId($organ_id);
+        if ($staff['staff_auth']=='0'){
+            $table_position = $staff['table_position'] == null ? 1 : $staff['table_position'];
 
-        $table_count = empty($setting['table_count']) ? 4 : $setting['table_count'];
-
-        $pos_amount = empty($setting['open_balance']) ? 0 : $setting['open_balance'];
-
-        $table_list = $this->table_model->getTableList(['organ_id'=>$organ_id, 'count'=>$table_count]);
-
-        $data = [];
-        foreach ($table_list as $item) {
-            $data[$item['position']] = $item;
-        }
-        $tables = [];
-        for($i=1;$i<=$table_count; $i++){
-            $tmp = [];
-            if (empty($data[$i])){
-                $tmp = array(
+            $table = $this->table_model->getTableRecord(['organ_id'=>$organ_id, 'position'=>$table_position]);
+            if (empty($table)){
+                $table = array(
                     'organ_id' => $organ_id,
-                    'position' => $i,
-                    'table_title' => '席'.$i,
+                    'position' => $table_position,
+                    'table_title' => '席'.$table_position,
                     'status' => '0',
                     'visible' => 1,
                 );
-                $tmp['table_id'] = $this->table_model->insertRecord($tmp);
-            }else{
-                $tmp = $data[$i];
+
+                $this->table_model->insertRecord($table);
+
             }
-            $no = $i<10 ? '0'.$i: $i;
-            $tmp['seat_no'] = 'SEAT '.$no;
-            $tables[] = $tmp;
+            $table['seat_no'] = 'SEAT '.$table_position;
+
+            $results['isLoad'] = true;
+            $results['tables'] = [$table];
+        }else{
+            $setting = $this->organ_model->getFromId($organ_id);
+
+            $table_count = empty($setting['table_count']) ? 4 : $setting['table_count'];
+
+            $pos_amount = empty($setting['open_balance']) ? 0 : $setting['open_balance'];
+
+            $table_list = $this->table_model->getTableList(['organ_id'=>$organ_id, 'count'=>$table_count]);
+
+            $data = [];
+            foreach ($table_list as $item) {
+                $data[$item['position']] = $item;
+            }
+            $tables = [];
+            for($i=1;$i<=$table_count; $i++){
+                $tmp = [];
+                if (empty($data[$i])){
+                    $tmp = array(
+                        'organ_id' => $organ_id,
+                        'position' => $i,
+                        'table_title' => '席'.$i,
+                        'status' => '0',
+                        'visible' => 1,
+                    );
+                    $tmp['table_id'] = $this->table_model->insertRecord($tmp);
+                }else{
+                    $tmp = $data[$i];
+                }
+                $no = $i<10 ? '0'.$i: $i;
+                $tmp['seat_no'] = 'SEAT '.$no;
+                $tables[] = $tmp;
+            }
+
+            $today_amount = $this->history_table_model->getTodayHistoryAmount(date('Y-m-d'), $organ_id);
+
+            $results['isLoad'] = true;
+            $results['tables'] = $tables;
+            $results['pos_amount'] = $pos_amount + $today_amount;
         }
-
-        $today_amount = $this->history_table_model->getTodayHistoryAmount(date('Y-m-d'), $organ_id);
-
-        $results['isLoad'] = true;
-        $results['tables'] = $tables;
-        $results['pos_amount'] = $pos_amount + $today_amount;
         echo(json_encode($results));
 
     }
