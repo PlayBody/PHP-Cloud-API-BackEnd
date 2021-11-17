@@ -26,13 +26,16 @@ class Reserve_model extends Base_model
     	return !empty($result);
     }
 
-    public function getReserveCount($organ_id, $time){
+    public function getReserveCount($organ_id, $time, $staff_id = ''){
     	$this->db->select('count(reserve_id) as count');
     	$this->db->from($this->table);
 
     	$this->db->where('organ_id', $organ_id);
 
-    	$this->db->where("start_time<='".$time."' and end_time>'".$time."'");
+    	$this->db->where("reserve_time", $time);
+    	if (!empty($staff_id)){
+            $this->db->where("staff_id", $staff_id);
+        }
 
     	$query = $this->db->get();
     	$result = $query->row_array();
@@ -120,6 +123,15 @@ class Reserve_model extends Base_model
         $result = $query->result_array();
 
         return $result;
+    }
+
+    public function getReserveStaffs($organ_id, $from_time, $to_time){
+        $this->db->from($this->table);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("reserve_time >='".$from_time."' and reserve_time<'".$to_time."'");
+
+        $query = $this->db->get();
+        return $query->result_array();
     }
 
 

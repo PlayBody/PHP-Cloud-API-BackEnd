@@ -24,11 +24,21 @@ class Apireserves extends WebController
 
         $this->load->model('reserve_model');
         $this->load->model('reserve_menu_model');
+
+        $this->load->model('shift_model');
+        $this->load->model('organ_time_model');
 //        $this->load->model('pos_staff_shift_model');
     }
 
     public function loadUserReserveData()
     {
+//        $user_id = '66';//$this->input->post('user_id');
+//        $organ_id = '1';//$this->input->post('organ_id');
+//        $staff_id = '12';// $this->input->post('staff_id');
+//        $from_date ='2021-11-15';// $this->input->post('from_date');
+//        $to_date = '2021-11-21';//$this->input->post('to_date');
+
+
         $user_id = $this->input->post('user_id');
         $organ_id = $this->input->post('organ_id');
         $staff_id = $this->input->post('staff_id');
@@ -36,160 +46,51 @@ class Apireserves extends WebController
         $to_date = $this->input->post('to_date');
 
         $results = [];
-
         if (empty($organ_id) || empty($user_id)){
             $results['isLoad'] = false;
             echo json_encode($results);
             return;
         }
+        $staff_list = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3, false);
 
-        $staff_list = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3);
-
-        $organ = $this->organ_model->getFromId($organ_id);
-
-        if (empty($organ['active_start_time'])) $organ['active_start_time'] = '00:00:00';
-        if (empty($organ['active_end_time'])) $organ['active_end_time'] = '23:59:59';
-        if (empty($organ['table_count'])) $organ['table_count'] = '7';
 
         $results = [];
+        $regions = [];
 
-        $cur_date = $from_date;
-        while($cur_date<=$to_date){
-            if ($cur_date<date('Y-m-d')){
-                    $tmp = [];
-                    $tmp['from_time'] = $cur_date. ' ' .'00:00:00';
-                    $tmp['to_time'] = $cur_date. ' ' .'23:59:59';
-                    $tmp['type'] = '0';
+        $cur_date = $from_date.' '.'00:00:00';
 
-                    $reserve_time_data[] = $tmp;
-            }else{
-                if ($organ['active_start_time']<$organ['active_end_time']){
-                    $tmp['from_time'] = $cur_date. ' ' .'00:00:00';
-                    $tmp['to_time'] = $cur_date. ' ' .$organ['active_start_time'];
-                    $tmp['type'] = '0';
-                    $reserve_time_data[] = $tmp;
-                    $tmp['from_time'] = $cur_date. ' ' .$organ['active_end_time'] ;
-                    $tmp['to_time'] = $cur_date. ' ' .'23:59:59';
-                    $tmp['type'] = '0';
-                    $reserve_time_data[] = $tmp;
-                }else{
-                    $tmp['from_time'] = $cur_date. ' ' .$organ['active_end_time'];
-                    $tmp['to_time'] = $cur_date. ' ' .$organ['active_start_time'];
-                    $tmp['type'] = '0';
-                    $reserve_time_data[] = $tmp;
-                    $reserve_time_data[] = $tmp;
-                }
+        while($cur_date<=$to_date.' 23:59:59'){
+            $tmp = [];
+            $tmp['time'] = $cur_date;
+            $tmp['type'] = $this->getReserveTimeStatus($organ_id, $staff_id, $cur_date);
 
-//                for ($i=$organ['active_start_time']; $i<$organ['active_end_time'];$i++) {
-//                    $tmp = [];
-//
-//                    $ii = $i;
-//                    $iadd = $i+1;
-//                    if ($ii<10) $ii = '0'.$ii;
-//                    if ($iadd<10) $iadd = '0'.$iadd;
-//
-//                    $tmp['from_time'] = $cur_date. ' ' .$ii.':00:00';
-//                    $tmp['to_time'] = $cur_date. ' ' .$iadd.':00:00';
-//                    $tmp['type'] = '1'; //free
-//
-//                    $cur_time = $cur_date. ' ' .$ii.':00:00';
-//
-//                    $isReserve = $this->reserve_model->isExistMyReserve($user_id, $organ_id, $cur_time);
-//                    if ($isReserve){
-//                        $tmp['type'] = '2'; //owner reserve
-//                    }else{
-//                        $reserveCount = $this->reserve_model->getReserveCount($organ_id, $cur_time);
-//                        if ($organ['table_count']<=$reserveCount){
-//                            $tmp['type'] = '3';
-//                        }else{
-//                            if (!empty($staff_id)){
-//                                $isExistStaff = $this->reserve_model->isExistStaff($staff_id, $cur_time);
-//                                if ($isExistStaff){
-//                                    $tmp['type'] = '3';
-//                                }else{
-////                                    $isStaffShiftReject = $this->pos_staff_shift_model->isStaffShiftReject($staff_id, $cur_time);
-////                                    if ($isStaffShiftReject){
-////                                        $tmp['type'] = '3';
-////                                    }
-//
-//                                }
-//                            }
-//                        }
-//                    }
-
-//                    $reserve_time_data[] = $tmp;
-//                }
-
-            }
-            $diff1Day = new DateInterval('P1D');
-
+            $regions[] = $tmp;
+            $diff1Day = new DateInterval('PT30M');
             $curDateTime = new DateTime($cur_date);
-
             $curDateTime->add($diff1Day);
-            $cur_date = $curDateTime->format("Y-m-d");
+            $cur_date = $curDateTime->format("Y-m-d H:i:s");
         }
-
-        //other_reserves
-        $cond=[];
-        $cond['user_id'] = $user_id;
-        $cond['from_time'] = date('Y-m-d')." 00:00:00";
-        $cond['to_time'] = $to_date." 23:59:59";
-        $other_list = $this->reserve_model->getOtherReserveCount($cond);
-        foreach ($other_list as $item){
-            if ($item['count']<$organ['table_count']) continue;
-
-            $tmp = [];
-            $tmp['from_time'] = $item['reserve_time'];
-
-            $curDateTime = new DateTime($item['reserve_time']);
-            $curDateTime->add(new DateInterval('PT1H'));
-            $tmp['to_time'] = $curDateTime->format("Y-m-d H:i:s");
-            $tmp['type'] = '3';
-            $reserve_time_data[] = $tmp;
-        }
-
-        if (!empty($staff_id)){
-            $cond=[];
-            $cond['user_id'] = $user_id;
-            $cond['from_time'] = date('Y-m-d')." 00:00:00";
-            $cond['to_time'] = $to_date." 23:59:59";
-            $cond['staff_id'] = $staff_id;
-            $staff_reserve = $this->reserve_model->getOtherReserveCount($cond);
-            foreach ($staff_reserve as $item){
-                $tmp = [];
-                $tmp['from_time'] = $item['reserve_time'];
-                $curDateTime = new DateTime($item['reserve_time']);
-                $curDateTime->add(new DateInterval('PT1H'));
-                $tmp['to_time'] = $curDateTime->format("Y-m-d H:i:s");
-                $tmp['type'] = '3';
-                $reserve_time_data[] = $tmp;
-            }
-        }
-
-
-        $cond=[];
-        $cond['user_id'] = $user_id;
-        if (!empty($staff_id)) $cond['staff_id'] = $staff_id;
-        $cond['from_time'] = date('Y-m-d')." 00:00:00";
-        $cond['to_time'] = $to_date." 23:59:59";
-        $reserve_list = $this->reserve_model->getListByCond($cond);
-
-        foreach ($reserve_list as $item){
-            $tmp = [];
-            $tmp['from_time'] = $item['reserve_time'];
-
-            $curDateTime = new DateTime($item['reserve_time']);
-            $curDateTime->add(new DateInterval('PT1H'));
-            $tmp['to_time'] = $curDateTime->format("Y-m-d H:i:s");
-            $tmp['type'] = '2';
-            $reserve_time_data[] = $tmp;
-        }
-
         $results['isLoad'] = true;
-        $results['reserve_time_data'] = $reserve_time_data;
+        $results['regions'] = $regions;
         $results['staffs'] = $staff_list;
-        $results['active_start_time'] = $organ['active_start_time'];
-        $results['active_end_time'] = $organ['active_end_time'];
+
+        echo(json_encode($results));
+
+    }
+
+    public function loadSelectStatus()
+    {
+        $organ_id = $this->input->post('organ_id');
+        $staff_id = $this->input->post('staff_id');
+        $select_time = $this->input->post('select_time');
+        if (empty($organ_id) || empty($staff_id)){
+            echo json_encode(['isLoad'=>false]);
+            return;
+        }
+
+        $status = $this->getReserveTimeStatus($organ_id, $staff_id, $select_time);
+        $results['isLoad'] = true;
+        $results['status'] = $status;
 
         echo(json_encode($results));
 
@@ -330,6 +231,56 @@ class Apireserves extends WebController
         $results['isDelete'] = true;
 
         echo json_encode($results);
+    }
+
+    public function loadReserveStaff(){
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+        $organ_id = $this->input->post('organ_id');
+
+        $reserves = $this->reserve_model->getReserveStaffs($organ_id, $from_time, $to_time);
+
+        $staffs = [];
+        foreach ($reserves as $reserve){
+            if (empty($reserve['staff_id'])) continue;
+            $staff_id = $reserve['staff_id'];
+            if (in_array($staff_id, $staffs)) continue;
+            $shifts = $this->shift_model->isExist($organ_id, $staff_id, '', $from_time, $to_time);
+            if (!empty($shifts)) continue;
+
+            $staffs[] = $staff_id;
+        }
+
+        $results['isLoad'] = true;
+        $results['staffs'] = $staffs;
+
+        echo json_encode($results);
+    }
+
+    private function getReserveTimeStatus($organ_id, $staff_id, $sel_time){
+
+        $organ = $this->organ_model->getFromId($organ_id);
+        $table_count = $organ['table_count'] == null ? 10 : $organ['table_count'];
+
+        if ($sel_time<=date('Y-m-d H:i:s')) return '0';
+
+        $week = date('N', strtotime($sel_time));
+        $time = date('H:i', strtotime($sel_time));
+        $isActive = $this->organ_time_model->isActiveTime($organ_id, $week, $time);
+        if (!$isActive) return '3';
+
+        $reserve_count = $this->reserve_model->getReserveCount($organ_id, $sel_time);
+        if ($reserve_count>=$table_count) return '3';
+
+        if (empty($staff_id)) return '3';
+
+        $staff_reserve_count = $this->reserve_model->getReserveCount($organ_id, $sel_time, $staff_id);
+        if ($staff_reserve_count > 0) return '3';
+
+        $isStaffActive = $this->shift_model->isStaffActiveReserve($organ_id, $staff_id, $sel_time);
+        if (!$isStaffActive) return '2';
+
+        return '1';
     }
 }
 ?>

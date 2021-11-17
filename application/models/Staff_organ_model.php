@@ -37,7 +37,7 @@ class Staff_organ_model extends Base_model
         return $query->result_array();
     }
 
-    public function getStaffsByOrgan($organ_id, $auth){
+    public function getStaffsByOrgan($organ_id, $auth, $isGetGuest = true){
         $this->db->select("staffs.*, ".$this->table.".auth, IF(staff_nick is NULL, CONCAT(staff_first_name,' ', staff_last_name), staff_nick) as sort_name");
         $this->db->from($this->table);
 
@@ -45,6 +45,8 @@ class Staff_organ_model extends Base_model
         $this->db->where('staffs.visible', '1');
         $this->db->where('organ_id', $organ_id);
         $this->db->where('staff_auth<'.$auth);
+        if (!$isGetGuest)
+            $this->db->where('staff_auth>0');
 
         $this->db->order_by('sort_name', 'asc');
         $query = $this->db->get();

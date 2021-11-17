@@ -185,4 +185,19 @@ order by tmp.time
         $query = $this->db->get();
         return $query->row_array();
     }
+
+
+    public function isStaffActiveReserve($organ_id, $staff_id, $time){
+        $this->db->select('*');
+        $this->db->from($this->table);
+
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where("from_time<='".$time."' and to_time>'".$time."'");
+
+        $this->db->where('shift_type', 2);
+
+        $query = $this->db->get();
+        return !empty($query->row_array());
+    }
 }

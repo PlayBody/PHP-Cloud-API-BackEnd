@@ -73,6 +73,8 @@ class Apimessages extends WebController
         $user_id = $this->input->post('user_id');
         $content = $this->input->post('content');
         $type = $this->input->post('type');
+        $file_type = $this->input->post('file_type');
+        $file_url = $this->input->post('file_url');
 
         if (empty($company_id) && empty($user_id)){
             $results['isSend'] = false;
@@ -84,6 +86,8 @@ class Apimessages extends WebController
             'company_id' => $company_id,
             'user_id' => $user_id,
             'content' => $content,
+            'file_type' => empty($file_type) ? null : $file_type,
+            'file_url' => empty($file_url) ? null : $file_url,
             'type' => $type
         );
 
@@ -142,6 +146,8 @@ class Apimessages extends WebController
         $company_id = $this->input->post('company_id');
         $group_id = $this->input->post('group_id');
         $message = $this->input->post('message');
+        $file_type = $this->input->post('file_type');
+        $file_url = $this->input->post('file_url');
 
         if (empty($company_id)){
             $results['isSave'] = false;
@@ -152,7 +158,9 @@ class Apimessages extends WebController
         $fitness = array(
             'company_id'=>$company_id,
             'group_id'=>empty($group_id) ? null : $group_id,
-            'message'=>$message
+            'message'=>$message,
+            'file_type' => empty($file_type) ? null : $file_type,
+            'file_url' => empty($file_url) ? null : $file_url,
         );
 
         $this->fitness_model->insertRecord($fitness);
@@ -160,6 +168,43 @@ class Apimessages extends WebController
         $results['isSave'] = true;
 
         echo json_encode($results);
+
+    }
+
+    function uploadAttachment() {
+
+        $result = array();
+
+        // user photo
+        $upload_path = "assets/messages/";
+        if(!is_dir($upload_path)) {
+            mkdir($upload_path);
+        }
+        $path  = base_url().$upload_path;
+        $fileName = $_FILES['upload']['name'];
+        $config = array(
+            'upload_path'   => $upload_path,
+            'allowed_types' => '*',
+            'overwrite'     => 1,
+            'file_name' 	=> $fileName
+        );
+        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
+
+        if (!empty($fileName)) {
+            if ($this->upload->do_upload('upload')) {
+                $file_url = $path.$this->upload->file_name;
+                //		$data = array('username' => $username, 'picture' => $file_url, 'about_me' => $aboutme,'user_location' => $userlocation, 'user_birthday' => $userbirthday, 'latitude' => $latitude, 'longitude' => $longitude);
+                //		$this->api_model->update_query("tb_user", $condition, $data);
+                $result['isUpload'] = true;
+            } else {
+                $result['isUpload'] = false;
+            }
+        }else{
+            $result['isUpload'] = false;
+        }
+
+        echo json_encode($result);
 
     }
 

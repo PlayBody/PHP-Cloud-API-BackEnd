@@ -21,18 +21,23 @@ class Apiorgans extends WebController
 
     public function loadOrganList(){
         $staff_id = $this->input->post('staff_id');
-
-        $staff = $this->staff_model->getFromId($staff_id);
-
-        $cond = [];
-        $organs = [];
-        if ($staff['staff_auth']==2){
-            $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
-        }else{
-            if ($staff['staff_auth']==3){
-                $cond['company_id'] = $staff['company_id'];
-            }
+        $company_id = $this->input->post('company_id');
+        if (empty($staff_id)){
+            $cond['company_id'] = $company_id;
             $organs = $this->organ_model->getListByCond($cond);
+        }else{
+            $staff = $this->staff_model->getFromId($staff_id);
+
+            $cond = [];
+            $organs = [];
+            if ($staff['staff_auth']==2){
+                $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
+            }else{
+                if ($staff['staff_auth']==3){
+                    $cond['company_id'] = $staff['company_id'];
+                }
+                $organs = $this->organ_model->getListByCond($cond);
+            }
         }
 
 
