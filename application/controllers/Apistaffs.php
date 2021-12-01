@@ -65,7 +65,7 @@ class Apistaffs extends WebController
             }
         }
 
-        $file = './assets/images/avatar/'.$file;
+        $file = './assets/images/staffs/'.$file;
         header("Content-Type: image/png");
         header("Content-Length: " . filesize($file));
         echo file_get_contents($file);
@@ -307,6 +307,7 @@ class Apistaffs extends WebController
         $staff_password = $this->input->post('staff_password');
         $staff_sex = $this->input->post('staff_sex');
         $staff_birthday = $this->input->post('staff_birthday');
+        $staff_entering_date = $this->input->post('staff_entering_date');
         $staff_organs = $this->input->post('staff_organs');
         $staff_salary_months = empty($this->input->post('staff_salary_months')) ? null : $this->input->post('staff_salary_months');
         $staff_salary_days =  empty($this->input->post('staff_salary_days')) ? null : $this->input->post('staff_salary_days');
@@ -315,24 +316,25 @@ class Apistaffs extends WebController
         $staff_shift = empty($this->input->post('staff_shift')) ? null : $this->input->post('staff_shift');
         $table_position = empty($this->input->post('table_position')) ? null : $this->input->post('table_position');
 
-        $image_stream = $this->input->post('image_stream');
+        $staff_avatar =empty($this->input->post('staff_avatar')) ? null : $this->input->post('staff_avatar');
 
-        if (!empty($image_stream)) {
-            $data = base64_decode($image_stream);
-            $im = imagecreatefromstring($data);
-            if ($im !== false) {
-                $file_name = 'avatar-'.date('YmdHis').'.jpg';
-                $output = './assets/images/avatar/'.$file_name;
-                imagejpeg($im, $output);
-                // file_put_contents($output, file_get_contents($im));
-            }
-        }
+//        if (!empty($image_stream)) {
+//            $data = base64_decode($image_stream);
+//            $im = imagecreatefromstring($data);
+//            if ($im !== false) {
+//                $file_name = 'avatar-'.date('YmdHis').'.jpg';
+//                $output = './assets/images/avatar/'.$file_name;
+//                imagejpeg($im, $output);
+//                // file_put_contents($output, file_get_contents($im));
+//            }
+//        }
 
         if (empty($staff_id)){
             $staff = [];
             $staff['staff_auth'] = 1;
             $staff['company_id'] = $company_id;
             $staff['staff_auth'] = $staff_auth;
+            $staff['staff_image'] = $staff_avatar;
             $staff['staff_first_name'] = $staff_first_name;
             $staff['staff_last_name'] = $staff_last_name;
             $staff['staff_nick'] = empty($staff_nick) ? null : $staff_nick;
@@ -343,6 +345,7 @@ class Apistaffs extends WebController
             $staff['table_position'] = $table_position;
             $staff['staff_sex'] = $staff_sex;
             $staff['staff_birthday'] = $staff_birthday;
+            $staff['staff_entering_date'] = $staff_entering_date;
             $staff['staff_salary_months'] = empty($staff_salary_months) ? null : $staff_salary_months;
             $staff['staff_salary_days'] = empty($staff_salary_days) ? null : $staff_salary_days;
             $staff['staff_salary_minutes'] = empty($staff_salary_minutes) ? null : $staff_salary_minutes;
@@ -355,7 +358,7 @@ class Apistaffs extends WebController
 
         }else{
             $staff = $this->staff_model->getFromId($staff_id);
-
+            if (!empty($staff_avatar))  $staff['staff_image'] = $staff_avatar;
             $staff['staff_auth'] = $staff_auth;
             $staff['staff_first_name'] = $staff_first_name;
             $staff['staff_last_name'] = $staff_last_name;
@@ -365,6 +368,7 @@ class Apistaffs extends WebController
             $staff['staff_shift'] = $staff_shift;
             $staff['staff_sex'] = $staff_sex;
             $staff['staff_birthday'] = $staff_birthday;
+            $staff['staff_entering_date'] = $staff_entering_date;
             $staff['table_position'] = $table_position;
             $staff['staff_salary_months'] = empty($staff_salary_months) ? null : $staff_salary_months;
             $staff['staff_salary_days'] = empty($staff_salary_days) ? null : $staff_salary_days;
@@ -374,9 +378,6 @@ class Apistaffs extends WebController
             if (!empty($staff_password))
                 $staff['staff_password'] = sha1($staff_password);
 
-            if(!empty($file_name)){
-                $staff['staff_image'] = $file_name;
-            }
 
             $staff['update_date'] = date('Y-m-d H:i:s');
 
@@ -531,6 +532,7 @@ class Apistaffs extends WebController
         $staff_id = $this->input->post('staff_id');
         $setting_year = $this->input->post('setting_year');
         $setting_month = $this->input->post('setting_month');
+        $organ_id = $this->input->post('organ_id');
 
         $results = [];
         if (empty($staff_id) || empty($setting_year) || empty($setting_month)){
@@ -564,7 +566,7 @@ class Apistaffs extends WebController
 
         $add_points = [];
         if (!empty($point_setting)){
-            $add_points = $this->staff_point_add_model->getPointList(['point_setting_id' => $point_setting['id']]);
+            $add_points = $this->staff_point_add_model->getPointList(['point_setting_id' => $point_setting['id'], 'organ_id'=>$organ_id]);
         }
 
         $results['isLoad'] = true;
@@ -624,6 +626,7 @@ class Apistaffs extends WebController
         $point_setting_id = $this->input->post('point_setting_id');
         $comment = $this->input->post('comment');
         $value = $this->input->post('value');
+        $organ_id = $this->input->post('organ_id');
 
         $results = [];
         if (empty($point_setting_id)){
@@ -635,7 +638,10 @@ class Apistaffs extends WebController
         $point = array(
             'point_setting_id' => $point_setting_id,
             'comment' => $comment,
+            'organ_id' => $organ_id,
             'value' => $value,
+            'type' => '0',
+            'status' => '2',
         );
 
         $this->staff_point_add_model->insertRecord($point);
@@ -660,5 +666,199 @@ class Apistaffs extends WebController
 
         echo json_encode($results);
     }
+
+
+    public function loadAddPoints(){
+        $date_year = $this->input->post('date_year');
+        $date_month = $this->input->post('date_month');
+        $staff_id = $this->input->post('staff_id');
+        $organ_id = $this->input->post('organ_id');
+        $load_type = $this->input->post('load_type');
+
+        $cond['staff_id'] = $staff_id;
+        $cond['setting_year'] = $date_year;
+        $cond['setting_month'] = $date_month;
+
+        $point_setting = $this->staff_point_setting_model->getSettingData($cond);
+
+        if (empty($point_setting)){
+            $last_setting = $this->staff_point_setting_model->getLastSetting($staff_id, $date_year.'-'.$date_month);
+
+            if (!empty($last_setting)){
+                $point_setting = array(
+                    'staff_id' => $staff_id,
+                    'setting_year' => $date_year,
+                    'setting_month' => $date_month,
+                    'menu_response' => $last_setting['menu_response'],
+                    'test_rate' => $last_setting['test_rate'],
+                    'quality_rate' => $last_setting['quality_rate'],
+                );
+                $point_setting['id'] = $this->staff_point_setting_model->insertRecord($point_setting);
+            }else{
+                $results['isLoad'] = false;
+                $results['msg'] = 'empty_setting';
+
+                echo json_encode($results);
+                return;
+            }
+        }
+
+        $cond = array(
+            'organ_id'=>$organ_id,
+            'point_setting_id'=>$point_setting['id'],
+            'type' => $load_type,
+        );
+
+        $points = $this->staff_point_add_model->getPointList($cond);
+
+        $points_sum = $this->staff_point_add_model->getPointsSum($cond);
+
+        $results['isLoad'] = true;
+        $results['points'] = $points;
+        $results['points_sum'] = $points_sum;
+
+        echo json_encode($results);
+    }
+
+    public function submitAddPoint(){
+        $date_year = $this->input->post('date_year');
+        $date_month = $this->input->post('date_month');
+        $staff_id = $this->input->post('staff_id');
+        $point_type = $this->input->post('point_type');
+        $organ_id = $this->input->post('organ_id');
+        $time = $this->input->post('time');
+
+        $cond['staff_id'] = $staff_id;
+        $cond['setting_year'] = $date_year;
+        $cond['setting_month'] = $date_month;
+
+        $point_setting = $this->staff_point_setting_model->getSettingData($cond);
+
+        if (empty($point_setting)){
+            $last_setting = $this->staff_point_setting_model->getLastSetting($staff_id, $date_year.'-'.$date_month);
+
+            if (!empty($last_setting)){
+                $point_setting = array(
+                    'staff_id' => $staff_id,
+                    'setting_year' => $date_year,
+                    'setting_month' => $date_month,
+                    'menu_response' => $last_setting['menu_response'],
+                    'test_rate' => $last_setting['test_rate'],
+                    'quality_rate' => $last_setting['quality_rate'],
+                );
+                $point_setting['id'] = $this->staff_point_setting_model->insertRecord($point_setting);
+            }else{
+                $point_setting = array(
+                    'staff_id' => $staff_id,
+                    'setting_year' => $date_year,
+                    'setting_month' => $date_month,
+                    'menu_response' => 1,
+                    'test_rate' => 0,
+                    'quality_rate' => 0,
+                );
+                $point_setting['id'] = $this->staff_point_setting_model->insertRecord($point_setting);
+            }
+        }
+
+
+        $comment = '';
+        $point_value = 0;
+
+        $organ = $this->organ_model->getFromId($organ_id);
+        if ($point_type=='1'){
+            $comment = '飛び込み';
+            $point_value = empty($organ['divide_point']) ? 0 : $organ['divide_point'];
+        }
+        if ($point_type=='2'){
+            $comment = '販促';
+            $point_value = empty($organ['promotional_point']) ? 0 : $organ['promotional_point'];
+        }
+        if ($point_type=='3'){
+            $comment = '次回予約';
+            $point_value = empty($organ['next_reservation_point']) ? 0 : $organ['next_reservation_point'];
+        }
+        if ($point_type=='4'){
+            $comment = '延長';
+            $point_value = empty($organ['extension_point']) ? 0 : $organ['extension_point'];
+        }
+        if ($point_type=='5'){
+            $comment = 'オプション';
+            $point_value = empty($organ['optional_acquisition_point']) ? 0 : $organ['optional_acquisition_point'];
+        }
+
+
+        $point = array(
+            'point_setting_id' =>$point_setting['id'],
+            'organ_id' => $organ_id,
+            'comment' => $comment . ' '. $time . '分',
+            'type' => $point_type,
+            'value' => $point_value * $time,
+            'status' => 1,
+        );
+
+        $this->staff_point_add_model->insertRecord($point);
+
+        $results['isSave'] = true;
+
+        echo json_encode($results);
+    }
+
+    public function deleteAddPoint(){
+        $add_point_id = $this->input->post('point_id');
+
+        $this->staff_point_add_model->delete_force($add_point_id, 'id');
+
+        $results['isDelete'] = true;
+
+        echo json_encode($results);
+    }
+
+    public function applyAddPoint(){
+        $add_point_id = $this->input->post('point_id');
+
+        $point = $this->staff_point_add_model->getFromId($add_point_id);
+
+        $point['status'] = '2';
+
+        $this->staff_point_add_model->updateRecord($point, 'id');
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+    }
+
+    function uploadPicture() {
+
+        $results = array();
+
+        // user photo
+        $image_path = "assets/images/staffs/";
+        if(!is_dir($image_path)) {
+            mkdir($image_path);
+        }
+        $image_url  = base_url().$image_path;
+        $fileName = $_FILES['picture']['name'];
+        $config = array(
+            'upload_path'   => $image_path,
+            'allowed_types' => '*',
+            'overwrite'     => 1,
+            'file_name' 	=> $fileName
+        );
+        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
+
+        $results['isUpload'] = false;
+        if (!empty($_FILES['picture']['name'])) {
+            if ($this->upload->do_upload('picture')) {
+                $file_url = $image_url.$this->upload->file_name;
+                $results['isUpload'] = true;
+                $results['picture'] = $file_url;
+            }
+        }
+
+        echo json_encode($results);
+
+    }
+
 }
 ?>

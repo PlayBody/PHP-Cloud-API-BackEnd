@@ -22,10 +22,12 @@ class Apishifts extends WebController
         $this->load->model('staff_model');
         $this->load->model('staff_organ_model');
         $this->load->model('organ_shift_time_model');
+        $this->load->model('shift_lock_model');
     }
 
     public function loadShifts(){
         $mode =  $this->input->post('mode');
+        $pattern =  $this->input->post('pattern');
         $staff_id = $this->input->post('staff_id');
         $organ_id = $this->input->post('organ_id');
         $from_date = $this->input->post('from_date');
@@ -91,12 +93,14 @@ class Apishifts extends WebController
         $count_shift = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_date'=>$to_date. ' 23:59:59']);
 
         if ($mode == 'init'){
+            $pattern = empty($pattern) ? 1 : $pattern;
             foreach ($shifts as $item) {
                 $this->shift_model->delete_force($item['shift_id'], 'shift_id');
             }
 
             $condInit['staff_id'] = $staff_id;
             $condInit['organ_id'] = $organ_id;
+            $condInit['pattern'] = $pattern;
             $initData = $this->setting_init_shift_model->getListByCond($condInit);
             foreach ($initData as $item){
                 $diff1Day = new DateInterval('P'.($item['weekday']-1).'D');
@@ -480,6 +484,54 @@ class Apishifts extends WebController
 
         echo json_encode($results);
 
+    }
+
+    public function loadLockStatus(){
+        $organ_id = $this->input->post('organ_id');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+
+        $cond['organ_id'] = $organ_id;
+        $cond['from_time'] = $from_time;
+        $cond['to_time'] = $to_time;
+
+        $lock = $this->shift_lock_model->getLockRecord($cond);
+        $is_lock = false;
+        if (!empty($lock)){
+            $is_lock = $lock['lock_status'] == 1 ? true : false;
+        }
+
+        $results['isLoad'] = true;
+        $results['is_lock'] = $is_lock;
+        echo json_encode($results);
+    }
+    public function updateLockStatus(){
+        $organ_id = $this->input->post('organ_id');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+        $lock_status = $this->input->post('lock_status');
+
+        $cond['organ_id'] = $organ_id;
+        $cond['from_time'] = $from_time;
+        $cond['to_time'] = $to_time;
+
+        $lock = $this->shift_lock_model->getLockRecord($cond);
+
+        if (empty($lock)){
+            $lock = array(
+                'organ_id' => $organ_id,
+                'from_time' => $from_time,
+                'to_time' => $to_time,
+                'lock_status' => $lock_status
+            );
+            $this->shift_lock_model->insertRecord($lock);
+        }else{
+            $lock['lock_status'] = $lock_status;
+            $this->shift_lock_model->updateRecord($lock, 'shift_lock_id');
+        }
+
+        $results['isSave'] = true;
+        echo json_encode($results);
     }
 }
 ?>

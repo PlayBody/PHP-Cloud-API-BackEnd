@@ -27,6 +27,18 @@ class Setting_init_Shift_model extends Base_model
             $this->db->where('weekday', $cond['weekday']);
         }
 
+        if (!empty($cond['pattern'])){
+            $this->db->where('pattern', $cond['pattern']);
+        }
+
+        if (!empty($cond['from_time'])){
+            $this->db->where('from_time>=', $cond['from_time']);
+        }
+
+        if (!empty($cond['to_time'])){
+            $this->db->where('to_time<=', $cond['to_time']);
+        }
+
         if (!empty($cond['input_time'])){
             $this->db->where("from_time <'". $cond['input_time'] ."'");
             $this->db->where("to_time >'". $cond['input_time'] ."'");

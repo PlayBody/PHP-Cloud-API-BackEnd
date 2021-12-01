@@ -30,7 +30,7 @@ class Apiorgans extends WebController
 
             $cond = [];
             $organs = [];
-            if ($staff['staff_auth']==2){
+            if ($staff['staff_auth']<3){
                 $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
             }else{
                 if ($staff['staff_auth']==3){
@@ -39,7 +39,6 @@ class Apiorgans extends WebController
                 $organs = $this->organ_model->getListByCond($cond);
             }
         }
-
 
         $results['isLoad'] = true;
         $results['organs'] = $organs;
@@ -304,6 +303,21 @@ class Apiorgans extends WebController
 
         $results = [];
         $results['isDelete'] = true;
+        echo json_encode($results);
+        return;
+    }
+
+    public function loadOrganSetTableData(){
+        $organ_id = $this->input->post('organ_id');
+        $set_number = $this->input->post('set_number');
+
+        $this->load->model('organ_set_table_model');
+
+        $set_data = $this->organ_set_table_model->getRecordTable($organ_id, $set_number);
+
+        $results = [];
+        $results['isLoad'] = true;
+        $results['set_data'] = $set_data;
         echo json_encode($results);
         return;
     }

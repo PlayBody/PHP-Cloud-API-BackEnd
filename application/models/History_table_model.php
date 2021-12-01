@@ -59,4 +59,21 @@ class History_table_model extends Base_model
         return $result['amount'];
 
     }
+
+    public function getBackAmount($staff_id, $first_day, $last_day){
+
+        $sql = "select sum(menu_variations.variation_back_amount) as back_amount from 
+((history_tables LEFT JOIN history_table_menus on history_tables.order_table_history_id = history_table_menus.history_table_id )
+left join menu_variations on history_table_menus.variation_id = menu_variations.variation_id)
+left join menu_variation_backs on menu_variations.variation_id = menu_variation_backs.variation_id
+
+where history_tables.start_time >= '".$first_day."' and history_tables.end_time < '".$last_day."'
+and menu_variation_backs.staff_id=$staff_id";
+
+
+        $results = $this->db->query($sql)->row_array();
+
+
+        return empty($results['back_amount']) ? 0 : $results['back_amount'];
+    }
 }

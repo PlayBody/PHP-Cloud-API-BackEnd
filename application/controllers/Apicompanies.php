@@ -15,6 +15,29 @@ class Apicompanies extends WebController
         $this->load->model('organ_model');
     }
 
+    public function loadCompanyInfo(){
+        $company_id = $this->input->post('company_id');
+
+        if (empty($company_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $company = $this->company_model->getFromId($company_id);
+
+        if (empty($company)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $results['isLoad'] = true;
+        $results['company'] = $company;
+
+        echo(json_encode($results));
+    }
+
     public function loadCompanyList(){
         $companies = $this->company_model->getListByCond([]);
 

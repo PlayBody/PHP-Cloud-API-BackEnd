@@ -26,6 +26,7 @@ class Apishiftsettings extends WebController
     public function loadShift(){
         $staff_id = $this->input->post('staff_id');
         $organ_id = $this->input->post('organ_id');
+        $pattern = $this->input->post('pattern');
 
         $results = [];
 
@@ -57,6 +58,7 @@ class Apishiftsettings extends WebController
         $cond = array();
         $cond['staff_id'] = $staff_id;
         $cond['organ_id'] = $organ_id;
+        $cond['pattern'] = $pattern;
         $initData = $this->setting_init_shift_model->getListByCond($cond);
 
         $results['isLoad'] = true;
@@ -74,6 +76,7 @@ class Apishiftsettings extends WebController
 
     public function loadStatus(){
         $staff_id = $this->input->post('staff_id');
+        $pattern = $this->input->post('pattern');
         $organ_id = $this->input->post('organ_id');
         $weekday = $this->input->post('weekday');
         $select_time = $this->input->post('select_time');
@@ -83,6 +86,7 @@ class Apishiftsettings extends WebController
         $cond['organ_id'] = $organ_id;
         $cond['select_time'] = $select_time;
         $cond['weekday'] = $weekday;
+        $cond['pattern'] = $pattern;
 
         $shifts = $this->setting_init_shift_model->getListByCond($cond);
 
@@ -107,6 +111,7 @@ class Apishiftsettings extends WebController
         $weekday = $this->input->post('weekday');
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
+        $pattern = $this->input->post('pattern');
         if ($to_time=='24:00:00')  $to_time =  '23:59:59';
 
         $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id, 'weekday'=>$weekday]);
@@ -125,11 +130,17 @@ class Apishiftsettings extends WebController
         $cond['organ_id'] = $organ_id;
         $cond['weekday'] = $weekday;
         $cond['input_time'] = $from_time;
+        $cond['pattern'] = $pattern;
         $shifts_from = $this->setting_init_shift_model->getListByCond($cond, $setting_id);
         $cond['input_time'] = $to_time;
         $shifts_to = $this->setting_init_shift_model->getListByCond($cond, $setting_id);
 
-        if (!empty($shifts_from) || !empty($shifts_to)){
+        $cond['input_time'] = '';
+        $cond['from_time'] = $from_time;
+        $cond['to_time'] =  $to_time;
+        $inner_shift = $this->setting_init_shift_model->getListByCond($cond, $setting_id);
+
+        if (!empty($shifts_from) || !empty($shifts_to) || !empty($inner_shift)){
             $results['isUpdate'] = false;
             $results['err'] = 'duplicate_err';
             echo json_encode($results);
@@ -141,6 +152,7 @@ class Apishiftsettings extends WebController
                 'staff_id' => $staff_id,
                 'organ_id' => $organ_id,
                 'weekday' => $weekday,
+                'pattern' => $pattern,
                 'from_time' => $from_time,
                 'to_time' => $to_time,
             );
@@ -267,17 +279,12 @@ class Apishiftsettings extends WebController
         if ($to_time=='24:00:00') $to_time = '23:59:59';
         $count = $this->input->post('count');
 
-        $organ = $this->organ_model->getFromId($organ_id);
-        $active_start_time = empty($organ['active_start_time'])? '00:00:00' : $organ['active_start_time'];
-        $active_end_time = empty($organ['active_end_time'])? '23:59:59' : $organ['active_end_time'];
-
         $time = strtotime($select_date);
         $weekday = date('w',$time);
 
         $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id, 'weekday'=>$weekday]);
 
         $isactive = $this->isActiveTime($shift_times, $from_time, $to_time);
-//        $isactive = $this->isActiveTime($active_start_time, $active_end_time, $from_time, $to_time);
 
         if (!$isactive){
             $results['isUpdate'] = false;

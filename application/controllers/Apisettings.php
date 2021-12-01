@@ -91,6 +91,7 @@ class Apisettings extends WebController
         $organ['organ_id'] = $organ_id;
         $organ['table_count'] = empty($this->input->post('table_count')) ? null : $this->input->post('table_count');
         $organ['set_time'] = empty($this->input->post('set_time')) ? null : $this->input->post('set_time');
+        $organ['set_number'] =  $this->input->post('set_number');
         $organ['set_amount'] = empty($this->input->post('set_amount')) ? null : $this->input->post('set_amount');
         $organ['table_amount'] = empty($this->input->post('table_amount')) ? null : $this->input->post('table_amount');
         $organ['active_start_time'] = empty($this->input->post('active_start_time')) ? null : $this->input->post('active_start_time');
@@ -102,13 +103,38 @@ class Apisettings extends WebController
         $organ['lat'] = empty($this->input->post('lat')) ? null : $this->input->post('lat');
         $organ['lon'] = empty($this->input->post('lon')) ? null : $this->input->post('lon');
         $organ['distance'] = empty($this->input->post('distance')) ? null : $this->input->post('distance');
-        $organ['open_business_point'] = $this->input->post('open_business_point');
-        $organ['close_business_point'] = $this->input->post('close_business_point');
+        $organ['business_weight'] = empty($this->input->post('business_weight')) ? null : $this->input->post('business_weight');
+        $organ['divide_point'] = empty($this->input->post('divide_point')) ? null : $this->input->post('divide_point');
+        $organ['promotional_point'] = empty($this->input->post('promotional_point')) ? null : $this->input->post('promotional_point');
+        $organ['optional_acquisition_point'] = empty($this->input->post('optional_acquisition_point')) ? null : $this->input->post('optional_acquisition_point');
+        $organ['next_reservation_point'] = empty($this->input->post('next_reservation_point')) ? null : $this->input->post('next_reservation_point');
+        $organ['extension_point'] = empty($this->input->post('extension_point')) ? null : $this->input->post('extension_point');
+        $organ['open_business_point'] = empty($this->input->post('open_business_point')) ? null : $this->input->post('open_business_point');
+        $organ['close_business_point'] = empty($this->input->post('close_business_point')) ? null : $this->input->post('close_business_point');
 
         if (empty($organ['organ_id'])){
             $this->organ_model->insertRecord($organ);
         }else{
             $this->organ_model->updateRecord($organ, 'organ_id');
+        }
+
+        $this->load->model('organ_set_table_model');
+        $setData = $this->organ_set_table_model->getRecordTable($organ_id, $organ['set_number']);
+        if (empty($setData)){
+            $setData = array(
+                'organ_id'=>$organ_id,
+                'set_number' => $organ['set_number'],
+                'set_time' => $organ['set_time'],
+                'set_amount' => $organ['set_amount'],
+                'table_amount' => $organ['table_amount']
+            );
+
+            $this->organ_set_table_model->insertRecord($setData);
+        }else{
+            $setData['set_time'] = $organ['set_time'];
+            $setData['set_amount'] = $organ['set_amount'];
+            $setData['table_amount'] = $organ['table_amount'];
+            $this->organ_set_table_model->updateRecord($setData, 'organ_set_table_id');
         }
 
         $results['isUpdate'] = true;

@@ -258,6 +258,8 @@ class Apitables extends WebController
                 $histoty_table_menu = array(
                     'history_table_id' => $history_table_id,
                     'menu_title' =>$item['menu_title'],
+                    'menu_id' =>$item['menu_id'],
+                    'variation_id' =>$item['variation_id'],
                     'quantity' => $item['quantity'],
                     'menu_price' => $item['menu_price'],
                     'visible' => 1,

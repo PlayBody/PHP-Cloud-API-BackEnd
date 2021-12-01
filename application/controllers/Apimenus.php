@@ -68,7 +68,7 @@ class Apimenus extends WebController
     public function registerReserveMenus(){
 
         $table_id = $this->input->post('table_id');
-        $data = $this->input->post('data');
+        $data = $this->input->post('data');//'[{"title":"女性","price":"1800","quantity":"2","menu_id":"5","variation_id":null},{"title":"SD","price":"800","quantity":"3","menu_id":"18","variation_id":null}]';
 
         $results = [];
         if (empty($table_id)){
