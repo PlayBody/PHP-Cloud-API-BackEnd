@@ -90,6 +90,22 @@ class Apisums extends WebController
         echo json_encode($results);
     }
 
+    public function deleteSale(){
+        $history_id = $this->input->post('history_id');
+        if (empty($history_id)){
+            $results['isDelete'] = false;
+
+            echo json_encode($results);
+            return;
+        }
+        $menus = $this->history_table_menu_model->getListCond(['history_table_id'=>$history_id]);
+        foreach ($menus as $item) {
+            $this->history_table_menu_model->delete_force($item['history_table_menu_id'], 'history_table_menu_id');
+        }
+        $this->history_table_model->delete_force($history_id, 'order_table_history_id');
+        $results['isDelete'] = true;
+        echo json_encode($results);
+    }
 
     public function loadSumSaleItem()
     {

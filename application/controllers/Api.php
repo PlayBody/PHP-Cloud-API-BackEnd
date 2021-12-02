@@ -110,5 +110,29 @@ class Api extends WebController
 
         echo json_encode($results);
     }
+
+
+    public function loadOrganPrintMaxOrder(){
+        $organ_id = $this->input->post('organ_id');
+        $print_date = $this->input->post('print_date');
+
+        $this->load->model('organ_print_order_model');
+
+        $record = $this->organ_print_order_model->getMaxOrder($organ_id, $print_date);
+
+        $max=1;
+        if (empty($record)){
+            $this->organ_print_order_model->insertRecord(['organ_id'=>$organ_id,'print_date'=>$print_date, 'order_number'=>1]);
+        }else{
+            $max = $record['order_number']+1;
+            $record['order_number'] = $max;
+            $this->organ_print_order_model->updateRecord($record, 'id');
+        }
+
+        $results['isLoad'] = true;
+        $results['max_order'] = $max;
+
+        echo json_encode($results);
+    }
 }
 ?>

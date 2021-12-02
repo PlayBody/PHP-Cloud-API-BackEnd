@@ -158,10 +158,11 @@ class Apitables extends WebController
         $results['isLoad'] = true;
         $results['menus'] = $menus;
         $results['table'] = $table;
+        $results['set_amount'] = empty($set_amount) ? 0 : $set_amount;
+        $results['table_amount'] = empty($table_amount) ? 0 : $table_amount;
 
         echo json_encode($results);
     }
-
 
     public function updateTableStatus()
     {

@@ -38,6 +38,34 @@ class Apicompanies extends WebController
         echo(json_encode($results));
     }
 
+    public function loadPrintCompanyInfo(){
+        $company_id = $this->input->post('company_id');
+
+        if (empty($company_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $company = $this->company_model->getFromId($company_id);
+
+        if (empty($company)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+
+        $company['print_order_number'] = empty($company['print_order_number']) ? 1 : ($company['print_order_number']+1);
+
+        $this->company_model->updateRecord($company, 'company_id');
+
+        $results['isLoad'] = true;
+        $results['company'] = $company;
+        
+        echo(json_encode($results));
+    }
+
     public function loadCompanyList(){
         $companies = $this->company_model->getListByCond([]);
 
@@ -71,11 +99,13 @@ class Apicompanies extends WebController
         $company_id = $this->input->post('company_id');
         $company_name = $this->input->post('company_name');
         $company_domain = $this->input->post('company_domain');
+        $company_receipt_number = $this->input->post('company_receipt_number');
 
 
         if (empty($company_id)){
             $company['company_name'] = $company_name;
             $company['company_domain'] = $company_domain;
+            $company['company_receipt_number'] = $company_receipt_number;
             $company['visible'] = 1;
 
             $company_id = $this->company_model->insertRecord($company);
@@ -83,6 +113,7 @@ class Apicompanies extends WebController
             $company = $this->company_model->getFromId($company_id);
             $company['company_name'] = $company_name;
             $company['company_domain'] = $company_domain;
+            $company['company_receipt_number'] = $company_receipt_number;
 
             $this->company_model->edit($company, 'company_id');
         }

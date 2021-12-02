@@ -112,6 +112,10 @@ class Apisettings extends WebController
         $organ['open_business_point'] = empty($this->input->post('open_business_point')) ? null : $this->input->post('open_business_point');
         $organ['close_business_point'] = empty($this->input->post('close_business_point')) ? null : $this->input->post('close_business_point');
 
+        if (!empty($this->input->post('print_logo_file'))){
+            $organ['print_logo_file'] = $this->input->post('print_logo_file');
+        }
+
         if (empty($organ['organ_id'])){
             $this->organ_model->insertRecord($organ);
         }else{
@@ -175,5 +179,37 @@ class Apisettings extends WebController
     }
 
 
+    function uploadPrintPicture() {
+
+        $results = array();
+
+        // user photo
+        $image_path = "assets/images/prints/";
+        if(!is_dir($image_path)) {
+            mkdir($image_path);
+        }
+        $image_url  = base_url().$image_path;
+        $fileName = $_FILES['picture']['name'];
+        $config = array(
+            'upload_path'   => $image_path,
+            'allowed_types' => '*',
+            'overwrite'     => 1,
+            'file_name' 	=> $fileName
+        );
+        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
+
+        $results['isUpload'] = false;
+        if (!empty($_FILES['picture']['name'])) {
+            if ($this->upload->do_upload('picture')) {
+                $file_url = $image_url.$this->upload->file_name;
+                $results['isUpload'] = true;
+                $results['picture'] = $file_url;
+            }
+        }
+
+        echo json_encode($results);
+
+    }
 }
 ?>
