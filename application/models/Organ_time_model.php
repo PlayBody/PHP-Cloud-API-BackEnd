@@ -33,5 +33,15 @@ class Organ_time_model extends Base_model
         return !empty($query->row_array());
     }
 
+    public function isPeriodActiveTime($organ_id, $weekday, $from_time, $to_time){
+        $this->db->from($this->table);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where('weekday', $weekday);
+        $this->db->where("from_time<='".$from_time."' and to_time>='".$to_time."'");
+        $query = $this->db->get();
+
+        return !empty($query->row_array());
+    }
+
 
 }

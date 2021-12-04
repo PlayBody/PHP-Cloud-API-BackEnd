@@ -209,6 +209,8 @@ class Apimenus extends WebController
         $menu_price = $this->input->post('price');
         $menu_cost = $this->input->post('cost');
         $menu_tax = $this->input->post('tax');
+        $is_user_menu = empty($this->input->post('is_user_menu')) ? null : $this->input->post('is_user_menu');
+        $menu_time = empty($this->input->post('menu_time')) ? null : $this->input->post('menu_time');
 
         if (empty($organ_id)){
             $results['isSave'] = false;
@@ -223,6 +225,8 @@ class Apimenus extends WebController
                 'menu_price' => $menu_price,
                 'menu_cost' => $menu_cost,
                 'menu_tax' => $menu_tax,
+                'is_user_menu' => $is_user_menu,
+                'menu_time' => $menu_time,
                 'sort_no' => $this->menu_model->getMaxOrder($organ_id),
                 'visible'=>'1',
             );
@@ -235,6 +239,8 @@ class Apimenus extends WebController
             $variation['menu_price'] = $menu_price;
             $variation['menu_cost'] = $menu_cost;
             $variation['menu_tax'] = $menu_tax;
+            $variation['is_user_menu'] = $is_user_menu;
+            $variation['menu_time'] = $menu_time;
 
             $this->menu_model->updateRecord($variation, 'menu_id');
 
@@ -365,7 +371,7 @@ class Apimenus extends WebController
 
         $organ_id = $this->input->post('organ_id');
 
-        $menu_list = $this->menu_model->getListByCond(['organ_id'=>$organ_id]);
+        $menu_list = $this->menu_model->getListByCond(['organ_id'=>$organ_id, 'is_user_menu' =>1]);
 
         $results['isLoad'] = true;
         $results['menus'] = $menu_list;

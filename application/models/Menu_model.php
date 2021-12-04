@@ -59,6 +59,9 @@ class Menu_model extends Base_model
         if (!empty($cond['organ_id'])){
             $this->db->where('organ_id', $cond['organ_id']);
         }
+        if (!empty($cond['is_user_menu'])){
+            $this->db->where('is_user_menu', $cond['is_user_menu']);
+        }
 
         $this->db->order_by('sort_no', 'asc');
 

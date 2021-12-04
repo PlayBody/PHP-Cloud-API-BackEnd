@@ -23,6 +23,7 @@ class Apishifts extends WebController
         $this->load->model('staff_organ_model');
         $this->load->model('organ_shift_time_model');
         $this->load->model('shift_lock_model');
+        $this->load->model('reserve_model');
     }
 
     public function loadShifts(){
@@ -136,6 +137,9 @@ class Apishifts extends WebController
 
         }
 
+        //reserveShift
+        $reserves = $this->reserve_model->getReserveList(['organ_id'=>$organ_id, 'staff_id'=>$staff_id, 'from_time'=>$from_date." 00:00:00", 'to_time'=>$to_date.' 23:59:59', 'max_status'=>'2']);
+
         $results['isLoad'] = true;
         $results['organ_id'] = $organ_id;
         $results['organ_list'] = $organ_list;
@@ -145,6 +149,7 @@ class Apishifts extends WebController
         $results['active_time']['to'] = $organ_active_end;
         $results['count_shifts'] = $count_shift;
         $results['shifts'] = $shifts;
+        $results['reserves'] = $reserves;
 
         echo(json_encode($results));
     }
@@ -165,6 +170,11 @@ class Apishifts extends WebController
 
         if (empty($shifts)){
             $results['status'] = '0';
+            $shift_count = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'select_time'=>$select_datetime]);
+            if (!empty($shift_count)){
+                $results['count_shift'] = $shift_count[0];
+            }
+
         }else{
             $results['shift'] = $shifts[0];
         }

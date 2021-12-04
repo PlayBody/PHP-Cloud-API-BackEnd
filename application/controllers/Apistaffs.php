@@ -22,6 +22,7 @@ class Apistaffs extends WebController
         $this->load->model('attendance_model');
         $this->load->model('staff_point_setting_model');
         $this->load->model('staff_point_add_model');
+        $this->load->model('reserve_model');
     }
 
     public function login()
@@ -556,6 +557,7 @@ class Apistaffs extends WebController
                     'setting_year' => $setting_year,
                     'setting_month' => $setting_month,
                     'menu_response' => $last_setting['menu_response'],
+                    'add_rate' => $last_setting['add_rate'],
                     'test_rate' => $last_setting['test_rate'],
                     'quality_rate' => $last_setting['quality_rate'],
                 );
@@ -602,6 +604,7 @@ class Apistaffs extends WebController
                 'setting_year' => $setting_year,
                 'setting_month' => $setting_month,
                 'menu_response' => empty($this->input->post('menu_response')) ? null : $this->input->post('menu_response'),
+                'add_rate' => empty($this->input->post('add_rate')) ? null : $this->input->post('add_rate'),
                 'test_rate' => empty($this->input->post('test_rate')) ? null : $this->input->post('test_rate'),
                 'quality_rate' => empty($this->input->post('quality_rate')) ? null : $this->input->post('quality_rate')
             );
@@ -610,6 +613,7 @@ class Apistaffs extends WebController
         }else{
             $setting = $this->staff_point_setting_model->getFromId($setting_id);
             $setting['menu_response'] = empty($this->input->post('menu_response')) ? null : $this->input->post('menu_response');
+            $setting['add_rate'] = empty($this->input->post('add_rate')) ? null : $this->input->post('add_rate');
             $setting['test_rate'] = empty($this->input->post('test_rate')) ? null : $this->input->post('test_rate');
             $setting['quality_rate'] = empty($this->input->post('quality_rate')) ? null : $this->input->post('quality_rate');
             $this->staff_point_setting_model->updateRecord($setting, 'id');
@@ -690,6 +694,7 @@ class Apistaffs extends WebController
                     'setting_year' => $date_year,
                     'setting_month' => $date_month,
                     'menu_response' => $last_setting['menu_response'],
+                    'add_rate' => $last_setting['add_rate'],
                     'test_rate' => $last_setting['test_rate'],
                     'quality_rate' => $last_setting['quality_rate'],
                 );
@@ -743,6 +748,7 @@ class Apistaffs extends WebController
                     'setting_year' => $date_year,
                     'setting_month' => $date_month,
                     'menu_response' => $last_setting['menu_response'],
+                    'add_rate' => $last_setting['add_rate'],
                     'test_rate' => $last_setting['test_rate'],
                     'quality_rate' => $last_setting['quality_rate'],
                 );
@@ -753,6 +759,7 @@ class Apistaffs extends WebController
                     'setting_year' => $date_year,
                     'setting_month' => $date_month,
                     'menu_response' => 1,
+                    'add_rate' => 0,
                     'test_rate' => 0,
                     'quality_rate' => 0,
                 );
@@ -770,8 +777,8 @@ class Apistaffs extends WebController
             $point_value = empty($organ['divide_point']) ? 0 : $organ['divide_point'];
         }
         if ($point_type=='2'){
-            $comment = '販促';
-            $point_value = empty($organ['promotional_point']) ? 0 : $organ['promotional_point'];
+            $comment = '販促 '. $time . '分';
+            $point_value = empty($organ['promotional_point']) ? 0 : $organ['promotional_point'] * $time;
         }
         if ($point_type=='3'){
             $comment = '次回予約';
@@ -785,12 +792,47 @@ class Apistaffs extends WebController
             $comment = 'オプション';
             $point_value = empty($organ['optional_acquisition_point']) ? 0 : $organ['optional_acquisition_point'];
         }
+        if ($point_type=='6'){
+            $comment = '指名 '. $time . '分';
 
+            $staff = $this->staff_model->getFromId($staff_id);
+            $month_reserves = $this->reserve_model->getMonthReserves($staff_id, $date_year."-".$date_month);
+            $all_time = 0;
+            foreach ($month_reserves as $item){
+                $datetime1 = strtotime($item['reserve_time']);
+                $datetime2 = strtotime($item['reserve_exit_time']);
+
+                $all_time += floor(($datetime2 - $datetime1)/60);
+            }
+            $point = 0;
+            if ($all_time<=500){
+                $point = 1;
+            }elseif ($all_time<=1000){
+                $point = 1.2;
+            }elseif($all_time<=2000){
+                $point = 1.4;
+            }elseif ($all_time<=2500){
+                $point = 1.6;
+            }else{
+                $point = 1.8;
+            }
+            $weight = 1;
+            $company = $staff['company_id'];
+            if ($company=='2'){
+                $weight = 2;
+            }
+            if ($company=='3'){
+                $weight = 3;
+            }
+
+            $point = $point * $weight;
+            $point_value = $point;
+        }
 
         $point = array(
             'point_setting_id' =>$point_setting['id'],
             'organ_id' => $organ_id,
-            'comment' => $comment . ' '. $time . '分',
+            'comment' => $comment,
             'type' => $point_type,
             'value' => $point_value * $time,
             'status' => 1,
@@ -858,6 +900,20 @@ class Apistaffs extends WebController
 
         echo json_encode($results);
 
+    }
+
+    public function loadStaffsByOrgan(){
+        $organ_id = $this->input->post('organ_id');
+
+        if (empty($organ_id)){
+            $staffs = [];
+        }else{
+            $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3, false);
+        }
+
+        $results['staffs'] = $staffs;
+
+        echo json_encode($results);
     }
 
 }
