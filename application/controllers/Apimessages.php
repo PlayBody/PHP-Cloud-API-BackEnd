@@ -20,6 +20,8 @@ class Apimessages extends WebController
         $this->load->model('user_model');
         $this->load->model('device_token_model');
         $this->load->model('fitness_model');
+        $this->load->model('group_user_model');
+        $this->load->model('staff_model');
     }
 
     public function loadMessageUserList(){
@@ -31,7 +33,7 @@ class Apimessages extends WebController
             echo json_encode($results);
             return;
         }
-
+        
         $messageUsers = $this->message_model->getMessageUserLists($company_id, $search);
 
         $results['isLoad'] = true;
@@ -44,14 +46,24 @@ class Apimessages extends WebController
         $company_id = $this->input->post('company_id');
         $user_id = $this->input->post('user_id');
         $user_type = $this->input->post('user_type');
+        $is_group = $this->input->post('is_group');
 
-        if (empty($company_id) || empty($user_id)){
+        if (empty($company_id) ||  (empty($user_id) && $user_id!='0' )){
             $results['isLoad'] = false;
             echo json_encode($results);
             return;
         }
 
-        $messages = $this->message_model->getMessageList($user_id, $company_id);
+        $cond = [];
+        $cond['company_id'] = $company_id;
+        if ($is_group == '1' ){
+            $cond['group_id'] = $user_id;
+        }else{
+            $cond['group_id'] = '';
+            $cond['user_id'] = $user_id;
+        }
+
+        $messages = $this->message_model->getMessageList($cond);
 
         foreach ($messages as $message){
             if ($message['type']==$user_type) {
@@ -71,47 +83,78 @@ class Apimessages extends WebController
     {
         $company_id = $this->input->post('company_id');
         $user_id = $this->input->post('user_id');
+        $staff_id = $this->input->post('staff_id');
         $content = $this->input->post('content');
         $type = $this->input->post('type');
         $file_type = $this->input->post('file_type');
         $file_url = $this->input->post('file_url');
+        $file_name = $this->input->post('file_name');
+        $video_url = $this->input->post('video_url');
+        $is_group = $this->input->post('is_group');
 
-        if (empty($company_id) && empty($user_id)){
+        if (empty($company_id) || (empty($user_id) && $user_id!='0' )){
             $results['isSend'] = false;
             echo json_encode($results);
             return;
         }
 
-        $message = array(
-            'company_id' => $company_id,
-            'user_id' => $user_id,
-            'content' => $content,
-            'file_type' => empty($file_type) ? null : $file_type,
-            'file_url' => empty($file_url) ? null : $file_url,
-            'type' => $type
-        );
+        $group_key = null;
+        if ($is_group=='1'){
+            $group_key = $company_id . '-' . $user_id. '-' . date('YmdHis') . '-' . md5(uniqid(rand(), true));
 
-        $this->message_model->insertRecord($message);
-        $token_data = [];
-        if ($type=='1'){
-            $token_data = $this->device_token_model->getListByCondition(['user_id'=>$user_id, 'user_type'=>'2']);
+            $group_id = $user_id;
+            if ($group_id=='0'){
+                $users = $this->user_model->getUsersByCond(['company_id'=>$company_id]);
+            }else{
+                $users = $this->group_user_model->getUsersByGroupGroup($group_id);
+            }
+        }else{
+            $group_id = null;
+
+            $users[]['user_id'] = $user_id;
         }
 
+        $title = '';
         if ($type=='2'){
-            $user = $this->user_model->getFromId('31');
-            if (!empty($user['user_device_token'])){
-                $token_data[] = $user['user_device_token'];
+            $staff = $this->staff_model->getFromId($staff_id);
+            $title = ($staff['staff_nick'] == null ? ($staff['staff_first_name'] . ' ' . $staff['staff_last_name']) : $staff['staff_nick']) . '様からメッセージが届きました。';
+        }
+
+        $is_fcm = false;
+        foreach ($users as $user){
+            $message = array(
+                'company_id' => $company_id,
+                'user_id' => $user['user_id'],
+                'content' => $content,
+                'file_type' => empty($file_type) ? null : $file_type,
+                'file_url' => empty($file_url) ? null : $file_url,
+                'file_name' => empty($file_name) ? null : $file_name,
+                'video_url' => empty($video_url) ? null : $video_url,
+                'type' => $type,
+                'group_id' => $group_id,
+                'group_key' =>$group_key,
+            );
+
+            $this->message_model->insertRecord($message);
+
+            if ($type=='1'){
+                $user = $this->user_model->getFromId($user['user_id']);
+                $title = $user['user_first_name'] . ' ' . $user['user_last_name'].'様からメッセージが届きました。';
+
+                $receive_staffs = $this->staff_model->getStaffList(['company_id'=>$company_id, 'staff_auth'=>'2']);
+                foreach ($receive_staffs as $receive_staff){
+                    $is_fcm = $this->sendNotifications('message', $title, $content, $user['user_id'], $receive_staff['staff_id'], '1');
+                }
+
+            }else{
+                $is_fcm = $this->sendNotifications('message', $title, $content, $company_id, $user['user_id'], '2');
             }
 
         }
-//        foreach ($token_data as $item){
-//
-//            if (!empty($item)){
-//                $this->sendFireBaseMessage('message', 'メセジが受信されました。', $content, $item);
-//            }
-//        }
+
 
         $results['isSend'] = true;
+        $results['isSendFcm'] = $is_fcm;
 
         echo json_encode($results);
 
@@ -208,6 +251,11 @@ class Apimessages extends WebController
 
     }
 
+    public function sendtest(){
+
+        $is_ok = $this->sendNotifications('message', 'from test message', 'test push notification', '2', '72', '2');
+        var_dump($is_ok);
+    }
 
 }
 ?>

@@ -309,6 +309,8 @@ class Apistaffs extends WebController
         $staff_sex = $this->input->post('staff_sex');
         $staff_birthday = $this->input->post('staff_birthday');
         $staff_entering_date = $this->input->post('staff_entering_date');
+        $staff_grade_level = empty($this->input->post('grade_level')) ? null : $this->input->post('grade_level');
+        $staff_national_level = empty($this->input->post('national_level')) ? null : $this->input->post('national_level');
         $staff_organs = $this->input->post('staff_organs');
         $staff_salary_months = empty($this->input->post('staff_salary_months')) ? null : $this->input->post('staff_salary_months');
         $staff_salary_days =  empty($this->input->post('staff_salary_days')) ? null : $this->input->post('staff_salary_days');
@@ -347,6 +349,8 @@ class Apistaffs extends WebController
             $staff['staff_sex'] = $staff_sex;
             $staff['staff_birthday'] = $staff_birthday;
             $staff['staff_entering_date'] = $staff_entering_date;
+            $staff['staff_grade_level'] = $staff_grade_level;
+            $staff['staff_national_level'] = $staff_national_level;
             $staff['staff_salary_months'] = empty($staff_salary_months) ? null : $staff_salary_months;
             $staff['staff_salary_days'] = empty($staff_salary_days) ? null : $staff_salary_days;
             $staff['staff_salary_minutes'] = empty($staff_salary_minutes) ? null : $staff_salary_minutes;
@@ -370,6 +374,8 @@ class Apistaffs extends WebController
             $staff['staff_sex'] = $staff_sex;
             $staff['staff_birthday'] = $staff_birthday;
             $staff['staff_entering_date'] = $staff_entering_date;
+            $staff['staff_grade_level'] = $staff_grade_level;
+            $staff['staff_national_level'] = $staff_national_level;
             $staff['table_position'] = $table_position;
             $staff['staff_salary_months'] = empty($staff_salary_months) ? null : $staff_salary_months;
             $staff['staff_salary_days'] = empty($staff_salary_days) ? null : $staff_salary_days;
@@ -571,6 +577,7 @@ class Apistaffs extends WebController
             $add_points = $this->staff_point_add_model->getPointList(['point_setting_id' => $point_setting['id'], 'organ_id'=>$organ_id]);
         }
 
+        $point_setting['add_rate'] = $this->clacPersonRate($staff_id, $setting_year, $setting_month);
         $results['isLoad'] = true;
         $results['point_setting'] = $point_setting;
         $results['point_add_list'] = $add_points;
@@ -840,6 +847,23 @@ class Apistaffs extends WebController
 
         $this->staff_point_add_model->insertRecord($point);
 
+        if ($point_type<6){
+            $staff = $this->staff_model->getFromId($staff_id);
+            $title = ($staff['staff_nick'] == null ?
+                    ($staff['staff_first_name'] . ' ' . $staff['staff_last_name'])
+                    : $staff['staff_nick']) .  '様からリクエストが入ってきました。';
+            $content = $comment . 'の追加ポイントのリクエストが入ってきました。';
+
+            $pushStaffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3, false, false);
+
+            foreach ($pushStaffs as $pushStaff){
+                if (!empty($pushStaff['staff_id'])){
+                    if ($staff_id != $pushStaff['staff_id'])
+                        $this->sendNotifications('add_point_request', $title, $content, $staff_id, $pushStaff['staff_id'], '1');
+                }
+            }
+        }
+
         $results['isSave'] = true;
 
         echo json_encode($results);
@@ -902,7 +926,7 @@ class Apistaffs extends WebController
 
     }
 
-    public function loadStaffsByOrgan(){
+    public function getStaffsByOrgan(){
         $organ_id = $this->input->post('organ_id');
 
         if (empty($organ_id)){

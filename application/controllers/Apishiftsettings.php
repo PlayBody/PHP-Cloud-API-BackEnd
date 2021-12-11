@@ -23,6 +23,40 @@ class Apishiftsettings extends WebController
         $this->load->model('organ_shift_time_model');
     }
 
+    public function importExeclCount(){
+        $organ_id = $this->input->post('organ_id');
+        $date_month = $this->input->post('date_month');
+        $import_data = $this->input->post('import_data');
+        if (empty($organ_id)){
+            $results['isImport'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $olds = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'date_month'=>$date_month]);
+        foreach ($olds as $old){
+            $this->setting_count_shift_model->delete_force($old['id'], 'id');
+        }
+        $data = json_decode($import_data);
+
+        foreach ($data as $item){
+            $shift_counts = array(
+                'organ_id' => $organ_id,
+                'from_time' => $item->from_time,
+                'to_time' => $item->to_time,
+                'count' => $item->count,
+            );
+
+            $this->setting_count_shift_model->insertRecord($shift_counts);
+        }
+
+        $results['isImport'] = true;
+
+        echo json_encode($results);
+    }
+
+
+
     public function loadShift(){
         $staff_id = $this->input->post('staff_id');
         $organ_id = $this->input->post('organ_id');

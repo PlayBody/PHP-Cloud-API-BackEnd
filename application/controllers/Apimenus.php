@@ -20,6 +20,26 @@ class Apimenus extends WebController
         $this->load->model('organ_model');
     }
 
+    public function getMenus(){
+
+        $organ_id = $this->input->post('organ_id');
+        $is_user_menu = $this->input->post('is_user_menu');
+
+        $cond = [];
+        if (!empty($organ_id)){
+            $cond['organ_id'] = $organ_id;
+        }
+        if (!empty($is_user_menu)){
+            $cond['is_user_menu'] = $is_user_menu;
+        }
+
+        $menus = $this->menu_model->getListByCond($cond);
+
+        $results['menus'] = $menus;
+
+        echo(json_encode($results));
+    }
+
     public function loadOrderMenus(){
 
     	$organ_id = $this->input->post('organ_id');

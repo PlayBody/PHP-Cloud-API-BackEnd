@@ -11,10 +11,21 @@ class Message_model extends Base_model
         $this->primary_key = 'message_id';
     }
 
-    public function getMessageList($user_id, $company_id){
+    public function getMessageList($cond){
         $this->db->from($this->table);
-        $this->db->where('user_id', $user_id);
-        $this->db->where('company_id', $company_id);
+        if (!empty($cond['user_id'])){
+            $this->db->where('user_id', $cond['user_id']);
+        }
+
+        if (!empty($cond['group_id']) || $cond['group_id']=='0'){
+            $this->db->where('group_id', $cond['group_id']);
+            $this->db->group_by('group_key');
+        }
+
+        if (!empty($cond['company_id'])){
+            $this->db->where('company_id', $cond['company_id']);
+        }
+
         $this->db->order_by('create_date', 'desc');
         $this->db->limit(20, 0);
 
@@ -24,7 +35,7 @@ class Message_model extends Base_model
 
     public function getMessageUserLists($company_id, $search_word){
         $sql = "select messages.*, users.user_nick, tmp.unread_message_count from
-(select max(message_id) as sel_messsage, sum(if (read_flag=1, 0, 1)) as unread_message_count from messages where type=1 GROUP BY user_id) tmp
+(select max(message_id) as sel_messsage, sum(if (type=2 or read_flag=1, 0, 1)) as unread_message_count from messages GROUP BY user_id) tmp
 left join messages on tmp.sel_messsage = messages.message_id
 left join users on messages.user_id = users.user_id
 where users.company_id=$company_id

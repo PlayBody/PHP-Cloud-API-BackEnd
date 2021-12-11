@@ -200,4 +200,5 @@ order by tmp.time
         $query = $this->db->get();
         return !empty($query->row_array());
     }
+
 }

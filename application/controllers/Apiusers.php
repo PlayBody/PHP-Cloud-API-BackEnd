@@ -83,6 +83,7 @@ class Apiusers extends WebController
 
     public function loadUserList(){
         $company_id = $this->input->post('company_id');
+
         if (empty($company_id)){
             $results['isLoad'] = false;
             echo json_encode($results);
@@ -236,6 +237,17 @@ class Apiusers extends WebController
         $qr_code = 'connect!'.$user_no.'!'.$domain.'!'.$company_code.'!'.$sum_check;
 
         return $qr_code;
+    }
+
+    public function deleteUser(){
+        $user_id = $this->input->post('user_id');
+        if (empty($user_id)){
+            echo json_encode(['isDelete'=>false]);
+            return;
+        }
+        $this->user_model->delete($user_id, 'user_id');
+
+        echo json_encode(['isDelete'=>true]);
     }
 }
 ?>

@@ -99,12 +99,14 @@ class Apicompanies extends WebController
         $company_id = $this->input->post('company_id');
         $company_name = $this->input->post('company_name');
         $company_domain = $this->input->post('company_domain');
+        $ec_site_url = $this->input->post('ec_site_url');
         $company_receipt_number = $this->input->post('company_receipt_number');
 
 
         if (empty($company_id)){
             $company['company_name'] = $company_name;
             $company['company_domain'] = $company_domain;
+            $company['ec_site_url'] = $ec_site_url;
             $company['company_receipt_number'] = $company_receipt_number;
             $company['visible'] = 1;
 
@@ -113,6 +115,7 @@ class Apicompanies extends WebController
             $company = $this->company_model->getFromId($company_id);
             $company['company_name'] = $company_name;
             $company['company_domain'] = $company_domain;
+            $company['ec_site_url'] = $ec_site_url;
             $company['company_receipt_number'] = $company_receipt_number;
 
             $this->company_model->edit($company, 'company_id');

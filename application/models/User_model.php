@@ -31,6 +31,8 @@ class User_model extends Base_model
             $this->db->where('company_id', $cond['company_id']);
         }
 
+        $this->db->where('visible', 1);
+
         $query = $this->db->get();
         return $query->result_array();
 

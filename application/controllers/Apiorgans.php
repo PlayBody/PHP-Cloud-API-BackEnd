@@ -19,6 +19,16 @@ class Apiorgans extends WebController
         $this->load->model('organ_shift_time_model');
     }
 
+    public function getOrgans(){
+        $company_id = $this->input->post('company_id');
+        $cond = [];
+        if (empty($comnpany_id)) $cond['company_id'] = $company_id;
+        $organs = $this->organ_model->getListByCond($cond);
+
+        $results['organs'] = $organs;
+        echo json_encode($results);
+    }
+
     public function loadOrganList(){
         $staff_id = $this->input->post('staff_id');
         $company_id = $this->input->post('company_id');

@@ -51,10 +51,14 @@ class Setting_count_shift_model extends Base_model
             $this->db->where("to_time <='". $cond['select_date'] ." 23:59:59'");
         }
 
+        if (!empty($cond['date_month'])){
+            $this->db->where("from_time like '". $cond['date_month'] ."-%'");
+        }
 
         if (!empty($setting_id)){
             $this->db->where("id <> '". $setting_id ."'");
         }
+
         $query = $this->db->get();
 
         return $query->result_array();

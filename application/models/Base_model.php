@@ -188,7 +188,7 @@ class Base_model extends CI_Model
      */
     function delete( $value , $key='id')
     {
-        $this->db->set('del_flag', 1);
+        $this->db->set('visible', 0);
         $this->db->where($key, $value);
         $this->db->update($this->table);
         return true;

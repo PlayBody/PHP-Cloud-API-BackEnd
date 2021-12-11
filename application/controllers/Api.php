@@ -134,5 +134,14 @@ class Api extends WebController
 
         echo json_encode($results);
     }
+
+    public function isFileCheck(){
+        $path = $this->input->post('path');
+
+        $results['isFile'] = is_file($path);
+
+        echo json_encode($results);
+    }
+
 }
 ?>

@@ -128,12 +128,14 @@ class Apipayslips extends WebController
 
         $back_amount = $this->history_table_model->getBackAmount($staff_id, $first_day, $last_day);
 
+        $rate = $this->clacPersonRate($staff_id, preg_split('/-/', $date_month)[0], preg_split('/-/', $date_month)[1]);
 
         $results['all_time'] = $all_time;
         $results['company'] = $staff['company_id'];
         $results['defualt_amount'] = $defualt_amount;
         $results['point_amount'] = $point_amount;
         $results['back_amount'] = $back_amount;
+        $results['staff_rate'] = $rate;
 
         echo json_encode($results);
 

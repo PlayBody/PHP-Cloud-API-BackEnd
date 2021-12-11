@@ -370,83 +370,130 @@ class WebController extends CI_Controller
     }
 
 
-    public function sendFireBaseMessage($type, $title, $body, $token){
+    public function sendFireBaseMessage($type, $sender_id, $title, $body, $token){
+        try {
+            define('API_ACCESS_KEY', 'AAAA7-7YI6E:APA91bF5qh5xiYllQINttSsBnXdIsBXmSu4fIF5bZ4UDWhdmVuAsdWRNSOjbyFPTyABVOlU9N4JCOvQvbn42TVK0DAfPQEHgWsFiQD5X2XA_VqWTLOOk2_PFXj_oi8egjRumDIxDrYH_');
+            $fcmUrl = 'https://fcm.googleapis.com/fcm/send';
 
-        $this->load->model('oauth_info_model');
-        $this->load->model('device_token_model');
+            $notification = [
+                'title' => $title,
+                'body' => $body,
+//                'icon' => 'myIcon',
+//                'sound' => 'mySound'
+            ];
+            $extraNotificationData = ["message" => $notification, "type" => $type, "sender_id" =>$sender_id];
+            $fcmNotification = [
+                'to' => $token, //single token
+                'notification' => $notification,
+                'data' => $extraNotificationData
+            ];
+            $headers = [
+                'Authorization: key=' . API_ACCESS_KEY,
+                'Content-Type: application/json'
+            ];
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $fcmUrl);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fcmNotification));
+            $result = curl_exec($ch);
+            curl_close($ch);
 
-        $oauth = $this->oauth_info_model->getFromId(1);
-
-        $refresh_token = $oauth['refresh_token'];
-        $client_id = $oauth['client_id'];
-        $client_secret = $oauth['client_secret'];
-
-
-        $token_refresh_param = [
-            "grant_type" =>"refresh_token",
-            "client_id" => $client_id,
-            "client_secret" => $client_secret,
-            "refresh_token"=>$refresh_token,
-            "valid_for"=>"60"
-        ];
-        $get_access_token_headers = array(
-            'Content-type: application/x-www-form-urlencoded'
-        );
-
-        $get_access_token_url = 'https://oauth2.googleapis.com/token';
-
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $get_access_token_url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $get_access_token_headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($token_refresh_param));
-        $result = curl_exec($ch);
-        if ($result === FALSE) {
-            die('Oops! FCM Send Error: ' . curl_error($ch));
+        }catch(Exception $e){
+            return false;
         }
 
-        $result_array = json_decode($result);
-
-        $access_token = $result_array->access_token;
-
-        $message_data = json_encode([
-            "message"=>[
-                "token"=> $token,
-                "data" => [
-                    "type" => $type
-                ],
-                "notification" => [
-                    "title" => $title,
-                    "body" => $body
-
-                ]
-            ]
-        ]);
+        return true;
+    }
 
 
-        $sender_url = 'https://fcm.googleapis.com/v1/projects/connect-326003/messages:send';
+    public function sendNotifications($n_type, $title, $content, $sender_id, $receiver_id, $receiver_type){
+//
+//        $data = array(
+//            'notification_type' => $n_type,
+//            'notification_title' => $title,
+//            'notification_content' => $content,
+//            'sender_type' => $sender_type,
+//            'sender_id' => $sender_id,
+//            'receiver_type' => $receiver_type,
+//            'receiver_id' => $receiver_id,
+//            'visible' => '1'
+//        );
+//
+//        $this->load->model('notification_model');
+//
+//        $this->notification_model->insertRecord($data);
 
-        $headers = array(
-            'Content-Type:application/json',
-            'Authorization: Bearer '.$access_token
-        );
+        $isFcm = false;
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $sender_url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $message_data);
-        $result = curl_exec($ch);
+        $this->load->model('device_token_model');
+        $this->load->model('user_model');
+        if ($receiver_type=='1'){
+            $staff_data = $this->device_token_model->getListByCondition(['user_id'=>$receiver_id, 'user_type'=>'1']);
+            if (empty($staff_data)) return $isFcm;
+            $token_data = $staff_data[0]['device_token'];
+        }
 
-        //var_dump($result);
-        curl_close($ch);
-        //echo json_encode($results);
+        if ($receiver_type=='2'){
+            $user = $this->user_model->getFromId($receiver_id);
+            if (empty($user)) return $isFcm;
+            $token_data = $user['user_device_token'];
+        }
+        if (!empty($token_data)){
+
+            $isFcm = $this->sendFireBaseMessage($n_type, $sender_id, $title, $content, $token_data);
+        }
+
+        return $isFcm;
+    }
+
+    public function clacPersonRate($staff_id, $year, $month){
+        $this->load->model('staff_model');
+        $staff = $this->staff_model->getFromId($staff_id);
+        $sum = 0;
+        if (empty($staff['staff_entering_date'])){
+//            $sum += 0;
+        }else{
+            $startDateTime = new DateTime($staff['staff_entering_date'].'-01');
+            $endDateTime = new DateTime($year.'-'.$month.'-01');
+
+            $dateDiff = date_diff($startDateTime, $endDateTime);
+            if ($dateDiff->y >= 5){
+                $sum += 1.25;
+//                $year_grade = 4;
+            }else if($dateDiff->y >= 2){
+                $sum += 1.22;
+//                $year_grade = 3;
+            }else if($dateDiff->y >= 1){
+                $sum += 1.21;
+//                $year_grade = 2;
+            }else{
+                $sum += 1.1;
+//                $year_grade = 1;
+            }
+        }
+
+        if (empty($staff['staff_grade_level'])){
+//            $sum += 0;
+        }else {
+            if($staff['staff_grade_level'] == '1'){
+                $sum += 0.02;
+            }else if ($staff['staff_grade_level'] == '2'){
+                $sum += 0.02;
+            }
+        }
+
+        if (empty($staff['staff_national_level'])){
+//            $sum += 0;
+        }else {
+            if($staff['staff_national_level'] == '1'){
+                $sum += 0.01;
+            }
+        }
+
+        return number_format($sum, 2);
+
     }
 }
