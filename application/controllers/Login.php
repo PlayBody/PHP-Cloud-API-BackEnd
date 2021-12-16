@@ -15,6 +15,7 @@ class Login extends AdminController
         if($this->_login_check(ROLE_COMPANY)){
            redirect('dashboard');
         }
+
     }
 
     /**
@@ -23,7 +24,7 @@ class Login extends AdminController
     public function index()
     {
         $this->data = array(
-            'email'=>$this->input->post('email'),
+            'login_id'=>$this->input->post('email'),
             'password'=>$this->input->post('password'),
         );
         $this->form_validation->set_rules('email', 'メールアドレス', 'required|valid_email|max_length[255]|trim');
@@ -31,13 +32,13 @@ class Login extends AdminController
 
         if($this->form_validation->run() === TRUE)
         {
-            $member = $this->member_model->login($this->data);
-            if(!empty($member)){
-                $this->session->set_userdata('company',$member);
+            $staff = $this->staff_model->login($this->data);
+            if(!empty($staff)){
+                $this->session->set_userdata('staff', $staff);
 
                 $loginInfo = array(
-                    "member_id"=>$user['member_id'],
-                    "sessionData" => json_encode($member)
+                    "staff_id"=>$staff['staff_id'],
+                    "sessionData" => json_encode($staff)
                 );
 
                 redirect('/dashboard');

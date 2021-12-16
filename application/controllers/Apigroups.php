@@ -132,5 +132,19 @@ class Apigroups extends WebController
 
         echo json_encode($results);
     }
+
+    public function deleteGroup(){
+        $group_id = $this->input->post('group_id');
+        $this->group_model->delete_force($group_id, 'group_id');
+
+        $user_groups = $this->group_user_model->getUsersByGroupGroup($group_id);
+
+        foreach ($user_groups as $item){
+            $this->group_user_model->delete_force($item['id'], 'id');
+        }
+
+        $results['isDelete'] = true;
+        echo json_encode($results);
+    }
 }
 ?>

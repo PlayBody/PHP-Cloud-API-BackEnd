@@ -13,6 +13,7 @@ class Apicompanies extends WebController
 
         $this->load->model('company_model');
         $this->load->model('organ_model');
+        $this->load->model('company_site_model');
     }
 
     public function loadCompanyInfo(){
@@ -154,6 +155,7 @@ class Apicompanies extends WebController
 
     public function deleteCompany(){
         $company_id = $this->input->post('company_id');
+        $is_restore = $this->input->post('is_restore');
 
         if (empty($company_id)){
             $results['isDelete'] = false;
@@ -161,8 +163,9 @@ class Apicompanies extends WebController
             return;
         }
 
-        $this->company_model->delete_force($company_id, 'company_id');
-        $this->organ_model->delete_force($company_id, 'company_id');
+        $company = $this->company_model->getFromId($company_id);
+        $company['visible'] = empty($is_restore) ? 0 : 1;
+        $this->company_model->updateRecord($company, 'company_id');
 
         $results['isDelete'] = true;
 
@@ -179,7 +182,7 @@ class Apicompanies extends WebController
             return;
         }
 
-        $this->organ_model->delete_force($organ_id, 'organ_id');
+//        $this->company_model->delete($organ_id, 'organ_id');
 
         $this->organ_model->delete_force($organ_id, 'organ_id');
 
@@ -187,6 +190,59 @@ class Apicompanies extends WebController
 
         echo(json_encode($results));
 
+    }
+
+    public function getCompanySites(){
+        $company_id = $this->input->post('company_id');
+
+        if (empty($company_id)){
+            $results['sites'] = [];
+            echo json_encode($results);
+            return;
+        }
+
+        $sites = $this->company_site_model->getListByCond(['company_id'=>$company_id]);
+
+        $results['sites'] = $sites;
+        echo json_encode($results);
+    }
+
+    public function saveCompanySite(){
+        $company_id = $this->input->post('company_id');
+        $site_id = $this->input->post('site_id');
+        $site_title = $this->input->post('site_title');
+        $site_url = $this->input->post('site_url');
+
+        if (empty($site_id)){
+            $site = array(
+                'company_id'=>$company_id,
+                'site_title' => $site_title,
+                'site_url' => $site_url,
+                'visible' => 1
+            );
+            $this->company_site_model->insertRecord($site);
+        }else{
+            $site = $this->company_site_model->getFromId($site_id);
+
+            $site['site_title'] = $site_title;
+            $site['site_url'] = $site_url;
+
+            $this->company_site_model->updateRecord($site, 'id');
+        }
+
+        $results['isSave'] = true;
+        echo json_encode($results);
+    }
+
+    public function deleteCompanySite(){
+        $site_id = $this->input->post('site_id');
+
+        if (!empty($site_id)){
+            $this->company_site_model->delete_force($site_id, 'id');
+        }
+
+        $results['isDelete'] = true;
+        echo json_encode($results);
     }
 }
 ?>

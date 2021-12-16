@@ -16,7 +16,26 @@ class Apiusers extends WebController
         parent::__construct();
         $this->load->model('user_model');
         $this->load->model('group_user_model');
+        $this->load->model('user_ticket_reset_setting_model');
     }
+
+//    public function getUsers(){
+//        $key_id = $this->input->post('key_id');
+//        $key_value = $this->input->post('key_value');
+//
+//        if (empty($company_id)){
+//            $results['isLoad'] = false;
+//            echo json_encode($results);
+//            return;
+//        }
+//
+//        $users = $this->user_model->getUsersByCond(['company_id'=>$company_id]);
+//
+//        $results['isLoad'] = true;
+//        $results['users'] = $users;
+//
+//        echo json_encode($results);
+//    }
 
     public function loadUserFromQrNo(){
         $user_no = $this->input->post('user_no');
@@ -109,11 +128,15 @@ class Apiusers extends WebController
         $user = $this->user_model->getFromId($user_id);
 
         $groups = $this->group_user_model->getGroupsByUser($user_id);
+
+        $ticket_reset = $this->user_ticket_reset_setting_model->getResetSetting(['user_id'=>$user_id]);
+
         if (!empty($groups)){
             $user['group'] = $groups[0];
         }
         $results['isLoad'] = true;
         $results['user'] = $user;
+        $results['ticket_reset'] = empty($ticket_reset) ? null : $ticket_reset ;
 
         echo json_encode($results);
     }
@@ -180,6 +203,28 @@ class Apiusers extends WebController
             if (!empty($this->input->post('user_ticket'))) $user['user_ticket'] = $this->input->post('user_ticket');
 
             $this->user_model->updateRecord($user, 'user_id');
+        }
+
+        if (!empty($user_id) && (!empty($this->input->post('is_reset_ticket')) || $this->input->post('is_reset_ticket')=='0' )){
+            $reset_setting = $this->user_ticket_reset_setting_model->getResetSetting(['user_id'=>$user_id]);
+            if (empty($reset_setting)){
+                $data = array(
+                    'user_id'=>$user_id,
+                    'is_enable' =>$this->input->post('is_reset_ticket'),
+                    'time_type'=>$this->input->post('ticket_reset_type'),
+                    'time_value'=>$this->input->post('ticket_reset_day'),
+                    'ticket_value'=>$this->input->post('ticket_reset_value'),
+                );
+                $this->user_ticket_reset_setting_model->insertRecord($data);
+            }else{
+
+                $reset_setting['is_enable'] = $this->input->post('is_reset_ticket');
+                $reset_setting['time_type'] = $this->input->post('ticket_reset_type');
+                $reset_setting['time_value'] = $this->input->post('ticket_reset_day');
+                $reset_setting['ticket_value'] = $this->input->post('ticket_reset_value');
+                $this->user_ticket_reset_setting_model->updateRecord($reset_setting, 'id');
+            }
+
         }
 
         $results['isSave'] = true;

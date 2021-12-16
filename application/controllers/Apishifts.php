@@ -155,6 +155,7 @@ class Apishifts extends WebController
         $organ_id = $this->input->post('organ_id');
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
+        $shift_type = $this->input->post('shift_type');
 
 
         $shift_exist = $this->shift_model->isExist($organ_id, $staff_id, $shift_id, $from_time, $to_time);
@@ -192,7 +193,7 @@ class Apishifts extends WebController
                 'organ_id' => $organ_id,
                 'from_time' => $input_from,
                 'to_time' => $input_to,
-                'shift_type' => 1,
+                'shift_type' => $shift_type,
                 'visible' => 1,
             );
             $is_add = true;
@@ -522,7 +523,7 @@ class Apishifts extends WebController
         $content = $fdate->format('n月j日').'から'. $tdate->format('n月j日') . 'までの希望シフトを入力してください。';
         $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3, false);
         foreach ($staffs as $staff){
-//            if ($staff_id == $staff['staff_id']) continue;
+            if ($staff_id == $staff['staff_id']) continue;
 
             $shifts = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'staff_id'=>$staff['staff_id'], 'from_time'=>$from_time, 'to_time'=>$to_time]);
 

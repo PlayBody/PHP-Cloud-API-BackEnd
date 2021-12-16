@@ -81,11 +81,11 @@ class Apimessages extends WebController
 
     public function sendMessage()
     {
-        $company_id = $this->input->post('company_id');
-        $user_id = $this->input->post('user_id');
+        $company_id = 1;$this->input->post('company_id');
+        $user_id = 72; $this->input->post('user_id');
         $staff_id = $this->input->post('staff_id');
-        $content = $this->input->post('content');
-        $type = $this->input->post('type');
+        $content = '22';$this->input->post('content');
+        $type = '1';$this->input->post('type');
         $file_type = $this->input->post('file_type');
         $file_url = $this->input->post('file_url');
         $file_name = $this->input->post('file_name');
@@ -251,11 +251,87 @@ class Apimessages extends WebController
 
     }
 
+
     public function sendtest(){
 
-        $is_ok = $this->sendNotifications('message', 'from test message', 'test push notification', '2', '72', '2');
-        var_dump($is_ok);
+        $company_id = 1;
+        $user_id = 72;
+        $staff_id = 3;
+        $content = 'test';
+        $type = '1';
+        $file_type = $this->input->post('file_type');
+        $file_url = $this->input->post('file_url');
+        $file_name = $this->input->post('file_name');
+        $video_url = $this->input->post('video_url');
+        $is_group = $this->input->post('is_group');
+
+        if (empty($company_id) || (empty($user_id) && $user_id!='0' )){
+            $results['isSend'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $group_key = null;
+        if ($is_group=='1'){
+            $group_key = $company_id . '-' . $user_id. '-' . date('YmdHis') . '-' . md5(uniqid(rand(), true));
+
+            $group_id = $user_id;
+            if ($group_id=='0'){
+                $users = $this->user_model->getUsersByCond(['company_id'=>$company_id]);
+            }else{
+                $users = $this->group_user_model->getUsersByGroupGroup($group_id);
+            }
+        }else{
+            $group_id = null;
+
+            $users[]['user_id'] = $user_id;
+        }
+
+        $title = '';
+        if ($type=='2'){
+            $staff = $this->staff_model->getFromId($staff_id);
+            $title = ($staff['staff_nick'] == null ? ($staff['staff_first_name'] . ' ' . $staff['staff_last_name']) : $staff['staff_nick']) . 'æ§˜ã‹ã‚‰ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒå±Šãã¾ã—ãŸã€‚';
+        }
+
+        $is_fcm = false;
+        foreach ($users as $user){
+            $message = array(
+                'company_id' => $company_id,
+                'user_id' => $user['user_id'],
+                'content' => $content,
+                'file_type' => empty($file_type) ? null : $file_type,
+                'file_url' => empty($file_url) ? null : $file_url,
+                'file_name' => empty($file_name) ? null : $file_name,
+                'video_url' => empty($video_url) ? null : $video_url,
+                'type' => $type,
+                'group_id' => $group_id,
+                'group_key' =>$group_key,
+            );
+
+            $this->message_model->insertRecord($message);
+
+            if ($type=='1'){
+                $user = $this->user_model->getFromId($user['user_id']);
+                $title = $user['user_first_name'] . ' ' . $user['user_last_name'].'æ§˜ã‹ã‚‰ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒå±Šãã¾ã—ãŸã€‚';
+
+                $receive_staffs = $this->staff_model->getStaffList(['company_id'=>$company_id, 'staff_auth'=>'2']);
+                foreach ($receive_staffs as $receive_staff){
+                    $is_fcm = $this->sendNotifications('message', $title, $content, $user['user_id'], $receive_staff['staff_id'], '1');
+                }
+
+            }else{
+                $is_fcm = $this->sendNotifications('message', $title, $content, $company_id, $user['user_id'], '2');
+            }
+
+        }
+
+
+        $results['isSend'] = true;
+        $results['isSendFcm'] = $is_fcm;
+
+        echo json_encode($results);
     }
+
 
 }
 ?>

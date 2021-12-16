@@ -74,7 +74,7 @@
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                             <img src="<?php echo base_url(); ?>assets/dist/img/avatar.png" class="user-image"
                                  alt="User Image"/>
-                            <span class="hidden-xs"><?php echo($user['title']); ?></span>
+                            <span class="hidden-xs"><?php echo($staff['staff_nick']); ?></span>
                         </a>
                         <ul class="dropdown-menu">
                             <!-- User image -->
@@ -83,7 +83,7 @@
                                 <img src="<?php echo base_url(); ?>assets/dist/img/avatar.png" class="img-circle"
                                      alt="User Image"/>
                                 <p>
-                                    <?php echo($user['title']); ?>
+                                    <?php echo($staff['staff_nick']); ?>
                                 </p>
 
                             </li>
@@ -120,44 +120,17 @@
                         <i class="fa fa-dashboard"></i> <span>ダッシュボード</span>
                     </a>
                 </li>
-                <?php if ($page == 'scenario'){ ?><li class="active"><?php }else{ ?><li><?php }?>
-                    <a href="<?php echo base_url(); ?>scenario">
-                        <i class="fa fa-ticket"></i>
-                        <span>シナリオ管理</span>
-                    </a>
-                </li>
-                <?php if ($page == 'faq'){ ?><li class="active"><?php }else{ ?><li><?php }?>
-                    <a href="<?php echo base_url(); ?>faq">
-                        <i class="fa fa-ticket"></i>
-                        <span>FAQ一覧</span>
-                    </a>
-                </li>
 
-                <?php if ($role == ROLE_ADMIN) { ?>
-                    <?php if ($page == 'user'){ ?><li class="active"><?php }else{ ?><li><?php }?>
-                        <a href="<?php echo base_url(); ?>userList">
-                            <i class="fa fa-users"></i>
-                            <span>ユーザー</span>
-                        </a>
-                    </li>
-                <?php } ?>
-
-                <?php if ($page == 'setting'){ ?><li class="active"><?php }else{ ?><li><?php }?>
-                    <a href="<?php echo base_url(); ?>setting">
-                        <i class="fa fa-cog"></i>
-                        <span>設定</span>
-                    </a>
-                </li>
-                <li>
                     <hr/>
 
 
-                <li <?php if ($page == 'staff'){ ?> class="active"<?php } ?> >
-                    <a href="<?php echo base_url(); ?>staff">
-                        <i class="fa fa-users"></i>
-                        <span>スタッフ管理</span>
+                <li <?php if ($page == 'excelexport'){ ?> class="active"<?php } ?> >
+                    <a href="<?php echo base_url(); ?>excelexport">
+                        <i class="fa fa-file-excel-o"></i>
+                        <span>Excelエスポート</span>
                     </a>
                 </li>
+
             </ul>
         </section>
         <!-- /.sidebar -->

@@ -9,7 +9,7 @@ class AdminController extends CI_Controller
     public $data;
     public $header;
     public $footer;
-    public $user;
+    public $staff;
 
     /**
      * Class constructor
@@ -58,10 +58,10 @@ class AdminController extends CI_Controller
                     return true;
                 }
                 break;
-            case ROLE_COMPANY:
-                $this->user = $this->session->userdata('company');
-                if (!empty($this->user)) {
-                    $this->header['user'] = $this->user;
+            case ROLE_STAFF:
+                $this->staff = $this->session->userdata('staff');
+                if (!empty($this->staff)) {
+                    $this->header['staff'] = $this->staff;
                     return true;
                 }
                 break;
@@ -114,6 +114,25 @@ class AdminController extends CI_Controller
         return $text;
     }
 
+    function loadOrganByStaff($staff){
+        $auth_id = $staff['staff_auth'];
+        $staff_id = $staff['staff_id'];
+        $company_id = $staff['company_id'];
+        $organ_list = [];
+        if ($auth_id==4){
+            $organ_list = $this->organ_model->getListByCond([]);
+        }
+        if ($auth_id==3){
+            $organ_list = $this->organ_model->getListByCond(['company_id'=>$company_id]);
+        }
+        if ($auth_id>=1 && $auth_id<3){
+            $this->load->model('staff_organ_model');
+            $organ_list = $this->staff_organ_model->getOrgansByStaff($staff_id);
+        }
+
+        return $organ_list;
+
+    }
     protected function _call_api($api_url)
     {
         $headers = array(

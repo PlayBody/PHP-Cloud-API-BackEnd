@@ -25,4 +25,14 @@ class Notification_model extends Base_Model
 
         return $query->result_array();
     }
+
+    public function getBageCountRecord($receiver_id, $receiver_type){
+        $this->db->from($this->table);
+        $this->db->where('receiver_id', $receiver_id);
+        $this->db->where('receiver_type', $receiver_type);
+
+        $query = $this->db->get();
+
+        return $query->row_array();
+    }
 }

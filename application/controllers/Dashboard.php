@@ -9,12 +9,12 @@ class Dashboard extends AdminController
      */
     public function __construct()
     {
-        parent::__construct(ROLE_COMPANY);
+        parent::__construct(ROLE_STAFF);
 
         //チャットボット
         $this->header['page'] = 'dashboard';
         $this->header['title'] = '管理画面【企業用】';
-        $this->header['user'] = $this->user;
+        $this->header['staff'] = $this->staff;
 
         $this->load->model('scenario_model');
         $this->load->model('bot_model');

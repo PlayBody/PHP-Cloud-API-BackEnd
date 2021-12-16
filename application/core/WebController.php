@@ -370,16 +370,16 @@ class WebController extends CI_Controller
     }
 
 
-    public function sendFireBaseMessage($type, $sender_id, $title, $body, $token){
+    public function sendFireBaseMessage($type, $sender_id, $title, $body, $token, $badge){
         try {
-            define('API_ACCESS_KEY', 'AAAA7-7YI6E:APA91bF5qh5xiYllQINttSsBnXdIsBXmSu4fIF5bZ4UDWhdmVuAsdWRNSOjbyFPTyABVOlU9N4JCOvQvbn42TVK0DAfPQEHgWsFiQD5X2XA_VqWTLOOk2_PFXj_oi8egjRumDIxDrYH_');
             $fcmUrl = 'https://fcm.googleapis.com/fcm/send';
 
             $notification = [
                 'title' => $title,
                 'body' => $body,
 //                'icon' => 'myIcon',
-//                'sound' => 'mySound'
+                'sound' => 'default',
+                'badge' => $badge
             ];
             $extraNotificationData = ["message" => $notification, "type" => $type, "sender_id" =>$sender_id];
             $fcmNotification = [
@@ -388,7 +388,7 @@ class WebController extends CI_Controller
                 'data' => $extraNotificationData
             ];
             $headers = [
-                'Authorization: key=' . API_ACCESS_KEY,
+                'Authorization: key=AAAA7-7YI6E:APA91bF5qh5xiYllQINttSsBnXdIsBXmSu4fIF5bZ4UDWhdmVuAsdWRNSOjbyFPTyABVOlU9N4JCOvQvbn42TVK0DAfPQEHgWsFiQD5X2XA_VqWTLOOk2_PFXj_oi8egjRumDIxDrYH_',
                 'Content-Type: application/json'
             ];
             $ch = curl_init();
@@ -410,21 +410,6 @@ class WebController extends CI_Controller
 
 
     public function sendNotifications($n_type, $title, $content, $sender_id, $receiver_id, $receiver_type){
-//
-//        $data = array(
-//            'notification_type' => $n_type,
-//            'notification_title' => $title,
-//            'notification_content' => $content,
-//            'sender_type' => $sender_type,
-//            'sender_id' => $sender_id,
-//            'receiver_type' => $receiver_type,
-//            'receiver_id' => $receiver_id,
-//            'visible' => '1'
-//        );
-//
-//        $this->load->model('notification_model');
-//
-//        $this->notification_model->insertRecord($data);
 
         $isFcm = false;
 
@@ -442,8 +427,25 @@ class WebController extends CI_Controller
             $token_data = $user['user_device_token'];
         }
         if (!empty($token_data)){
+            $this->load->model('notification_model');
+            $badge_record = $this->notification_model->getBageCountRecord($receiver_id, $receiver_type);
+            $badge = 1;
+            if (empty($badge_record)){
+                $data = array(
+                    'receiver_type' => $receiver_type,
+                    'receiver_id' => $receiver_id,
+                    'badge_count' => '1'
+                );
+                $this->notification_model->insertRecord($data);
 
-            $isFcm = $this->sendFireBaseMessage($n_type, $sender_id, $title, $content, $token_data);
+            }else{
+                $badge = (empty($badge_record['badge_count'])? 0: $badge_record['badge_count']) + 1;
+                $badge_record['badge_count'] = $badge;
+
+                $this->notification_model->updateRecord($badge_record, 'id');
+            }
+
+            $isFcm = $this->sendFireBaseMessage($n_type, $sender_id, $title, $content, $token_data, $badge);
         }
 
         return $isFcm;

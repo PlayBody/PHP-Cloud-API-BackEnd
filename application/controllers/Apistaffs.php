@@ -35,6 +35,7 @@ class Apistaffs extends WebController
 
         $results = [];
         $results['isLogin'] = false;
+        $results['err_type'] = '2';
         $results['staff'] = array();
 
         $organ = [];
@@ -42,8 +43,20 @@ class Apistaffs extends WebController
             $results['isLogin'] = true;
             $results['staff'] = $staff;
 
-            $organs = $this->staff_organ_model->getOrgansByStaff($staff['staff_id']);
-            if (!empty($organs)) $organ = $organs[0];
+            if ($staff['staff_auth']>3)
+                $company['visible']='1';
+            else
+                $company = $this->company_model->getFromId($staff['company_id']);
+
+            if (empty($company) || $company['visible']!='1'){
+                $results['isLogin'] = false;
+                $results['err_type'] = '1';
+                $results['staff'] = $staff;
+            }else{
+                $organs = $this->staff_organ_model->getOrgansByStaff($staff['staff_id']);
+                if (!empty($organs)) $organ = $organs[0];
+            }
+
 
         }
         $results['organ'] = $organ;
@@ -65,8 +78,9 @@ class Apistaffs extends WebController
                 $file = $staff['staff_image'];
             }
         }
-
         $file = './assets/images/staffs/'.$file;
+        if (!is_file($file)) $file = './assets/images/staffs/noImage.jpg';
+
         header("Content-Type: image/png");
         header("Content-Length: " . filesize($file));
         echo file_get_contents($file);
@@ -316,7 +330,7 @@ class Apistaffs extends WebController
         $staff_salary_days =  empty($this->input->post('staff_salary_days')) ? null : $this->input->post('staff_salary_days');
         $staff_salary_minutes = empty($this->input->post('staff_salary_minutes')) ? null : $this->input->post('staff_salary_minutes');
         $staff_salary_times = empty($this->input->post('staff_salary_times')) ? null : $this->input->post('staff_salary_times');
-        $staff_shift = empty($this->input->post('staff_shift')) ? null : $this->input->post('staff_shift');
+        $staff_shift = $this->input->post('staff_shift');
         $table_position = empty($this->input->post('table_position')) ? null : $this->input->post('table_position');
 
         $staff_avatar =empty($this->input->post('staff_avatar')) ? null : $this->input->post('staff_avatar');
@@ -467,8 +481,8 @@ class Apistaffs extends WebController
             }
         }
 
-//        $this->staff_model->delete_force($staff_id, 'staff_id');
-//        $this->staff_organ_model->delete_force($staff_id, 'staff_id');
+        $this->staff_model->delete_force($staff_id, 'staff_id');
+        $this->staff_organ_model->delete_force($staff_id, 'staff_id');
 
         $results['isDelete'] = true;
 
@@ -939,6 +953,5 @@ class Apistaffs extends WebController
 
         echo json_encode($results);
     }
-
 }
 ?>
