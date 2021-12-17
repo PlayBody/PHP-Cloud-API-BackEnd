@@ -27,7 +27,7 @@ class Message_model extends Base_model
         }
 
         $this->db->order_by('create_date', 'desc');
-        $this->db->limit(20, 0);
+        $this->db->limit(30, 0);
 
         $query = $this->db->get();
         return $query->result_array();
@@ -35,7 +35,7 @@ class Message_model extends Base_model
 
     public function getMessageUserLists($company_id, $search_word){
         $sql = "select messages.*, users.user_nick, tmp.unread_message_count from
-(select max(message_id) as sel_messsage, sum(if (type=2 or read_flag=1, 0, 1)) as unread_message_count from messages GROUP BY user_id) tmp
+(select max(message_id) as sel_messsage, sum(if (type=2 or read_flag=1, 0, 1)) as unread_message_count from messages where company_id=$company_id GROUP BY user_id) tmp
 left join messages on tmp.sel_messsage = messages.message_id
 left join users on messages.user_id = users.user_id
 where users.company_id=$company_id

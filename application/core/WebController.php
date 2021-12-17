@@ -411,6 +411,11 @@ class WebController extends CI_Controller
 
     public function sendNotifications($n_type, $title, $content, $sender_id, $receiver_id, $receiver_type){
 
+        $notification_type = 0;
+        if ($n_type=='message') $notification_type = 1;
+        if ($n_type=='shift_require') $notification_type = 2;
+        if ($n_type=='add_point_request') $notification_type = 3;
+
         $isFcm = false;
 
         $this->load->model('device_token_model');
@@ -428,22 +433,28 @@ class WebController extends CI_Controller
         }
         if (!empty($token_data)){
             $this->load->model('notification_model');
-            $badge_record = $this->notification_model->getBageCountRecord($receiver_id, $receiver_type);
-            $badge = 1;
-            if (empty($badge_record)){
+            $cond = [];
+            $cond['receiver_type'] = $receiver_type;
+            $cond['receiver_id'] = $receiver_id;
+            $cond['notification_type'] = $notification_type;
+            $notification = $this->notification_model->getRecordByCond($cond);
+            if (empty($notification)){
                 $data = array(
                     'receiver_type' => $receiver_type,
                     'receiver_id' => $receiver_id,
+                    'notification_type' => $notification_type,
                     'badge_count' => '1'
                 );
                 $this->notification_model->insertRecord($data);
 
             }else{
-                $badge = (empty($badge_record['badge_count'])? 0: $badge_record['badge_count']) + 1;
-                $badge_record['badge_count'] = $badge;
+                $count = (empty($notification['badge_count'])? 0: $notification['badge_count']) + 1;
+                $notification['badge_count'] = $count;
 
-                $this->notification_model->updateRecord($badge_record, 'id');
+                $this->notification_model->updateRecord($notification, 'id');
             }
+
+            $badge = $this->notification_model->getBageCount($receiver_id, $receiver_type);
 
             $isFcm = $this->sendFireBaseMessage($n_type, $sender_id, $title, $content, $token_data, $badge);
         }

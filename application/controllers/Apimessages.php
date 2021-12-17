@@ -81,11 +81,11 @@ class Apimessages extends WebController
 
     public function sendMessage()
     {
-        $company_id = 1;$this->input->post('company_id');
-        $user_id = 72; $this->input->post('user_id');
+        $company_id = $this->input->post('company_id');
+        $user_id =  $this->input->post('user_id');
         $staff_id = $this->input->post('staff_id');
-        $content = '22';$this->input->post('content');
-        $type = '1';$this->input->post('type');
+        $content = $this->input->post('content');
+        $type = $this->input->post('type');
         $file_type = $this->input->post('file_type');
         $file_url = $this->input->post('file_url');
         $file_name = $this->input->post('file_name');
@@ -214,6 +214,15 @@ class Apimessages extends WebController
 
     }
 
+    public function getStaffUnreadCount(){
+        $company_id = $this->input->post('company_id');
+        $count = $this->message_model->getUnreadMessageCount('1', $company_id);
+
+        $results['count'] = empty($count)?0 : $count;
+        echo json_encode($results);
+
+    }
+
     function uploadAttachment() {
 
         $result = array();
@@ -255,7 +264,7 @@ class Apimessages extends WebController
     public function sendtest(){
 
         $company_id = 1;
-        $user_id = 72;
+        $user_id = 73;
         $staff_id = 3;
         $content = 'test';
         $type = '1';
