@@ -138,11 +138,13 @@ class Apicompanies extends WebController
             $organ['company_id'] = $company_id;
             $organ['organ_name'] = $organ_name;
             $organ['visible'] = 1;
+            $organ['organ_number'] = $this->organ_model->getMaxOrganNumber($company_id);
 
             $organ_id = $this->organ_model->insertRecord($organ);
         }else{
             $organ = $this->organ_model->getFromId($organ_id);
             $organ['organ_name'] = $organ_name;
+            if (empty($organ['organ_number'])) $organ['organ_number'] = $this->organ_model->getMaxOrganNumber($company_id);
 
             $this->organ_model->updateRecord($organ, 'organ_id');
         }

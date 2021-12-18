@@ -141,6 +141,22 @@ class Apiusers extends WebController
         echo json_encode($results);
     }
 
+    public function updateUserTicket(){
+        $user_id = $this->input->post('user_id');
+        $ticket_count = $this->input->post('ticket_count');
+
+        $user = $this->user_model->getFromId($user_id);
+
+        if (!empty($user)){
+            $user['user_ticket'] = $ticket_count;
+            $this->user_model->updateRecord($user, 'user_id');
+        }
+
+        $results['is_update'] = true;
+
+        echo json_encode($results);
+    }
+
     public function saveUserInfo(){
         $company_id = $this->input->post('company_id');
         $user_id = $this->input->post('user_id');

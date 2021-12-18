@@ -210,8 +210,8 @@ class Reserve_model extends Base_model
 
         $query = $this->db->get();
         return $query->result_array();
-
     }
+
     public function getReserveRecord($cond){
         $this->db->from($this->table);
         if (!empty($cond['staff_id']))
@@ -231,5 +231,43 @@ class Reserve_model extends Base_model
 
     }
 
+    public function getReserverLastRecord($cond){
 
+        $this->db->from($this->table);
+        if (!empty($cond['staff_id']))
+            $this->db->where('staff_id', $cond['staff_id']);
+
+        if (!empty($cond['organ_id']))
+            $this->db->where('organ_id', $cond['organ_id']);
+
+        if (!empty($cond['user_id']))
+            $this->db->where('user_id', $cond['user_id']);
+
+        $this->db->order_by('create_date', 'desc');
+        $query = $this->db->get();
+
+        return $query->row_array();
+    }
+
+
+    public function getReserveNowData($cond){
+        $this->db->from($this->table);
+        if (!empty($cond['staff_id']))
+            $this->db->where('staff_id', $cond['staff_id']);
+
+        if (!empty($cond['organ_id']))
+            $this->db->where('organ_id', $cond['organ_id']);
+
+        if (!empty($cond['from_time']))
+            $this->db->where("reserve_time >= '".$cond['from_time']."'");
+
+        if (!empty($cond['to_time']))
+            $this->db->where("reserve_time <= '". $cond['to_time']."'");
+
+        if (!empty($cond['reserve_status']))
+            $this->db->where("reserve_status", $cond['reserve_status']);
+
+        $query = $this->db->get();
+        return $query->result_array();
+    }
 }

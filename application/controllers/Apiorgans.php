@@ -29,6 +29,18 @@ class Apiorgans extends WebController
         echo json_encode($results);
     }
 
+    public function getOrganInfoByOrganNumber(){
+        $company_id = $this->input->post('company_id');
+        $organ_number = $this->input->post('organ_number');
+        $cond = [];
+        $cond['company_id'] = $company_id;
+        $cond['organ_number'] = $organ_number;
+        $organ = $this->organ_model->getRecordByCond($cond);
+
+        $results['organ'] = $organ;
+        echo json_encode($results);
+    }
+
     public function loadOrganList(){
         $staff_id = $this->input->post('staff_id');
         $company_id = $this->input->post('company_id');

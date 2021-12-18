@@ -13,6 +13,7 @@ class Apitables extends WebController
 
         $this->load->model('table_model');
         $this->load->model('organ_model');
+        $this->load->model('organ_set_table_model');
         $this->load->model('stamp_model');
         $this->load->model('staff_model');
 
@@ -109,9 +110,10 @@ class Apitables extends WebController
 
         $table = $this->table_model->getFromId($table_id);
 
-
         if ($table['status']>0){
-            $setting  = $this->organ_model->getFromId($organ_id);
+            $set_num = (empty($table) || empty($table['set_num'])) ? '1' : $table['set_num'];
+            $setting = $this->organ_set_table_model->getRecordTable($organ_id, $set_num);
+
             $set_amount = 0;
 
             $start_time = $table['start_time'];
@@ -173,6 +175,7 @@ class Apitables extends WebController
         $staff_id = $this->input->post('$staff_id');
         $pay_method = $this->input->post('pay_method');
         $person_count = $this->input->post('person_count');
+        $set_number = $this->input->post('set_number');
 
         if (empty($table_id) || empty($organ_id) ||empty($update_value)){
             $results['isUpdate'] = false;
@@ -215,6 +218,7 @@ class Apitables extends WebController
             $table['start_time'] = $now;
             $table['user_id'] = $user_id;
             $table['person_count'] = $person_count;
+            $table['set_num'] = empty($set_number) ? '1' : $set_number;
         }
 
         if ($update_value == 2){
@@ -241,7 +245,7 @@ class Apitables extends WebController
                 'table_title' => $table['table_title'],
                 'table_position' => $table['position'],
                 'user_id' => $table['user_id'],
-                'table_charge_amount' => $this->getTableChargeAmount($organ_id),
+                'table_charge_amount' => $this->getTableChargeAmount($organ_id, $table['table_id']),
                 'set_amount' => $this->getSetAmount($organ_id, $table_id),
                 'amount' =>$this->getTableAmount($organ_id, $table_id),
                 'start_time' => $table['start_time'],
@@ -310,19 +314,24 @@ class Apitables extends WebController
 
         $table_menu_amount = $this->table_menu_model->getMenuAmountByCond(['table_id'=>$table_id]);
 
-        return $this->getTableChargeAmount($organ_id) + $this->getSetAmount($organ_id, $table_id) + $table_menu_amount;
+        return $this->getTableChargeAmount($organ_id, $table_id) + $this->getSetAmount($organ_id, $table_id) + $table_menu_amount;
     }
 
-    private function getTableChargeAmount($organ_id){
-        $setting  = $this->organ_model->getFromId($organ_id);
+    private function getTableChargeAmount($organ_id, $table_id){
+        $table = $this->table_model->getFromId($table_id);
+        $set_num = (empty($table) || empty($table['set_num'])) ? '1' : $table['set_num'];
+        $setRecord = $this->organ_set_table_model->getRecordTable($organ_id, $set_num);
 
-        $table_amount = empty($setting['table_amount']) ? 0 : $setting['table_amount'];
+        $table_amount = (empty($setRecord) || empty($setRecord['table_amount'])) ? 0 : $setRecord['table_amount'];
 
         return $table_amount;
     }
 
     private function getSetAmount($organ_id, $table_id){
-        $setting  = $this->organ_model->getFromId($organ_id);
+        $table = $this->table_model->getFromId($table_id);
+        $set_num = (empty($table) || empty($table['set_num'])) ? '1' : $table['set_num'];
+        $setting = $this->organ_set_table_model->getRecordTable($organ_id, $set_num);
+        if (empty($setting)) return 0;
         $set_amount = 0;
 
         $table = $this->table_model->getFromId($table_id);

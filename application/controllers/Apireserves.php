@@ -291,8 +291,8 @@ class Apireserves extends WebController
         $staff_reserve_count = $this->reserve_model->getReserveCount($organ_id, $sel_time, $staff_id);
         if ($staff_reserve_count > 0) return '3';
 
-        $isStaffActive = $this->shift_model->isStaffActiveReserve($organ_id, $staff_id, $sel_time);
-        if (!$isStaffActive) return '2';
+        $isRejectActive = $this->shift_model->isStaffRejectReserve($organ_id, $staff_id, $sel_time);
+        if ($isRejectActive) return '2';
 
         return '1';
     }
@@ -375,6 +375,47 @@ class Apireserves extends WebController
 //        if (!$isStaffActive) return '2';
 
         return true;
+    }
+
+    public function getLastReserve(){
+        $user_id = $this->input->post('user_id');
+        $organ_id = $this->input->post('organ_id');
+
+        $last_reserve = $this->reserve_model->getReserverLastRecord(['organ_id'=>$organ_id, 'user_id'=>$user_id]);
+
+        if (empty($last_reserve)){
+            $results['staff_id'] = '';
+        }else{
+            $results['staff_id'] = empty($last_reserve['staff_id']) ? '' : $last_reserve['staff_id'];
+        }
+
+        echo json_encode($results);
+
+    }
+
+    public function updateReserveStatus(){
+        $user_id = $this->input->post('user_id');
+        $organ_id = $this->input->post('organ_id');
+
+        $cond = [];
+        $cond['organ_id'] = $organ_id;
+        $cond['user_id'] = $user_id;
+        $cond['reserve_status'] = '1';
+        $cond['from_time'] = date('Y-m-d H:i:s', strtotime(' -30 min'));
+        $cond['to_time'] = date('Y-m-d H:i:s', strtotime(' +30 min'));
+        $reserves = $this->reserve_model->getReserveNowData($cond);
+        if (empty($reserves)){
+            $results['isExistReserve'] = false;
+        }else{
+            $results['isExistReserve'] = true;
+            foreach ($reserves as $reserve){
+                $reserve['reserve_status']=2;
+                $this->reserve_model->updateRecord($reserve, 'reserve_id');
+            }
+        }
+
+        echo json_encode($results);
+
     }
 
 }
