@@ -166,9 +166,9 @@ class Apiusers extends WebController
         $results['err_type'] = '';
         if (!empty($user_email)){
             if(empty($user_id)){
-                $isEmailExist = $this->user_model->checkEmailExists($user_email);
+                $isEmailExist = $this->user_model->checkEmailExists($user_email, $company_id);
             } else {
-                $isEmailExist = $this->user_model->checkEmailExists($user_email, $user_id);
+                $isEmailExist = $this->user_model->checkEmailExists($user_email, $company_id, $user_id);
             }
 
             if($isEmailExist){
@@ -198,6 +198,7 @@ class Apiusers extends WebController
                 'user_birthday' => empty($this->input->post('user_birthday')) ? null : $this->input->post('user_birthday'),
                 'user_ticket' => 0,
                 'user_device_token' => empty($this->input->post('user_device_token')) ? '' : $this->input->post('user_device_token'),
+                'user_password' => empty($this->input->post('user_password')) ? null : sha1($this->input->post('user_password')),
                 'visible' => 1,
             );
             $user_id = $this->user_model->insertRecord($user);
@@ -217,6 +218,9 @@ class Apiusers extends WebController
             if (!empty($this->input->post('user_sex'))) $user['user_sex'] = $this->input->post('user_sex');
             if (!empty($this->input->post('user_birthday'))) $user['user_birthday'] = $this->input->post('user_birthday');
             if (!empty($this->input->post('user_ticket'))) $user['user_ticket'] = $this->input->post('user_ticket');
+            if (!empty($this->input->post('user_password')) && $this->input->post('user_password')!='oldpassword'){
+                $user['user_password'] = sha1($this->input->post('user_password'));
+            }
 
             $this->user_model->updateRecord($user, 'user_id');
         }
@@ -245,11 +249,13 @@ class Apiusers extends WebController
 
         $results['isSave'] = true;
         $results['user_id'] = $user_id;
+        $results['user_name'] = empty($user['user_nick']) ? ($user['user_first_name'].' '.$user['user_last_name']) : $user['user_nick'];
 
         echo json_encode($results);
     }
 
     public function getRegisterUserInfo(){
+        $company_id = $this->input->post('company_id');
         $device_token = $this->input->post('device_token');
         if (empty($device_token)){
             $results['isLoad'] = false;
@@ -257,7 +263,7 @@ class Apiusers extends WebController
             return;
         }
 
-        $user = $this->user_model->getUserByToken($device_token);
+        $user = $this->user_model->getUserByToken($device_token, $company_id);
 
         if (empty($user)){
             $results['isLoad'] = false;
@@ -309,6 +315,27 @@ class Apiusers extends WebController
         $this->user_model->delete($user_id, 'user_id');
 
         echo json_encode(['isDelete'=>true]);
+    }
+
+    public function loginCheck(){
+        $user_id = $this->input->post('user_id');
+        $email = $this->input->post('email');
+        $password = $this->input->post('password');
+
+        $is_login = false;
+        if (!empty($user_id)){
+            $user = $this->user_model->getFromId($user_id);
+            if (!empty($user)){
+                if ($user['user_email']==$email && sha1($password) == $user['user_password']){
+                    $is_login = true;
+                }
+            }
+        }
+
+        $results['isLogin'] = $is_login;
+
+        echo json_encode($results);
+
     }
 }
 ?>

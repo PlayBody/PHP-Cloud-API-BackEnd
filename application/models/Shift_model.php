@@ -215,4 +215,22 @@ order by tmp.time
         return !empty($query->row_array());
     }
 
+    public function getDayShift($organ_id, $select_date){
+        $this->db->select($this->table.".*, 
+            IF(staffs.staff_nick is NULL, 
+                CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
+                staffs.staff_nick
+            ) as staff_name");
+        $this->db->from($this->table);
+        $this->db->join('staffs', 'shifts.staff_id=staffs.staff_id', 'left');
+
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("from_time like '" . $select_date . "%'");
+        $this->db->where("to_time like '" . $select_date . "%'");
+
+//        $this->db->where('shift_type', '-3');
+
+        $query = $this->db->get();
+        return $query->result_array();
+    }
 }

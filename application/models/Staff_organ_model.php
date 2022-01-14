@@ -30,7 +30,7 @@ class Staff_organ_model extends Base_model
 
         $this->db->where('staff_id', $staff_id);
 
-        $this->db->where('organs.visible', '1');
+//        $this->db->where('organs.visible', '1');
 
         $query = $this->db->get();
 

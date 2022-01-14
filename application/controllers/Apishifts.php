@@ -74,16 +74,24 @@ class Apishifts extends WebController
                 $curDateTime->add($diff1Day);
                 $sel_date = $curDateTime->format("Y-m-d");
 
+                $condR = [];
+                $condR['organ_id'] = $organ_id;
+                $condR['inner_from_time'] = $sel_date . ' ' .$item['from_time'];
+                $condR['inner_to_time'] = $sel_date . ' ' .$item['to_time'];
 
-                $add_shift = array(
-                    'from_time'=> $sel_date . ' ' .$item['from_time'],// $input_from,
-                    'to_time' => $sel_date . ' ' .$item['to_time'], //$input_to,
-                    'staff_id' => $staff_id,
-                    'organ_id' => $organ_id,
-                    'visible' => 1,
-                    'shift_type' => 1,
-                );
-                $this->shift_model->insertRecord($add_shift);
+                $shift_count = $this->setting_count_shift_model->getListByCond($condR);
+
+                if (!empty($shift_count)){
+                    $add_shift = array(
+                        'from_time'=> $sel_date . ' ' .$item['from_time'],// $input_from,
+                        'to_time' => $sel_date . ' ' .$item['to_time'], //$input_to,
+                        'staff_id' => $staff_id,
+                        'organ_id' => $organ_id,
+                        'visible' => 1,
+                        'shift_type' => 1,
+                    );
+                    $this->shift_model->insertRecord($add_shift);
+                }
             }
 
             $shifts = $this->shift_model->getListByCond($cond);
@@ -534,6 +542,16 @@ class Apishifts extends WebController
 
         echo json_encode(['isSend'=>true]);
 
+    }
+
+    public function loadDailyDetail(){
+        $organ_id = $this->input->post('organ_id');
+        $select_date = $this->input->post('select_date');
+        $shifts = $this->shift_model->getDayShift($organ_id, $select_date);
+
+        $results['shifts'] = $shifts;
+
+        echo json_encode($results);
     }
 }
 ?>

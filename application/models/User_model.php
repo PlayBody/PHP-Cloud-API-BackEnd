@@ -63,9 +63,10 @@ class User_model extends Base_model
 
     }
 
-    public function checkEmailExists($email, $userId=''){
+    public function checkEmailExists($email, $company_id, $userId=''){
         $this->db->from($this->table);
         $this->db->where('user_email', $email);
+        $this->db->where('company_id', $company_id);
         if (!empty($userId)){
             $this->db->where('user_id <> '. $userId);
         }
@@ -75,9 +76,10 @@ class User_model extends Base_model
         return !empty($query->result_array());
     }
 
-    public function getUserByToken($token){
+    public function getUserByToken($token, $company_id){
         $this->db->from($this->table);
         $this->db->where('user_device_token', $token);
+        $this->db->where('company_id', $company_id);
         $query = $this->db->get();
         return $query->row_array();
     }

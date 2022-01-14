@@ -344,5 +344,21 @@ class Apiorgans extends WebController
         return;
     }
 
+    public function loadOrganShiftTime(){
+        $organ_id = $this->input->post('organ_id');
+        $select_date = $this->input->post('select_date');
+        $sdate = new DateTime($select_date);
+
+        $cond['organ_id'] = $organ_id;
+        $cond['weekday'] = $sdate->format('N');
+        $data = $this->organ_shift_time_model->getListByCond($cond);
+
+        $results = [];
+        $results['isLoad'] = true;
+        $results['data'] = $data;
+
+        echo json_encode($results);
+    }
+
 }
 ?>
