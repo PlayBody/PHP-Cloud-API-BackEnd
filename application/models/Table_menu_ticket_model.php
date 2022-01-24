@@ -26,7 +26,7 @@ class Table_menu_ticket_model extends Base_model
 
     function getTicketAmountByCond($cond)
     {
-        $this->db->select('sum(tickets.ticket_price*table_menu_tickets.count) as amount');
+        $this->db->select('sum(tickets.ticket_price02*table_menu_tickets.count) as amount');
 
         $this->db->from($this->table);
         $this->db->join('tickets', 'table_menu_tickets.ticket_id=tickets.id', 'left');

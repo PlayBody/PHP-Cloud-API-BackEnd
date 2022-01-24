@@ -22,6 +22,7 @@ class Apitables extends WebController
         $this->load->model('history_table_model');
         $this->load->model('history_table_menu_model');
         $this->load->model('history_table_menu_ticket_model');
+        $this->load->model('user_ticket_model');
     }
 
     public function loadTableRecord(){
@@ -292,6 +293,12 @@ class Apitables extends WebController
                     );
 
                     $this->history_table_menu_ticket_model->insertRecord($insert_ticket);
+
+                    $user_ticket = $this->user_ticket_model->getUserTicket(['user_id'=>$user_id, 'ticket_id'=>$ticket_item['ticket_id']]);
+                    if (!empty($user_ticket)){
+                        $user_ticket['count'] = $user_ticket['count']-$ticket_item['count'];
+                        $this->user_ticket_model->updateRecord($user_ticket, 'id');
+                    }
                 }
                 $this->table_menu_ticket_model->delete_force($item['table_menu_id'], 'table_menu_id');
             }

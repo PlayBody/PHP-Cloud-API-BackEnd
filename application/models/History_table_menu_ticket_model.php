@@ -24,8 +24,12 @@ class History_table_menu_ticket_model extends Base_model
         return $query->result_array();
     }
 
-    public function getTicketCount($cond){
-        $this->db->select("sum(history_table_menu_tickets.count) as ticket_count");
+    public function getTicketCount($cond, $is_get_amount=''){
+        if (empty($is_get_amount)){
+            $this->db->select("sum(history_table_menu_tickets.count) as ticket_count");
+        }else{
+            $this->db->select("sum(history_table_menu_tickets.count*tickets.ticket_price02) as sum_amount");
+        }
         $this->db->from($this->table);
         $this->db->join('tickets', 'tickets.id=history_table_menu_tickets.ticket_id', 'left');
         $this->db->join('history_table_menus', 'history_table_menus.history_table_menu_id=history_table_menu_tickets.history_table_menu_id', 'left');
@@ -48,6 +52,11 @@ class History_table_menu_ticket_model extends Base_model
         $query = $this->db->get();
 
         $result = $query->row_array();
-        return $result['ticket_count']==null ? '0' : $result['ticket_count'];
+
+        if (empty($is_get_amount)){
+            return $result['ticket_count']==null ? '0' : $result['ticket_count'];
+        }
+        return $result['sum_amount']==null ? '0' : $result['sum_amount'];
     }
+
 }

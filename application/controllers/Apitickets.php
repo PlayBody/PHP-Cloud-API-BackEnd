@@ -69,12 +69,21 @@ class Apitickets extends WebController
         $ticket_tax = $this->input->post('tax');
         $ticket_count = $this->input->post('ticket_count');
 
+        $price02 = 0;
+        if (intval($ticket_count)>0){
+            $tax_rate = 1;
+            $one_price = $ticket_price/$ticket_count;
+            if (!empty($ticket_tax)) $tax_rate+= $ticket_tax/100;
+            $price02 = intval($one_price*$tax_rate);
+        }
+
         if (empty($id)){
             $ticket = array(
                 'ticket_id' => $ticket_id,
 //                'ticket_title' => $ticket_title,
                 'company_id' => $company_id,
                 'ticket_price' => $ticket_price,
+                'ticket_price02' => $price02,
                 'ticket_cost' => $ticket_cost,
                 'ticket_tax' => $ticket_tax,
                 'ticket_count' => $ticket_count,
@@ -86,6 +95,7 @@ class Apitickets extends WebController
             $ticket['ticket_id'] = $ticket_id;
 //            $ticket['ticket_title'] = $ticket_title;
             $ticket['ticket_price'] = $ticket_price;
+            $ticket['ticket_price02'] = $price02;
             $ticket['ticket_cost'] = $ticket_cost;
             $ticket['ticket_tax'] = $ticket_tax;
             $ticket['ticket_count'] = $ticket_count;
@@ -124,6 +134,7 @@ class Apitickets extends WebController
             $tmp['ticket_id'] = $ticket['id'];
             $tmp['ticket_title'] = $ticket['ticket_name'];
             $tmp['ticket_price'] = $ticket['ticket_price'];
+            $tmp['ticket_price02'] = $ticket['ticket_price02'];
             $tmp['ticket_cost'] = $ticket['ticket_cost'];
             $tmp['ticket_tax'] = $ticket['ticket_tax'];
             $tmp['add_count'] = $ticket['ticket_count'];

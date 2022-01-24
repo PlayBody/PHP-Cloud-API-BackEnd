@@ -182,7 +182,7 @@ class Excelexport extends AdminController
                 $objPHPExcel->getActiveSheet()->SetCellValue('I'.$row, $this->history_table_model->getRejectCount($cur_date, '1'));
                 $objPHPExcel->getActiveSheet()->SetCellValue('J'.$row, $this->history_table_model->getRejectCount($cur_date, '0'));
                 $objPHPExcel->getActiveSheet()->SetCellValue('K'.$row, $this->history_table_model->getOrderMinusAmount($cur_date));
-
+                $objPHPExcel->getActiveSheet()->SetCellValue('L'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date], 1));
                 $objPHPExcel->getActiveSheet()->SetCellValue('N'.$row, '');
                 $objPHPExcel->getActiveSheet()->SetCellValue('O'.$row, '0');
                 $objPHPExcel->getActiveSheet()->SetCellValue('P'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>1]));
@@ -190,7 +190,7 @@ class Excelexport extends AdminController
                 $objPHPExcel->getActiveSheet()->SetCellValue('R'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>3, 'ticket_use_am'=>1]));
                 $objPHPExcel->getActiveSheet()->SetCellValue('S'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>3, 'ticket_use_pm'=>1]));
                 $objPHPExcel->getActiveSheet()->SetCellValue('T'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>4]));
-
+                $objPHPExcel->getActiveSheet()->SetCellValue('U'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>5]));
                 $objPHPExcel->getActiveSheet()->SetCellValue('V'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,1, $PAList));//attendance later
                 $objPHPExcel->getActiveSheet()->SetCellValue('W'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,1, $NPAList));//attendance later
                 $objPHPExcel->getActiveSheet()->SetCellValue('X'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,2));//attendance later
