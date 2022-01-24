@@ -233,4 +233,24 @@ order by tmp.time
         $query = $this->db->get();
         return $query->result_array();
     }
+
+    public function getShiftTimeListByAuth($date, $company_id, $auth, $paList){
+        $this->db->select('shifts.staff_id, shifts.from_time, shifts.to_time, TIMESTAMPDIFF(MINUTE,shifts.from_time,shifts.to_time) as shift_time');
+        $this->db->from($this->table);
+        $this->db->join('organs', 'organs.organ_id = shifts.organ_id', 'left');
+        $this->db->join('staffs', 'staffs.staff_id = shifts.staff_id', 'left');
+
+        $this->db->where("shifts.from_time like '".$date."%'");
+        $this->db->where("organs.company_id", $company_id);
+        $this->db->where("shifts.shift_type", 2);
+        $this->db->where("staffs.staff_auth", $auth);
+
+        if (!empty($paList)){
+            $this->db->where("staffs.staff_id in (".$paList.")");
+        }
+
+        $query = $this->db->get();
+
+        return $query->result_array();
+    }
 }

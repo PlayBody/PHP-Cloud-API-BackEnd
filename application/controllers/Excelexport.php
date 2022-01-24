@@ -14,10 +14,18 @@ class Excelexport extends AdminController
         $this->load->model('setting_model');
         $this->load->model('staff_model');
         $this->load->model('organ_model');
+
+        $this->load->model('history_table_model');
+        $this->load->model('history_table_menu_model');
+        $this->load->model('history_table_menu_ticket_model');
+
+        $this->load->model('staff_point_setting_model');
 //        $this->load->model('staff_organ_model');
 
         $this->header['page'] = 'excelexport';
         $this->header['title'] = 'Excelエスポート';
+
+        $this->load->library('excel');
     }
     
     /**
@@ -25,306 +33,212 @@ class Excelexport extends AdminController
      */
     public function index()
     {
-        $organ_list = $this->loadOrganByStaff($this->staff);
-
-        $date_year = $this->input->post('date_year');
-        $date_month = $this->input->post('date_month');
-        $organ_id = $this->input->post('organ_id');
-
-        $organ_id = empty($organ_id) ? '' : $organ_id;
-        $date_year = empty($date_year) ? date('Y') : $date_year;
-        $date_month = empty($date_month) ? date('m') : $date_month;
-
-//        $mode = $this->input->post('mode');
-//
-//        $search  =  $this->input->post('searchText') ? $this->input->post('searchText') : '';
-//
-//        $condition = array();
-//
-//        $condition['search'] = $search;
-//        $condition['member_id'] = $this->user['member_id'];
-//
-//        $this->load->library('pagination');
-//
-//        $all_count = $this->staff_model->getStaffList($condition, true);
-//
-//        $returns = $this->_paginationCompress( "staff/index", $all_count, 10 ,4);
-//
-//        $this->data['start_page']  = $returns["segment"]+1;
-//        $this->data['end_page']  = $returns["segment"]+$returns["page"];
-//        if($this->data['end_page']>$all_count) $this->data['end_page'] = $all_count;
-//        if(!$this->data['start_page']) $this->data['start_page'] = 1;
+//        $date_year = $this->input->post('date_year');
+//        $date_month = $this->input->post('date_month');
+//        $organ_id = $this->input->post('organ_id');
 //
 //
-//        $this->data['list'] = $this->staff_model->getStaffList($condition,false,$returns['page'],$returns['segment']);
-//        $this->data['search'] = $search;
-
-        $this->data['organ_list'] = $organ_list;
-        $this->data['date_year'] = $date_year;
-        $this->data['date_month'] = $date_month;
-        $this->data['organ_id'] = $organ_id;
+//        $organ_id = empty($organ_id) ? '' : $organ_id;
+//        $date_year = empty($date_year) ? date('Y') : $date_year;
+//        $date_month = empty($date_month) ? date('m') : $date_month;
+//
+//
+//        $this->data['organ_list'] = $organ_list;
+//        $this->data['date_year'] = $date_year;
+//        $this->data['date_month'] = $date_month;
+//        $this->data['organ_id'] = $organ_id;
 
         $this->_load_view("excelexport/index");
     }
 
-    public function edit($_id)
-    {
-        if($_id == null)
-        {
-            redirect('staff');
-        }
+    public function export1(){
+        $date_year = $this->input->post('date_year');
+        $date_month = $this->input->post('date_month');
 
-        $staff = $this->staff_model->getFromId($_id);
-        if(empty($staff))
-        {
-            redirect('staff');
-        }
-        $mode = $this->input->post('mode');
-        if($mode == 'save'){
+        $date_year = empty($date_year) ? date('Y') : $date_year;
+        $date_month = empty($date_month) ? date('m') : $date_month;
 
-           $this->data['staff'] = array(
-                'staff_id'=>$_id,
-                'title'=>$this->input->post('title'),
-                'mail_address'=>$this->input->post('mail_address'),
-                'password'=>$this->input->post('password'),
+        $mod = $this->input->post('mod');
+
+        if ($mod == 'export'){
+
+            $company_id=2;
+
+            $file_name = 'りらくーかん金山店予算_'.$date_year.'.'.$date_month.'_'.date('YmdHis').'.xls';
+            $objPHPExcel = new PHPExcel();
+            $objPHPExcel->setActiveSheetIndex(0);
+            $objPHPExcel->getActiveSheet()->setTitle('入力');
+            $objPHPExcel->getActiveSheet()->freezePane('D4');
+
+            $objPHPExcel->getActiveSheet()->getRowDimension(2)->setVisible(false);
+
+            $objPHPExcel->getActiveSheet()->setShowGridlines(true);
+            $border_thin = array(
+                'borders' => array(
+                    'allborders' => array('style' => PHPExcel_Style_Border::BORDER_THIN)
+                ),
+                'alignment' => array(
+                    'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_CENTER,
+                )
             );
 
-            $this->form_validation->set_rules('title','スタッフ名','trim|required|max_length[128]');
-            $this->form_validation->set_rules('mail_address','メールアドレス','trim|required|valid_email|max_length[128]');
-            $this->form_validation->set_rules('password','パスワード','required|max_length[20]');
-            $this->form_validation->set_rules('password_confirm','パスワード（確認）','trim|required|matches[password]|max_length[20]');
-
-            if($this->form_validation->run() === TRUE)
-            {
-                if($this->_check_email($this->data['staff']['mail_address'],$_id)){
-                    $this->data['staff']['update_date'] = date('Y-m-d H:i:s');
-                    if(!empty($this->data['staff']['password'])){
-                        $this->data['staff']['password'] = sha1($this->data['staff']['password']);
-                    }else{
-                        unset($this->data['staff']['password'] );
-                    }
-
-                    $result = $this->staff_model->edit($this->data['staff'],'staff_id');
-                    if($result){
-                        $this->session->set_flashdata('success', '正常に更新されました。');
-                        $this->session->set_flashdata('error', '');
-                    }else{
-                        $this->session->set_flashdata('success', '');
-                        $this->session->set_flashdata('error', '更新に失敗しました。');
-                    }
-                }else{
-                    $this->session->set_flashdata('error', '既に登録されているメールアドレスです。');
-                }
-            }else{
-            }
-
-        }else{
-            $this->data['staff'] = $staff;
-        }
-
-        $this->_load_view("staff/edit");
-
-    }
-    /**
-     * This function is used to load the user list
-     */
-    function add()
-    {
-        $mode = $this->input->post('mode');
-        if($mode == 'save'){
-
-            $this->data['staff'] = array(
-                'staff_id'=>NULL,
-                'title'=>$this->input->post('title'),
-                'mail_address'=>$this->input->post('mail_address'),
-                'password'=>$this->input->post('password'),
+            $objPHPExcel->getActiveSheet()->getStyle('D4:AI34')->applyFromArray(
+                array(
+                    'fill' => array(
+                        'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                        'color' => array('rgb' => 'F7F5AD')
+                    )
+                )
             );
 
-            $this->form_validation->set_rules('title','スタッフ名','trim|required|max_length[128]');
-            $this->form_validation->set_rules('mail_address','メールアドレス','trim|required|valid_email|max_length[128]');
-            $this->form_validation->set_rules('password','パスワード','required|max_length[20]');
-            $this->form_validation->set_rules('password_confirm','パスワード（確認）','trim|required|matches[password]|max_length[20]');
 
-            if($this->form_validation->run() === TRUE)
-            {
+            $objPHPExcel->getActiveSheet()->getStyle('B1:E1')->getFont()->setSize(24);
+            $objPHPExcel->getActiveSheet()->getStyle('B4:AI34')->getFont()->setSize(12);
 
-                if($this->_check_email($this->data['staff']['mail_address'])){
-                    $this->data['staff']['password'] = sha1($this->data['staff']['password']);
-                    $this->data['staff']['create_date'] = date('Y-m-d H:i:s');
-                    $this->data['staff']['update_date'] = date('Y-m-d H:i:s');
-                    $this->data['staff']['member_id'] = $this->user['member_id'];
-                    $this->data['staff']['attendance_status'] = 2;
-                    $result = $this->staff_model->add($this->data['staff']);
-                    if($result){
-                        $this->session->set_flashdata('success', '正常に登録されました。');
-                        $this->session->set_flashdata('error', '');
+            $objPHPExcel->getActiveSheet()
+                ->getStyle('E4:AH35')
+                ->getNumberFormat()
+                ->setFormatCode('#,##0');
 
-                        redirect('staff');
 
-                    }else{
-                        $this->session->set_flashdata('success', '');
-                        $this->session->set_flashdata('error', '更新に失敗しました。');
-                    }
-                }else{
-                    $this->session->set_flashdata('error', '既に登録されているメールアドレスです。');
+            for($i=1;$i<=34;$i++){
+                $objPHPExcel->getActiveSheet()->getStyleByColumnAndRow($i, 3)->applyFromArray($border_thin);
+            }
+
+
+            $objPHPExcel->getActiveSheet()->SetCellValue('P1', '利用');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AB1', '販売');
+
+            $objPHPExcel->getActiveSheet()->SetCellValue('B3', '日付');
+            $objPHPExcel->getActiveSheet()->SetCellValue('C3', '曜日');
+            $objPHPExcel->getActiveSheet()->SetCellValue('D3', '天候');
+            $objPHPExcel->getActiveSheet()->SetCellValue('E3', 'PM施術売上');
+            $objPHPExcel->getActiveSheet()->SetCellValue('F3', 'PM物販売上');
+            $objPHPExcel->getActiveSheet()->SetCellValue('G3', 'クレジット');
+            $objPHPExcel->getActiveSheet()->SetCellValue('H3', '電子マネー');
+            $objPHPExcel->getActiveSheet()->SetCellValue('I3', 'お断り');
+            $objPHPExcel->getActiveSheet()->SetCellValue('J3', '来店客数');
+            $objPHPExcel->getActiveSheet()->SetCellValue('K3', '施術値引');
+            $objPHPExcel->getActiveSheet()->SetCellValue('L3', '回数券値引');
+            $objPHPExcel->getActiveSheet()->SetCellValue('M3', '10分無料');
+            $objPHPExcel->getActiveSheet()->SetCellValue('N3', 'HPB');
+            $objPHPExcel->getActiveSheet()->SetCellValue('O3', 'ギフトカード');
+            $objPHPExcel->getActiveSheet()->SetCellValue('P3', '5回利用');
+            $objPHPExcel->getActiveSheet()->SetCellValue('Q3', '11回利用');
+            $objPHPExcel->getActiveSheet()->SetCellValue('R3', '朝割時間内');
+            $objPHPExcel->getActiveSheet()->SetCellValue('S3', '朝割時間外');
+            $objPHPExcel->getActiveSheet()->SetCellValue('T3', '90分利用');
+            $objPHPExcel->getActiveSheet()->SetCellValue('U3', '周年回数券');
+            $objPHPExcel->getActiveSheet()->SetCellValue('V3', 'ＰＡ');
+            $objPHPExcel->getActiveSheet()->SetCellValue('W3', '研修ＰＡ');
+            $objPHPExcel->getActiveSheet()->SetCellValue('X3', '店長');
+            $objPHPExcel->getActiveSheet()->SetCellValue('Y3', 'MG');
+            $objPHPExcel->getActiveSheet()->SetCellValue('Z3', '誤差＋');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AA3', '誤差－');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AB3', '5回');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AC3', '11回');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AD3', '朝回');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AE3', '90分券');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AF3', '周年回数券');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AG3', 'ケア分数');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AH3', '小口入金額');
+            $objPHPExcel->getActiveSheet()->SetCellValue('AI3', 'コメント');
+
+
+            $first_date = new DateTime($date_year.'-'.$date_month.'-1');
+            $diff1Month = new DateInterval('P1M');
+            $diff1Day = new DateInterval('P1D');
+            $first_date->add($diff1Month)->sub($diff1Day);
+            $to_row = $first_date->format('d');
+
+            $_date = new DateTime($date_year.'-'.$date_month.'-1');
+
+            $objPHPExcel->getActiveSheet()->mergeCells("B1:E1");
+            $objPHPExcel->getActiveSheet()->SetCellValue('B1', $_date->format('Y年n月'));
+
+
+            $PAList = $this->staff_point_setting_model->getPAList($company_id, 1, $_date->format('Y-m'));
+            $NPAList = $this->staff_point_setting_model->getPAList($company_id, 2, $_date->format('Y-m'));
+
+            $days=['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+            for ($i=1;$i<=$to_row;$i++){
+
+                for($ii=1;$ii<=34;$ii++){
+                    $objPHPExcel->getActiveSheet()->getStyleByColumnAndRow($ii, $i+3)->applyFromArray($border_thin);
                 }
-            }else{
-//                var_dump(validation_errors());;
+
+                $cur_date = $_date->format('Y-m-d');
+
+                $row = $i+3;
+                $objPHPExcel->getActiveSheet()->SetCellValue('B'.$row, $i);
+                $objPHPExcel->getActiveSheet()->SetCellValue('C'.$row, $days[$_date->format('N')]);
+
+
+                $objPHPExcel->getActiveSheet()->SetCellValue('E'.$row, $this->history_table_menu_model->getMenuSumAmount($cur_date, '1'));//coupon, ticket using later
+
+                $objPHPExcel->getActiveSheet()->SetCellValue('G'.$row, $this->history_table_model->getSumAmountOneDay($cur_date, '3'));
+                $objPHPExcel->getActiveSheet()->SetCellValue('H'.$row, $this->history_table_model->getSumAmountOneDay($cur_date, '2'));
+                $objPHPExcel->getActiveSheet()->SetCellValue('I'.$row, $this->history_table_model->getRejectCount($cur_date, '1'));
+                $objPHPExcel->getActiveSheet()->SetCellValue('J'.$row, $this->history_table_model->getRejectCount($cur_date, '0'));
+                $objPHPExcel->getActiveSheet()->SetCellValue('K'.$row, $this->history_table_model->getOrderMinusAmount($cur_date));
+
+                $objPHPExcel->getActiveSheet()->SetCellValue('N'.$row, '');
+                $objPHPExcel->getActiveSheet()->SetCellValue('O'.$row, '0');
+                $objPHPExcel->getActiveSheet()->SetCellValue('P'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>1]));
+                $objPHPExcel->getActiveSheet()->SetCellValue('Q'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>2]));
+                $objPHPExcel->getActiveSheet()->SetCellValue('R'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>3, 'ticket_use_am'=>1]));
+                $objPHPExcel->getActiveSheet()->SetCellValue('S'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>3, 'ticket_use_pm'=>1]));
+                $objPHPExcel->getActiveSheet()->SetCellValue('T'.$row, $this->history_table_menu_ticket_model->getTicketCount(['sel_date'=>$cur_date, 'ticket_master_id'=>4]));
+
+                $objPHPExcel->getActiveSheet()->SetCellValue('V'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,1, $PAList));//attendance later
+                $objPHPExcel->getActiveSheet()->SetCellValue('W'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,1, $NPAList));//attendance later
+                $objPHPExcel->getActiveSheet()->SetCellValue('X'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,2));//attendance later
+                $objPHPExcel->getActiveSheet()->SetCellValue('Y'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,3));//attendance later
+
+                $_date->add($diff1Day);
             }
 
+
+            header('Content-Type: application/vnd.ms-excel');
+            header('Content-Disposition: attachment;filename="'.$file_name.'');
+            header('Cache-Control: max-age=0');
+            $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel5');
+            $objWriter->save('php://output');
+
+//            $objWriter = new PHPExcel_Writer_HTML($objPHPExcel);
+//
+//            header('Content-Type: application/vnd.ms-excel');
+//            header('Content-Disposition: attachment;filename="'.$file_name.'"');
+//            $objWriter->save('php://output');
+//            die('s');
         }
 
-        $this->_load_view("staff/add");
 
+        $this->data['date_year'] = $date_year;
+        $this->data['date_month'] = $date_month;
+
+
+        $this->_load_view("excelexport/export1");
     }
 
-    /**
-     * This function is used to check whether email already exist or not
-     */
-    function _check_email($email,$staff_id=0)
-    {
-        if(empty($staff_id)){
-            $result = $this->staff_model->checkEmailExists($email);
-        } else {
-            $result = $this->staff_model->checkEmailExists($email, $staff_id);
-        }
+    private function getPermissionAttendanceTime($date, $company_id, $auth, $paList=''){
 
-        return empty($result) ? true: false;
+        if ($auth==1 && $paList=='') return 0;
+
+        $this->load->model('shift_model');
+        $this->load->model('attendance_model');
+
+        $shifts = $this->shift_model->getShiftTimeListByAuth($date, $company_id, $auth, $paList);
+
+        $sum_time = 0;
+        foreach ($shifts as $shift){
+            $sum_time += $shift['shift_time'];
+
+        }
+        return $sum_time;
     }
 
-    /**
-     * This function is used to delete the user using userId
-     * @return boolean $result : TRUE / FALSE
-     */
-    function delete()
-    {
-        $staff_id = $this->input->post('staff_id');
-
-        $result = $this->staff_model->delete($staff_id,'staff_id');
-
-        if ($result > 0) { echo(json_encode(array('status'=>TRUE))); }
-        else { echo(json_encode(array('status'=>FALSE))); }
-    }
-
-
-    /**
-     * This function is used to show users profile
-     */
-    function profile($active = "details")
-    {
-        $data["userInfo"] = $this->user_model->getUserInfoWithRole($this->vendorId);
-        $data["active"] = $active;
-        
-        $this->global['pageTitle'] = $active == "詳細" ? 'パスワード変更' : 'プロフィール編集';
-        $this->loadViews("profile", $this->global, $data, NULL);
-    }
-
-    /**
-     * This function is used to update the user details
-     * @param text $active : This is flag to set the active tab
-     */
-    function profileUpdate($active = "details")
-    {
-        $this->load->library('form_validation');
-            
-        $this->form_validation->set_rules('fname','Full Name','trim|required|max_length[128]');
-        $this->form_validation->set_rules('mobile','Mobile Number','required|min_length[10]');
-        $this->form_validation->set_rules('email','Email','trim|required|valid_email|max_length[128]|callback_emailExists');        
-        
-        if($this->form_validation->run() == FALSE)
-        {
-            $this->profile($active);
-        }
-        else
-        {
-            $name = strtolower($this->security->xss_clean($this->input->post('fname')));
-            $mobile = $this->security->xss_clean($this->input->post('mobile'));
-            $email = strtolower($this->security->xss_clean($this->input->post('email')));
-            
-            $userInfo = array('name'=>$name, 'email'=>$email, 'mobile'=>$mobile, 'updatedBy'=>$this->vendorId, 'updatedDtm'=>date('Y-m-d H:i:s'));
-            
-            $result = $this->user_model->editUser($userInfo, $this->vendorId);
-            
-            if($result == true)
-            {
-                $this->session->set_userdata('name', $name);
-                $this->session->set_flashdata('success', 'パスワードの更新に成功しました。');
-            }
-            else
-            {
-                $this->session->set_flashdata('error', 'パスワードの更新に失敗しました。');
-            }
-
-            redirect('profile/'.$active);
-        }
-    }
-
-    /**
-     * This function is used to change the password of the user
-     * @param text $active : This is flag to set the active tab
-     */
-    function changePassword($active = "changepass")
-    {
-        $this->load->library('form_validation');
-
-        $this->form_validation->set_rules('oldPassword','Old password','required|max_length[20]');
-        $this->form_validation->set_rules('newPassword','New password','required|max_length[20]');
-        $this->form_validation->set_rules('cNewPassword','Confirm new password','required|matches[newPassword]|max_length[20]');
-
-        if($this->form_validation->run() == FALSE)
-        {
-            $this->profile($active);
-        }
-        else
-        {
-            $oldPassword = $this->input->post('oldPassword');
-            $newPassword = $this->input->post('newPassword');
-
-            $resultPas = $this->user_model->matchOldPassword($this->vendorId, $oldPassword);
-
-            if(empty($resultPas))
-            {
-                $this->session->set_flashdata('nomatch', 'Your old password is not correct');
-                redirect('profile/'.$active);
-            }
-            else
-            {
-                $usersData = array('password'=>getHashedPassword($newPassword), 'updatedBy'=>$this->vendorId,
-                                'updatedDtm'=>date('Y-m-d H:i:s'));
-
-                $result = $this->user_model->changePassword($this->vendorId, $usersData);
-
-                if($result > 0) { $this->session->set_flashdata('success', 'パスワードの更新に成功しました。'); }
-                else { $this->session->set_flashdata('error', 'パスワードの更新に失敗しました。'); }
-
-                redirect('profile/'.$active);
-            }
-        }
-    }
-
-    /**
-     * This function is used to check whether email already exist or not
-     * @param {string} $email : This is users email
-     */
-    function emailExists($email)
-    {
-        $userId = $this->vendorId;
-        $return = false;
-
-        if(empty($userId)){
-            $result = $this->user_model->checkEmailExists($email);
-        } else {
-            $result = $this->user_model->checkEmailExists($email, $userId);
-        }
-
-        if(empty($result)){ $return = true; }
-        else {
-            $this->form_validation->set_message('emailExists', 'The {field} already taken');
-            $return = false;
-        }
-
-        return $return;
-    }
 }
 
 ?>

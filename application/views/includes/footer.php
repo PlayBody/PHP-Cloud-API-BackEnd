@@ -2,7 +2,7 @@
 
     <footer class="main-footer">
         <div class="pull-right hidden-xs">
-          <b>チャットボット</b>管理画面
+          <b>Visit-POS</b>管理画面
         </div>
         <strong>Copyright &copy; 2021 <a href="<?php echo base_url(); ?>"></a>.</strong> All rights reserved.
     </footer>

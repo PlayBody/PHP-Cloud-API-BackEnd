@@ -35,4 +35,5 @@ class Attendance_model extends Base_model
         return $query->result_array();
     }
 
+
 }

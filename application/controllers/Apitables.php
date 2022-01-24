@@ -18,8 +18,18 @@ class Apitables extends WebController
         $this->load->model('staff_model');
 
         $this->load->model('table_menu_model');
+        $this->load->model('table_menu_ticket_model');
         $this->load->model('history_table_model');
         $this->load->model('history_table_menu_model');
+        $this->load->model('history_table_menu_ticket_model');
+    }
+
+    public function loadTableRecord(){
+        $table_id = $this->input->post('table_id');
+
+        $results['table'] = $this->table_model->getFromId($table_id);
+
+        echo json_encode($results);
     }
 
     public function loadTables(){
@@ -152,7 +162,9 @@ class Apitables extends WebController
 
             $table_menu_amount = $this->table_menu_model->getMenuAmountByCond(['table_id'=>$table_id]);
 
-            $results['amount'] = $table_amount + $set_amount + $table_menu_amount;
+            $table_ticket_amount = $this->table_menu_ticket_model->getTicketAmountByCond(['table_id'=>$table_id]);
+
+            $results['amount'] = $table_amount + $set_amount + $table_menu_amount - $table_ticket_amount;
         }
 
         $menus = $this->table_menu_model->getMenuListByCond(['table_id'=>$table_id]);
@@ -269,7 +281,19 @@ class Apitables extends WebController
                     'menu_price' => $item['menu_price'],
                     'visible' => 1,
                 );
-                $this->history_table_menu_model->insertRecord($histoty_table_menu);
+                $histoty_table_menu_id = $this->history_table_menu_model->insertRecord($histoty_table_menu);
+
+                $tickets = $this->table_menu_ticket_model->getListByCond(['table_menu_id'=>$item['table_menu_id']]);
+                foreach ($tickets as $ticket_item){
+                    $insert_ticket=array(
+                        'history_table_menu_id' => $histoty_table_menu_id,
+                        'ticket_id' => $ticket_item['ticket_id'],
+                        'count'=> $ticket_item['count']
+                    );
+
+                    $this->history_table_menu_ticket_model->insertRecord($insert_ticket);
+                }
+                $this->table_menu_ticket_model->delete_force($item['table_menu_id'], 'table_menu_id');
             }
         }
         // add stamp
@@ -313,8 +337,9 @@ class Apitables extends WebController
     private function getTableAmount($organ_id, $table_id){
 
         $table_menu_amount = $this->table_menu_model->getMenuAmountByCond(['table_id'=>$table_id]);
+        $table_ticket_amount = $this->table_menu_ticket_model->getTicketAmountByCond(['table_id'=>$table_id]);
 
-        return $this->getTableChargeAmount($organ_id, $table_id) + $this->getSetAmount($organ_id, $table_id) + $table_menu_amount;
+        return $this->getTableChargeAmount($organ_id, $table_id) + $this->getSetAmount($organ_id, $table_id) + $table_menu_amount-$table_ticket_amount;
     }
 
     private function getTableChargeAmount($organ_id, $table_id){
@@ -465,6 +490,28 @@ class Apitables extends WebController
 
         echo(json_encode($results));
 
+    }
+
+    public function saveRejectTable(){
+        $table_id = $this->input->post('table_id');
+
+        $table = $this->table_model->getFromId($table_id);
+
+        $reject = array(
+            'organ_id' => $table['organ_id'],
+            'table_position' => $table['position'],
+            'table_title' => $table['table_title'],
+            'is_reject' => '1',
+            'start_time' => date('Y-m-d H:i:s'),
+            'end_time' => date('Y-m-d H:i:s'),
+            'visible' => '1'
+        );
+
+        $this->history_table_model->insertRecord($reject);
+
+        $results['isSave'] = true;
+
+        echo json_encode($results);
     }
 }
 ?>

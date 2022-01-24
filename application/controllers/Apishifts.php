@@ -48,7 +48,7 @@ class Apishifts extends WebController
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
         $mode =  $this->input->post('mode');
-        $pattern =  $this->input->post('pattern');
+        $pattern = $this->input->post('pattern');
 
 
         $cond['organ_id'] = $organ_id;
@@ -76,22 +76,30 @@ class Apishifts extends WebController
 
                 $condR = [];
                 $condR['organ_id'] = $organ_id;
-                $condR['inner_from_time'] = $sel_date . ' ' .$item['from_time'];
-                $condR['inner_to_time'] = $sel_date . ' ' .$item['to_time'];
+                $condR['from_time'] = $sel_date . ' 00:00:00';
+                $condR['to_time'] = $sel_date . ' 23:59:59';
 
-                $shift_count = $this->setting_count_shift_model->getListByCond($condR);
+                $shift_counts = $this->setting_count_shift_model->getListByCond($condR);
+                $item_from = $sel_date . ' ' . $item['from_time'];
+                $item_to = $sel_date . ' ' . $item['to_time'];
+                foreach ($shift_counts as $count){
+                    if ($item_from<$count['to_time'] && $item_to>$count['from_time']){
 
-                if (!empty($shift_count)){
-                    $add_shift = array(
-                        'from_time'=> $sel_date . ' ' .$item['from_time'],// $input_from,
-                        'to_time' => $sel_date . ' ' .$item['to_time'], //$input_to,
-                        'staff_id' => $staff_id,
-                        'organ_id' => $organ_id,
-                        'visible' => 1,
-                        'shift_type' => 1,
-                    );
-                    $this->shift_model->insertRecord($add_shift);
+                        $_from  = $item_from>=$count['from_time'] ? $item_from : $count['from_time'];
+                        $_to  = $item_to<=$count['to_time'] ? $item_to : $count['to_time'];
+                        $add_shift = array(
+                            'from_time'=> $_from,// $input_from,
+                            'to_time' => $_to, //$input_to,
+                            'staff_id' => $staff_id,
+                            'organ_id' => $organ_id,
+                            'visible' => 1,
+                            'shift_type' => 1,
+                        );
+
+                        $this->shift_model->insertRecord($add_shift);
+                    }
                 }
+
             }
 
             $shifts = $this->shift_model->getListByCond($cond);

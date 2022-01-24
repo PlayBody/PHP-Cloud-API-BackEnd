@@ -17,6 +17,7 @@ class Apimenus extends WebController
         $this->load->model('menu_variation_model');
         $this->load->model('menu_variation_back_model');
         $this->load->model('table_menu_model');
+        $this->load->model('table_menu_ticket_model');
         $this->load->model('organ_model');
     }
 
@@ -88,7 +89,7 @@ class Apimenus extends WebController
     public function registerReserveMenus(){
 
         $table_id = $this->input->post('table_id');
-        $data = $this->input->post('data');//'[{"title":"女性","price":"1800","quantity":"2","menu_id":"5","variation_id":null},{"title":"SD","price":"800","quantity":"3","menu_id":"18","variation_id":null}]';
+        $data = $this->input->post('data');//'[{"title":"ボディケア基本的30分コース","price":"2390","quantity":"2","menu_id":"46","variation_id":null,"use_tickets":{"10":"2"}}]';
 
         $results = [];
         if (empty($table_id)){
@@ -97,6 +98,11 @@ class Apimenus extends WebController
             return;
         }
 
+
+        $table_menus = $this->table_menu_model->getMenuListByCond(['table_id'=>$table_id]);
+        foreach ($table_menus as $item){
+            $this->table_menu_ticket_model->delete_force($item['table_menu_id'], 'table_menu_id');
+        }
         $this->table_menu_model->delete_force($table_id, 'table_id');
 
         $data = json_decode($data);
@@ -119,9 +125,24 @@ class Apimenus extends WebController
                 $insertData['variation_id'] = $record->variation_id;
             }
 
-            $insert = $this->table_menu_model->add($insertData);
+            $talbe_menu_id = $insert = $this->table_menu_model->add($insertData);
+
+            foreach ($record->use_tickets as $key=>$val) {
+                $insertTicket = [];
+                $insertTicket = array(
+                    'table_menu_id' => $talbe_menu_id,
+                    'ticket_id' => $key,
+                    'count' => $val,
+                );
+
+                $insert = $this->table_menu_ticket_model->insertRecord($insertTicket);
+
+            }
 
         }
+
+
+
         echo(json_encode(array('isSave'=>true)));
         exit(0);
     }

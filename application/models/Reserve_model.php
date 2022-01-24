@@ -189,9 +189,16 @@ class Reserve_model extends Base_model
     }
 
     public function getReserveList($cond){
+        $this->db->select($this->table.".*, 
+            IF(staffs.staff_nick is NULL, 
+                CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
+                staffs.staff_nick
+            ) as staff_name");
         $this->db->from($this->table);
+        $this->db->join('staffs', 'reserves.staff_id=staffs.staff_id', 'left');
+
         if (!empty($cond['staff_id']))
-            $this->db->where('staff_id', $cond['staff_id']);
+            $this->db->where($this->table.'.staff_id', $cond['staff_id']);
 
         if (!empty($cond['organ_id']))
             $this->db->where('organ_id', $cond['organ_id']);

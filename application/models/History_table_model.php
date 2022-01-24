@@ -18,6 +18,7 @@ class History_table_model extends Base_model
             WHERE history_tables.organ_id = '" . $organ_id . "'
             and history_tables.start_time>='" . $from_date . " 00:00:00' and history_tables.start_time<='" . $to_date . " 23:59:59'
             and history_tables.end_time>='" . $from_date . " 00:00:00' and history_tables.end_time<='" . $to_date . " 23:59:59'
+            and is_reject is Null
         ";
 
         $query = $this->db->query($sql);
@@ -75,5 +76,47 @@ and menu_variation_backs.staff_id=$staff_id";
 
 
         return empty($results['back_amount']) ? 0 : $results['back_amount'];
+    }
+
+    public function getSumAmountOneDay($date, $pay_method=''){
+        $this->db->select("sum(amount) as sum_amount");
+        $this->db->from($this->table);
+        $this->db->where("end_time like '".$date."%'");
+        if (!empty($pay_method)){
+            $this->db->where("pay_method", $pay_method);
+        }
+
+        $query = $this->db->get();
+        $row = $query->row_array();
+        return empty($row['sum_amount']) ? 0 : $row['sum_amount'];
+    }
+
+    public function getRejectCount($date, $is_reject=''){
+        $this->db->select("count(order_table_history_id) as reject_count");
+        $this->db->from($this->table);
+        $this->db->where("end_time like '".$date."%'");
+
+        if ($is_reject=='1')
+            $this->db->where("is_reject", $is_reject);
+
+        if ($is_reject=='0')
+            $this->db->where("is_reject is Null");
+
+        $query = $this->db->get();
+        $row = $query->row_array();
+        return empty($row['reject_count']) ? 0 : $row['reject_count'];
+    }
+
+    public function getOrderMinusAmount($date){
+        $this->db->select("sum(history_table_menus.menu_price*history_table_menus.quantity) as sum_amount");
+        $this->db->from($this->table);
+        $this->db->join('history_table_menus', 'history_tables.order_table_history_id=history_table_menus.history_table_id', 'left');
+
+        $this->db->where($this->table.".end_time like '".$date."%'");
+        $this->db->where("history_table_menus.menu_price < 0");
+
+        $query = $this->db->get();
+        $row = $query->row_array();
+        return empty($row['sum_amount']) ? 0 : $row['sum_amount']*-1;
     }
 }
