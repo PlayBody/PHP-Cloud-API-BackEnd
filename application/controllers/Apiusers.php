@@ -227,31 +227,33 @@ class Apiusers extends WebController
         }
 
 //        $s = '[{"id":"","user_id":"null","ticket_id":"1","count":"0","is_reset":"0","reset_time_type":"0","reset_time_value":"0","reset_count":"0"},{"id":"","user_id":"null","ticket_id":"6","count":"0","is_reset":"0","reset_time_type":"0","reset_time_value":"0","reset_count":"0"}]';
-        $user_tickets = json_decode($this->input->post('user_tickets'), true);
+        if (!empty($this->input->post('user_tickets'))) {
+            $user_tickets = json_decode($this->input->post('user_tickets'), true);
 //        $user_tickets = json_decode($s, true);
-        foreach ($user_tickets as $user_ticket){
-            if (empty($user_ticket['id'])){
-                $ticket = array(
-                    'user_id' => $user_ticket['user_id'],
-                    'ticket_id' => $user_ticket['ticket_id'],
-                    'count' => $user_ticket['count'],
-                    'is_reset' => $user_ticket['is_reset'],
-                    'reset_time_type' => $user_ticket['reset_time_type'],
-                    'reset_time_value' => $user_ticket['reset_time_value'],
-                    'reset_count' => $user_ticket['reset_count'],
-                );
+            foreach ($user_tickets as $user_ticket) {
+                if (empty($user_ticket['id'])) {
+                    $ticket = array(
+                        'user_id' => $user_ticket['user_id'],
+                        'ticket_id' => $user_ticket['ticket_id'],
+                        'count' => $user_ticket['count'],
+                        'is_reset' => $user_ticket['is_reset'],
+                        'reset_time_type' => $user_ticket['reset_time_type'],
+                        'reset_time_value' => $user_ticket['reset_time_value'],
+                        'reset_count' => $user_ticket['reset_count'],
+                    );
 
-                $this->user_ticket_model->insertRecord($ticket);
-            }else{
-                $ticket = $this->user_ticket_model->getFromId($user_ticket['id']);
-                $ticket['user_id'] = $user_ticket['user_id'];
-                $ticket['ticket_id'] = $user_ticket['ticket_id'];
-                $ticket['count'] = $user_ticket['count'];
-                $ticket['is_reset'] = $user_ticket['is_reset'];
-                $ticket['reset_time_type'] = $user_ticket['reset_time_type'];
-                $ticket['reset_time_value'] = $user_ticket['reset_time_value'];
-                $ticket['reset_count'] = $user_ticket['reset_count'];
-                $this->user_ticket_model->updateRecord($ticket, 'id');
+                    $this->user_ticket_model->insertRecord($ticket);
+                } else {
+                    $ticket = $this->user_ticket_model->getFromId($user_ticket['id']);
+                    $ticket['user_id'] = $user_ticket['user_id'];
+                    $ticket['ticket_id'] = $user_ticket['ticket_id'];
+                    $ticket['count'] = $user_ticket['count'];
+                    $ticket['is_reset'] = $user_ticket['is_reset'];
+                    $ticket['reset_time_type'] = $user_ticket['reset_time_type'];
+                    $ticket['reset_time_value'] = $user_ticket['reset_time_value'];
+                    $ticket['reset_count'] = $user_ticket['reset_count'];
+                    $this->user_ticket_model->updateRecord($ticket, 'id');
+                }
             }
         }
 //        if (!empty($user_id) && (!empty($this->input->post('is_reset_ticket')) || $this->input->post('is_reset_ticket')=='0' )){

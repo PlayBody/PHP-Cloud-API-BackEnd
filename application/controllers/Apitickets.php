@@ -63,11 +63,13 @@ class Apitickets extends WebController
         $ticket_id = $this->input->post('ticket_id');
         $company_id = $this->input->post('company_id');
 
-//        $ticket_title = $this->input->post('title');
+        $ticket_title = $this->input->post('ticket_title');
+        $ticket_detail = $this->input->post('ticket_detail');
         $ticket_price = $this->input->post('price');
         $ticket_cost = $this->input->post('cost');
         $ticket_tax = $this->input->post('tax');
         $ticket_count = $this->input->post('ticket_count');
+        $ticket_image_url = $this->input->post('ticket_image');
 
         $price02 = 0;
         if (intval($ticket_count)>0){
@@ -82,6 +84,9 @@ class Apitickets extends WebController
                 'ticket_id' => $ticket_id,
 //                'ticket_title' => $ticket_title,
                 'company_id' => $company_id,
+                'ticket_title' => $ticket_title,
+                'ticket_detail' => $ticket_detail,
+                'ticket_image' => empty($ticket_image_url) ? null : $ticket_image_url,
                 'ticket_price' => $ticket_price,
                 'ticket_price02' => $price02,
                 'ticket_cost' => $ticket_cost,
@@ -93,7 +98,9 @@ class Apitickets extends WebController
         }else{
             $ticket = $this->ticket_model->getFromId($id);
             $ticket['ticket_id'] = $ticket_id;
-//            $ticket['ticket_title'] = $ticket_title;
+            $ticket['ticket_title'] = $ticket_title;
+            $ticket['ticket_detail'] = $ticket_detail;
+            if (!empty($ticket_image_url))  $ticket['ticket_image']= $ticket_image_url;
             $ticket['ticket_price'] = $ticket_price;
             $ticket['ticket_price02'] = $price02;
             $ticket['ticket_cost'] = $ticket_cost;
@@ -116,7 +123,7 @@ class Apitickets extends WebController
             echo json_encode($results);
             return;
         }
-        $this->ticket_model->delete_force($ticket_id, 'ticket_id');
+        $this->ticket_model->delete_force($ticket_id, 'id');
         $results['isDelete'] = true;
 
         echo json_encode($results);
@@ -132,7 +139,8 @@ class Apitickets extends WebController
         foreach ($tickets as $ticket) {
             $tmp = [];
             $tmp['ticket_id'] = $ticket['id'];
-            $tmp['ticket_title'] = $ticket['ticket_name'];
+            $tmp['ticket_name'] = $ticket['ticket_name'];
+            $tmp['ticket_title'] = $ticket['ticket_title'];
             $tmp['ticket_price'] = $ticket['ticket_price'];
             $tmp['ticket_price02'] = $ticket['ticket_price02'];
             $tmp['ticket_cost'] = $ticket['ticket_cost'];
@@ -154,6 +162,40 @@ class Apitickets extends WebController
         $results['tickets'] = $user_tickets;
 
         echo json_encode($results);
+    }
+
+
+    function uploadPhoto() {
+
+        $results = array();
+
+        // user photo
+        $image_path = "assets/images/tickets/";
+        if(!is_dir($image_path)) {
+            mkdir($image_path);
+        }
+        $image_url  = base_url().$image_path;
+        $fileName = $_FILES['picture']['name'];
+        $config = array(
+            'upload_path'   => $image_path,
+            'allowed_types' => '*',
+            'overwrite'     => 1,
+            'file_name' 	=> $fileName
+        );
+        $this->load->library('upload', $config);
+        $this->upload->initialize($config);
+
+        $results['isUpload'] = false;
+        if (!empty($_FILES['picture']['name'])) {
+            if ($this->upload->do_upload('picture')) {
+                $file_url = $image_url.$this->upload->file_name;
+                $results['isUpload'] = true;
+                $results['picture'] = $file_url;
+            }
+        }
+
+        echo json_encode($results);
+
     }
 }
 ?>
