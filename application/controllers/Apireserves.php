@@ -32,12 +32,6 @@ class Apireserves extends WebController
 
     public function loadUserReserveData()
     {
-//        $user_id = '66';//$this->input->post('user_id');
-//        $organ_id = '1';//$this->input->post('organ_id');
-//        $staff_id = '12';// $this->input->post('staff_id');
-//        $from_date ='2021-11-15';// $this->input->post('from_date');
-//        $to_date = '2021-11-21';//$this->input->post('to_date');
-
 
         $user_id = $this->input->post('user_id');
         $organ_id = $this->input->post('organ_id');
@@ -53,26 +47,35 @@ class Apireserves extends WebController
         }
         $staff_list = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3, false);
 
+        $organ_time = $this->organ_time_model->getOrganFromToTime($organ_id);
+
+        $organ_from_time = empty($organ_time['from_time']) ? "00:00:00" : ($organ_time['from_time'].":00");
+        $organ_to_time = (empty($organ_time['to_time']) || $organ_time['to_time'] == '24:00') ? "23:59:59" : ($organ_time['to_time'].":00");
 
         $results = [];
         $regions = [];
 
-        $cur_date = $from_date.' '.'00:00:00';
+        $cur_date = $from_date.' '.$organ_from_time;
 
-        while($cur_date<=$to_date.' 23:59:59'){
-            $tmp = [];
-            $tmp['time'] = $cur_date;
-            $tmp['type'] = $this->getReserveTimeStatus($organ_id, $staff_id, $cur_date);
-
-            $regions[] = $tmp;
-            $diff1Day = new DateInterval('PT30M');
+        while($cur_date<=$to_date.' '. $organ_to_time){
             $curDateTime = new DateTime($cur_date);
+            $base = $curDateTime->format("H:i:s");
+            if ($base>=$organ_from_time && $base < $organ_to_time){
+                $tmp = [];
+                $tmp['time'] = $cur_date;
+                $tmp['type'] = $this->getReserveTimeStatus($organ_id, $staff_id, $cur_date);
+                $regions[] = $tmp;
+            }
+
+            $diff1Day = new DateInterval('PT30M');
             $curDateTime->add($diff1Day);
             $cur_date = $curDateTime->format("Y-m-d H:i:s");
         }
         $results['isLoad'] = true;
         $results['regions'] = $regions;
         $results['staffs'] = $staff_list;
+        $results['organ_from_time'] = $organ_from_time;
+        $results['organ_to_time'] = $organ_to_time;
 
         $reserves = $this->reserve_model->getUserReserveData($from_date." 00:00:00", $to_date." 23:59:59", $user_id);
         $results['reserves'] = $reserves;
@@ -286,13 +289,22 @@ class Apireserves extends WebController
         $reserve_count = $this->reserve_model->getReserveCount($organ_id, $sel_time);
         if ($reserve_count>=$table_count) return '3';
 
-        if (empty($staff_id)) return '3';
-
         $staff_reserve_count = $this->reserve_model->getReserveCount($organ_id, $sel_time, $staff_id);
-        if ($staff_reserve_count > 0) return '3';
 
-        $isRejectActive = $this->shift_model->isStaffRejectReserve($organ_id, $staff_id, $sel_time);
-        if ($isRejectActive) return '2';
+       if (empty($staff_id)) {
+           $activeStaffCount = $this->shift_model->getActiveStaffCount($organ_id, $sel_time);
+            if ($reserve_count>=$activeStaffCount-$staff_reserve_count){
+                return '2';
+            }
+       }else{
+           if ($staff_reserve_count > 0) return '3';
+
+           $isRejectActive = $this->shift_model->isStaffRejectReserve($organ_id, $staff_id, $sel_time);
+           if ($isRejectActive) return '2';
+
+           $isActive = $this->shift_model->isStaffActiveReserve($organ_id, $staff_id, $sel_time);
+           if (!$isActive) return '2';
+       }
 
         return '1';
     }

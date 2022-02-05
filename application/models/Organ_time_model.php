@@ -43,5 +43,14 @@ class Organ_time_model extends Base_model
         return !empty($query->row_array());
     }
 
+    public function getOrganFromToTime($organ_id){
+        $this->db->select('min(from_time) as from_time, max(to_time) as to_time');
+        $this->db->from($this->table);
+        $this->db->where('organ_id', $organ_id);
+        $query = $this->db->get();
+
+        return $query->row_array();
+    }
+
 
 }

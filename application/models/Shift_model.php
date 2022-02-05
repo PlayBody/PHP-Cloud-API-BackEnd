@@ -80,6 +80,11 @@ class Shift_model extends Base_model
         if (!empty($cond['to_time'])){
             $this->db->where("to_time <='". $cond['to_time'] ."'");
         }
+
+        if (!empty($cond['shift_type'])){
+            $this->db->where("shift_type", $cond['shift_type']);
+        }
+
         if (!empty($cond['select_datetime'])){
             $this->db->where("from_time <='". $cond['select_datetime'] ."'");
             $this->db->where("to_time >'". $cond['select_datetime'] ."'");
@@ -199,6 +204,20 @@ order by tmp.time
 
         $query = $this->db->get();
         return !empty($query->row_array());
+    }
+
+    public function getActiveStaffCount($organ_id, $time){
+        $this->db->select('count(shift_id) as staff_count');
+        $this->db->from($this->table);
+
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("from_time<='".$time."' and to_time>'".$time."'");
+
+        $this->db->where('shift_type', 2);
+
+        $query = $this->db->get();
+        $result = $query->row_array();
+        return empty($result['staff_count']) ? 0 : $result['staff_count'];
     }
 
     public function isStaffRejectReserve($organ_id, $staff_id, $time){

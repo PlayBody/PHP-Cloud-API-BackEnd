@@ -60,6 +60,7 @@
                 <div class="box">
                     <ul class="excel_export_list">
                         <li><a href="<?php echo base_url(); ?>excelexport/export1">金山店予算</a></li>
+                        <li><a href="<?php echo base_url(); ?>excelexport/export2">手温イオンモール木曽川店予算</a></li>
 
                     </ul>
                 </div><!-- /.box -->

@@ -419,7 +419,7 @@ class Apishifts extends WebController
 
         $update_value = '4';
         if ($shift_type=='1') $update_value = '2';
-        if ($shift_type=='-2') $update_value = '-3';
+        if ($shift_type=='-4') $update_value = '-3';
 
         if (empty($shift_id)){
             $shift = array(
@@ -558,6 +558,36 @@ class Apishifts extends WebController
         $shifts = $this->shift_model->getDayShift($organ_id, $select_date);
 
         $results['shifts'] = $shifts;
+
+        echo json_encode($results);
+    }
+
+    public function applyOrRejectRequestShift   (){
+        $organ_id = $this->input->post('organ_id');
+        $staff_id = $this->input->post('staff_id');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+        $update_shift_type = $this->input->post('update_shift_type');
+
+        $shift = $this->shift_model->getRecordByCond([
+            'staff_id' => $staff_id,
+            'organ_id' => $organ_id,
+            'from_time' => $from_time,
+            'to_time' => $to_time,
+            'shit_type' => '4'
+        ]);
+
+        if (empty($shift)){
+            $results['isUpdate'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $shift['shift_type'] = $update_shift_type;
+
+        $this->shift_model->updateRecord($shift, 'shift_id');
+
+        $results['isUpdate'] = true;
 
         echo json_encode($results);
     }
