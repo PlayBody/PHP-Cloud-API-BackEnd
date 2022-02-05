@@ -93,7 +93,7 @@ class Apishifts extends WebController
                             'staff_id' => $staff_id,
                             'organ_id' => $organ_id,
                             'visible' => 1,
-                            'shift_type' => 1,
+                            'shift_type' => empty($item['shift_type']) ? 1 : $item['shift_type'],
                         );
 
                         $this->shift_model->insertRecord($add_shift);

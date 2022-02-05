@@ -146,6 +146,7 @@ class Apishiftsettings extends WebController
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
         $pattern = $this->input->post('pattern');
+        $shift_type = $this->input->post('shift_type');
         if ($to_time=='24:00:00')  $to_time =  '23:59:59';
 
         $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id, 'weekday'=>$weekday]);
@@ -187,6 +188,7 @@ class Apishiftsettings extends WebController
                 'organ_id' => $organ_id,
                 'weekday' => $weekday,
                 'pattern' => $pattern,
+                'shift_type' => $shift_type,
                 'from_time' => $from_time,
                 'to_time' => $to_time,
             );
@@ -196,6 +198,7 @@ class Apishiftsettings extends WebController
             $shift = $this->setting_init_shift_model->getFromId($setting_id);
             $shift['from_time'] = $from_time;
             $shift['to_time'] = $to_time;
+            $shift['shift_type'] = $shift_type;
 
             $this->setting_init_shift_model->updateRecord($shift);
         }
