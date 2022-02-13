@@ -33,7 +33,7 @@ class Apimessages extends WebController
             echo json_encode($results);
             return;
         }
-        
+
         $messageUsers = $this->message_model->getMessageUserLists($company_id, $search);
 
         $results['isLoad'] = true;
@@ -263,11 +263,11 @@ class Apimessages extends WebController
 
     public function sendtest(){
 
-        $company_id = 1;
-        $user_id = 73;
-        $staff_id = 3;
+        $company_id = 4;
+        $user_id = 123;
+        $staff_id = 2;
         $content = 'test';
-        $type = '1';
+        $type = '2';
         $file_type = $this->input->post('file_type');
         $file_url = $this->input->post('file_url');
         $file_name = $this->input->post('file_name');
@@ -299,7 +299,7 @@ class Apimessages extends WebController
         $title = '';
         if ($type=='2'){
             $staff = $this->staff_model->getFromId($staff_id);
-            $title = ($staff['staff_nick'] == null ? ($staff['staff_first_name'] . ' ' . $staff['staff_last_name']) : $staff['staff_nick']) . 'æ§˜ã‹ã‚‰ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒå±Šãã¾ã—ãŸã€‚';
+            $title = ($staff['staff_nick'] == null ? ($staff['staff_first_name'] . ' ' . $staff['staff_last_name']) : $staff['staff_nick']) . '様からメッセージが届きました。';
         }
 
         $is_fcm = false;
@@ -317,11 +317,11 @@ class Apimessages extends WebController
                 'group_key' =>$group_key,
             );
 
-            $this->message_model->insertRecord($message);
+            // $this->message_model->insertRecord($message);
 
             if ($type=='1'){
                 $user = $this->user_model->getFromId($user['user_id']);
-                $title = $user['user_first_name'] . ' ' . $user['user_last_name'].'æ§˜ã‹ã‚‰ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãŒå±Šãã¾ã—ãŸã€‚';
+                $title = $user['user_first_name'] . ' ' . $user['user_last_name'].'様からメッセージが届きました。';
 
                 $receive_staffs = $this->staff_model->getStaffList(['company_id'=>$company_id, 'staff_auth'=>'2']);
                 foreach ($receive_staffs as $receive_staff){
@@ -329,6 +329,7 @@ class Apimessages extends WebController
                 }
 
             }else{
+
                 $is_fcm = $this->sendNotifications('message', $title, $content, $company_id, $user['user_id'], '2');
             }
 

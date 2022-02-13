@@ -68,7 +68,7 @@ class Apicarts extends WebController
 
 
     public function updateCart(){
-        $user_id = 143;$this->input->post('user_id');
+        $user_id = $this->input->post('user_id');
 
         $cart = $this->cart_model->getRecordByCond(['user_id'=>$user_id, 'visible'=>'1', 'cart_type'=>'1']);
         if (empty($cart)){

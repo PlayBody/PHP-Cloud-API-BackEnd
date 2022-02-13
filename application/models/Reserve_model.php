@@ -32,7 +32,7 @@ class Reserve_model extends Base_model
 
     	$this->db->where('organ_id', $organ_id);
 
-    	$this->db->where("reserve_time<='". $time. "' and reserve_exit_time>'".$time."'");
+    	$this->db->where("reserve_time<='". $time. "' and ADDDATE(reserve_exit_time, INTERVAL sum_interval MINUTE) >'".$time."'");
     	if (!empty($staff_id)){
             $this->db->where("staff_id", $staff_id);
         }

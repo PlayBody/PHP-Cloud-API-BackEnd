@@ -20,6 +20,7 @@ class Apireserves extends WebController
         $this->load->model('company_model');
         $this->load->model('staff_model');
         $this->load->model('user_model');
+        $this->load->model('menu_model');
 
 
         $this->load->model('reserve_model');
@@ -111,6 +112,7 @@ class Apireserves extends WebController
 //        $end_time = $this->input->post('end_time');
         $reserve_menu = $this->input->post('reserve_menu');
         $coupon_id = $this->input->post('coupon_id');
+        $pay_method = $this->input->post('pay_method');
         $results = [];
         if (empty($organ_id) || empty($user_id)){
             $results['isSave'] = false;
@@ -126,7 +128,6 @@ class Apireserves extends WebController
 
         }
 
-
         $reserve = array(
             'user_id' => $user_id,
             'organ_id' => $organ_id,
@@ -134,6 +135,7 @@ class Apireserves extends WebController
             'reserve_time' => $reserve_start_time,
             'reserve_exit_time' => $reserve_end_time,
             'coupon_id' => empty($coupon_id)?null:$coupon_id,
+            'pay_method' => empty($pay_method)?null:$pay_method,
 //            'end_time' => $end_time,
             'reserve_status'=>1,
             'visible' => 1,
@@ -148,8 +150,11 @@ class Apireserves extends WebController
         }
 
         $data = json_decode($reserve_menu);
-
+        $interval = 0;
         foreach ($data as $record) {
+            $menu = $this->menu_model->getFromId($record->menu_id);
+            $menu_interval = empty($menu['menu_interval']) ? 0 : $menu['menu_interval'];
+            if ($interval<$menu_interval) $interval = $menu_interval;
             $insertData = [];
             $insertData = array(
                 'reserve_id' => $reserve_id,
@@ -159,8 +164,32 @@ class Apireserves extends WebController
             $insert = $this->reserve_menu_model->insertRecord($insertData);
         }
 
+        $reserveData = $this->reserve_model->getFromId($reserve_id);
+        $reserveData['sum_interval'] = $interval;
+        $this->reserve_model->updateRecord($reserveData, 'reserve_id');
+
+        if (!empty($staff_id)){
+            $results['isFCM'] = $this->sendNotificationToStaffReserveRequest($user_id, $staff_id, $reserve_start_time, $reserve_end_time);
+        }
+
         $results['isSave'] = true;
         echo json_encode($results);
+
+    }
+
+    private function sendNotificationToStaffReserveRequest($user_id, $staff_id, $from_time, $to_time){
+        $user = $this->user_model->getFromId($user_id);
+        $title = $user['user_first_name'] . ' ' . $user['user_last_name'] .  '様から施術が予約されました。';
+
+
+        $fdate = new DateTime($from_time);
+        $tdate = new DateTime($to_time);
+
+        $content = $fdate->format('n月j日 H時i分').'から'. $tdate->format('H時i分') . 'まで施術が予約されました。';
+
+        $is_fcm = $this->sendNotifications('reserve', $title, $content, $staff_id, $user_id, '1');
+
+        return true;
 
     }
 

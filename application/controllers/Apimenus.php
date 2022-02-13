@@ -252,6 +252,7 @@ class Apimenus extends WebController
         $menu_tax = $this->input->post('tax');
         $is_user_menu = empty($this->input->post('is_user_menu')) ? null : $this->input->post('is_user_menu');
         $menu_time = empty($this->input->post('menu_time')) ? null : $this->input->post('menu_time');
+        $menu_interval = empty($this->input->post('menu_interval')) ? null : $this->input->post('menu_interval');
 
         if (empty($organ_id)){
             $results['isSave'] = false;
@@ -268,6 +269,7 @@ class Apimenus extends WebController
                 'menu_tax' => $menu_tax,
                 'is_user_menu' => $is_user_menu,
                 'menu_time' => $menu_time,
+                'menu_interval' => $menu_interval,
                 'sort_no' => $this->menu_model->getMaxOrder($organ_id),
                 'visible'=>'1',
             );
@@ -282,6 +284,7 @@ class Apimenus extends WebController
             $variation['menu_tax'] = $menu_tax;
             $variation['is_user_menu'] = $is_user_menu;
             $variation['menu_time'] = $menu_time;
+            $variation['menu_interval'] = $menu_interval;
 
             $this->menu_model->updateRecord($variation, 'menu_id');
 

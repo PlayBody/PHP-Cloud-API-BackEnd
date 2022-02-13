@@ -408,6 +408,30 @@ class WebController extends CI_Controller
         return true;
     }
 
+    public function sendMailMessage($title, $body, $receive_mail = 'playbody2021@gmail.com'){
+        try {
+            $config = array(
+                'protocol' => 'smtp', // 'mail', 'sendmail', or 'smtp'
+                'smtp_host' => 'mail.visit-pos.net',
+                'smtp_port' => 587,
+                'smtp_user' => 'system@visit-pos.net',
+                'smtp_pass' => '1#TQUr*zX-gF]Xx)',
+            );
+
+            $this->load->library('email');
+
+            $this->email->initialize($config);
+
+            $this->email->from('system@visit-pos.net', 'Visit System');
+            $this->email->to($receive_mail);
+            $this->email->subject($title);
+            $this->email->message($body);
+            $this->email->send();
+
+        }catch (Exception $e){
+            return false;
+        }
+    }
 
     public function sendNotifications($n_type, $title, $content, $sender_id, $receiver_id, $receiver_type){
 
@@ -415,22 +439,30 @@ class WebController extends CI_Controller
         if ($n_type=='message') $notification_type = 1;
         if ($n_type=='shift_require') $notification_type = 2;
         if ($n_type=='add_point_request') $notification_type = 3;
+        if ($n_type=='shift_request') $notification_type = 4;
+        if ($n_type=='reserve') $notification_type = 5;
+        if ($n_type=='shift_accept') $notification_type = 6;
 
         $isFcm = false;
 
         $this->load->model('device_token_model');
         $this->load->model('user_model');
+        $mail_address="";
         if ($receiver_type=='1'){
             $staff_data = $this->device_token_model->getListByCondition(['user_id'=>$receiver_id, 'user_type'=>'1']);
+            $staff = $this->staff_model->getFromId($receiver_id);
             if (empty($staff_data)) return $isFcm;
             $token_data = $staff_data[0]['device_token'];
+            $mail_address = $staff['staff_mail'];
         }
 
         if ($receiver_type=='2'){
             $user = $this->user_model->getFromId($receiver_id);
             if (empty($user)) return $isFcm;
             $token_data = $user['user_device_token'];
+            $mail_address = $user['user_email'];
         }
+
         if (!empty($token_data)){
             $this->load->model('notification_model');
             $cond = [];
@@ -457,6 +489,7 @@ class WebController extends CI_Controller
             $badge = $this->notification_model->getBageCount($receiver_id, $receiver_type);
 
             $isFcm = $this->sendFireBaseMessage($n_type, $sender_id, $title, $content, $token_data, $badge);
+            $isMail = $this->sendMailMessage($title, $content, $mail_address);
         }
 
         return $isFcm;

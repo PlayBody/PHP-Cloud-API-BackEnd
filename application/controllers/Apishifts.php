@@ -265,7 +265,9 @@ class Apishifts extends WebController
 //        }
 
         $results=[];
-
+//        if ($shift['shift_type']=='1'){
+//            $results['isSend'] = $this->sendNotificationToStaffShiftRequest($organ_id, $staff_id,  $shift['from_time'], $shift['to_time']);
+//        }
         $results['isUpdate'] = true;
         echo json_encode($results);
         return;
@@ -410,6 +412,7 @@ class Apishifts extends WebController
     }
 
     public function saveShiftComplete(){
+        $cur_staff_id = $this->input->post('cur_staff_id');
         $organ_id = $this->input->post('organ_id');
         $staff_id = $this->input->post('staff_id');
         $shift_id = $this->input->post('shift_id');
@@ -437,8 +440,31 @@ class Apishifts extends WebController
             $this->shift_model->updateRecord($shift, 'shift_id');
         }
 
+        if ($staff_id!=$cur_staff_id){
+            if ($update_value==4 || $update_value==2){
+                $this->sendNotificationToStaffShiftRequest($organ_id, $cur_staff_id, $staff_id, $from_time, $to_time, $update_value);
+            }
+        }
+
         $results['isSave'] = true;
         echo json_encode($results);
+
+    }
+
+    private function sendNotificationToStaffShiftRequest($organ_id, $sender_id, $receiver_id, $from_time, $to_time, $update_value){
+        $strMsg = $update_value==4 ? '出勤要請が入りました' : '出勤が承認されました。';
+        $curstaff = $this->staff_model->getFromId($sender_id);
+        $title = ($curstaff['staff_nick'] == null ? ($curstaff['staff_first_name'] . ' ' . $curstaff['staff_last_name']) : $curstaff['staff_nick']) .  '様から'.$strMsg;
+
+
+        $fdate = new DateTime($from_time);
+        $tdate = new DateTime($to_time);
+
+        $content = $fdate->format('n月j日 H時i分').'から'. $tdate->format('H時i分') . 'まで'.$strMsg;
+
+        $is_fcm = $this->sendNotifications($update_value==4 ? 'shift_request' : 'shift_accept', $title, $content, $receiver_id, $sender_id, '1');
+
+        return true;
 
     }
 

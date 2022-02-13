@@ -72,7 +72,6 @@
                     <div class="checkbox icheck">
                         <label>
                             <input name="remember" type="checkbox"> 次回から自動的にログイン
-        <a><img src="https://192.168.111.35/pos_app/api_staff/get_avator?staff_id=2" /></a>
                         </label>
                     </div>
                 </div>
