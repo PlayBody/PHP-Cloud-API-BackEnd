@@ -202,11 +202,11 @@ class Apireserves extends WebController
 
         if (!empty($staff_id)){
             $staff = $this->staff_model->getFromId($staff_id);
-            if ($staff['staff_auth']==2){
+            if ($staff['staff_auth']<4){
                 $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
                 $cond['organ_ids'] = join(',' , array_column($organs,'organ_id'));
             }
-            if ($staff['staff_auth']==3){
+            if ($staff['staff_auth']==4){
                 $cond['company_id'] = $company_id;
             }
         }

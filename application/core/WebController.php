@@ -542,4 +542,28 @@ class WebController extends CI_Controller
         return number_format($sum, 2);
 
     }
+
+    public function getOrgansByStaffPermission($staff_id){
+        $staff = $this->staff_model->getFromId($staff_id);
+        $organs = [];
+        if (empty($staff)) return $organs;
+
+        $auth = empty($staff['staff_auth']) ? 1 : $staff['staff_auth'];
+
+        if($auth<4){
+            $cond['staff_id'] = $staff_id;
+            $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
+        }
+        if($auth==4){
+            $cond = [];
+            if ($auth<5) $cond['company_id'] = $staff['company_id'];
+            $organs = $this->organ_model->getListByCond(['company_id'=>$staff['company_id']]);
+        }
+        if($auth>4){
+            $organs = $this->organ_model->getListByCond([]);
+        }
+
+        return $organs;
+    }
+
 }

@@ -20,6 +20,7 @@ class Excelexport extends AdminController
         $this->load->model('history_table_menu_ticket_model');
 
         $this->load->model('staff_point_setting_model');
+        $this->load->model('cart_model');
 //        $this->load->model('staff_organ_model');
 
         $this->header['page'] = 'excelexport';
@@ -195,6 +196,12 @@ class Excelexport extends AdminController
                 $objPHPExcel->getActiveSheet()->SetCellValue('W'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,1, $NPAList));//attendance later
                 $objPHPExcel->getActiveSheet()->SetCellValue('X'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,2));//attendance later
                 $objPHPExcel->getActiveSheet()->SetCellValue('Y'.$row, $this->getPermissionAttendanceTime($cur_date, $company_id,3));//attendance later
+
+                $objPHPExcel->getActiveSheet()->SetCellValue('AB'.$row, $this->cart_model->getTicketSaleCount(['sale_date'=>$cur_date, 'ticket_master_id'=>1, 'company_id'=>$company_id] ));
+                $objPHPExcel->getActiveSheet()->SetCellValue('AC'.$row, $this->cart_model->getTicketSaleCount(['sale_date'=>$cur_date, 'ticket_master_id'=>2, 'company_id'=>$company_id] ));
+                $objPHPExcel->getActiveSheet()->SetCellValue('AD'.$row, $this->cart_model->getTicketSaleCount(['sale_date'=>$cur_date, 'ticket_master_id'=>3, 'company_id'=>$company_id] ));
+                $objPHPExcel->getActiveSheet()->SetCellValue('AE'.$row, $this->cart_model->getTicketSaleCount(['sale_date'=>$cur_date, 'ticket_master_id'=>4, 'company_id'=>$company_id] ));
+                $objPHPExcel->getActiveSheet()->SetCellValue('AF'.$row, $this->cart_model->getTicketSaleCount(['sale_date'=>$cur_date, 'ticket_master_id'=>5, 'company_id'=>$company_id] ));
 
                 $_date->add($diff1Day);
             }

@@ -37,7 +37,7 @@ class Apicoupons extends WebController
         $staff = $this->staff_model->getFromId($staff_id);
 
         $cond = [];
-        if ($staff['staff_auth']==3){
+        if ($staff['staff_auth']==4){
             $cond['company_id'] = $staff['company_id'];
         }
 

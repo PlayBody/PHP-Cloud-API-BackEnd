@@ -43,7 +43,7 @@ class Apistaffs extends WebController
             $results['isLogin'] = true;
             $results['staff'] = $staff;
 
-            if ($staff['staff_auth']>3)
+            if ($staff['staff_auth']>4)
                 $company['visible']='1';
             else
                 $company = $this->company_model->getFromId($staff['company_id']);
@@ -147,7 +147,7 @@ class Apistaffs extends WebController
 
     }
 
-    public function loadStaffList(){
+    public function loadStaffByGroupList(){
         $staff_id = $this->input->post('staff_id');
 
         $results = [];
@@ -158,30 +158,9 @@ class Apistaffs extends WebController
         }
 
         $staff = $this->staff_model->getFromId($staff_id);
-
-        if (empty($staff)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
-
         $auth = empty($staff['staff_auth']) ? 1 : $staff['staff_auth'];
 
-        if($auth==2){
-            $cond['staff_id'] = $staff_id;
-            $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
-        }
-        if($auth>2){
-            $cond = [];
-            if ($auth<4) $cond['company_id'] = $staff['company_id'];
-            $organs = $this->organ_model->getListByCond($cond);
-        }
-
-        if (empty($organs)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
+        $organs = $this->getOrgansByStaffPermission($staff_id);
 
         $data = [];
         foreach ($organs as $item){
@@ -198,7 +177,6 @@ class Apistaffs extends WebController
 
         echo json_encode($results);
     }
-
 
     public function loadStaffCompanyList(){
         $company_id = $this->input->post('company_id');
@@ -227,41 +205,7 @@ class Apistaffs extends WebController
     }
 
     public function loadStaffDetail(){
-        $staff_id = $this->input->post('edit_staff_id');
-        $login_id = $this->input->post('login_staff_id');
-
-        if (empty($login_id)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
-
-        $login_staff = $this->staff_model->getFromId($login_id);
-        $staff = $this->staff_model->getFromId($staff_id);
-
-        if (empty($login_staff)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
-
-        $cond = [];
-//        if ($login_staff['staff_auth']<4) $cond['company_id'] = $login_staff['company_id'];
-
-        if (empty($staff['company_id'])){
-            $cond['company_id'] = $login_staff['company_id'];
-        }else{
-            $cond['company_id'] = $staff['company_id'];
-        }
-        $organs = $this->organ_model->getListByCond($cond);
-
-        $owner_organs = $organs;
-
-        if ($login_staff['staff_auth']==2) $owner_organs = $this->staff_organ_model->getOrgansByStaff($login_id);
-
-        $results = [];
-        $results['organs'] = $organs;
-        $results['owner_organs'] = $owner_organs;
+        $staff_id = $this->input->post('staff_id');
 
         if (empty($staff_id)){
             $results['isLoad'] = false;
@@ -269,12 +213,10 @@ class Apistaffs extends WebController
             return;
         }
 
-
-        $staff_organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
+        $staff = $this->staff_model->getFromId($staff_id);
 
         $results['isLoad'] = true;
         $results['staff'] = $staff;
-        $results['staff_organs'] = $staff_organs;
 
         echo json_encode($results);
     }

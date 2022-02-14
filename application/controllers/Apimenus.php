@@ -152,31 +152,7 @@ class Apimenus extends WebController
 
         $staff_id = $this->input->post('staff_id');
 
-        $staff = $this->staff_model->getFromId($staff_id);
-
-        if (empty($staff)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
-
-        $auth = empty($staff['staff_auth']) ? 1 : $staff['staff_auth'];
-
-        if($auth==2){
-            $organ_list = $this->staff_organ_model->getOrgansByStaff($staff_id);
-        }
-
-        if ($auth>2){
-            $cond = [];
-            if ($auth==3) $cond['company_id'] = $staff['company_id'];
-            $organ_list = $this->organ_model->getListByCond($cond);
-        }
-
-        if (empty($organ_list)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
+        $organ_list = $this->getOrgansByStaffPermission($staff_id);
 
         $organ_id = $this->input->post('organ_id');
 
@@ -524,11 +500,11 @@ class Apimenus extends WebController
         $staff = $this->staff_model->getFromId($staff_id);
 
         $cond = [];
-        if ($staff['staff_auth']==2){
+        if ($staff['staff_auth']<4){
             $organs = $this->staff_organ_model->getOrgansByStaff($staff_id);
             $cond['organ_ids'] = join(',' , array_column($organs,'organ_id'));
         }
-        if ($staff['staff_auth']==3){
+        if ($staff['staff_auth']==4){
             $cond['company_id'] = $staff['company_id'];
         }
 

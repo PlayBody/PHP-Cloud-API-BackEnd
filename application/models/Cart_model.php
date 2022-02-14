@@ -36,4 +36,30 @@ class Cart_model extends Base_model
         return $query->row_array();
 
     }
+
+    public function getTicketSaleCount($cond){
+        $this->db->select('sum(cart_details.count) as all_count');
+
+        $this->db->from($this->table);
+        $this->db->join('cart_details', 'carts.cart_id = cart_details.cart_id', 'right');
+        $this->db->join('tickets', 'tickets.id = cart_details.ticket_id', 'left');
+
+
+        if (!empty($cond['company_id'])){
+            $this->db->where("carts.company_id ", $cond['company_id']);
+        }
+
+        if (!empty($cond['sale_date'])){
+            $this->db->where("carts.create_date like '".$cond['sale_date']." %'");
+        }
+
+        if (!empty($cond['ticket_master_id'])){
+            $this->db->where("tickets.ticket_id ", $cond['ticket_master_id']);
+        }
+
+        $query = $this->db->get();
+        $result = $query->row_array();
+
+        return empty($result['all_count']) ? 0 : $result['all_count'];
+    }
 }

@@ -324,9 +324,9 @@ class Apishifts extends WebController
 
         $staff = $this->staff_model->getFromId($staff_id);
 
-        if ($staff['staff_auth']>2){
+        if ($staff['staff_auth']>3){
             $cond = [];
-            if ($staff['staff_auth']<4) $cond['company_id'] = $staff['company_id'];
+            if ($staff['staff_auth']<5) $cond['company_id'] = $staff['company_id'];
             $organ_list = $this->organ_model->getListByCond($cond);
         }else{
             $organ_list = $this->staff_organ_model->getOrgansByStaff($staff_id);
