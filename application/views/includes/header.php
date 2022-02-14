@@ -126,6 +126,12 @@
 
                 <li <?php if ($page == 'excelexport'){ ?> class="active"<?php } ?> >
                     <a href="<?php echo base_url(); ?>excelexport">
+                        <i class="fa fa-user"></i>
+                        <span>ユーザー管理</span>
+                    </a>
+                </li>
+                <li <?php if ($page == 'excelexport'){ ?> class="active"<?php } ?> >
+                    <a href="<?php echo base_url(); ?>excelexport">
                         <i class="fa fa-file-excel-o"></i>
                         <span>Excelエスポート</span>
                     </a>
