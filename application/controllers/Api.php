@@ -80,19 +80,21 @@ class Api extends WebController
 
     public function loadConnectHomeMenuSetting(){
         $company_id = $this->input->post('company_id');
+        $is_admin = $this->input->post('is_admin');
         if (empty($company_id)){
             $results['isLoad'] = false;
             echo json_encode($results);
             return;
         }
 
-        $list = $this->connect_home_menu_model->getHomeMenuList($company_id);
+        $list = $this->connect_home_menu_model->getHomeMenuList($company_id, $is_admin);
 
         $results['isLoad'] = true;
         $results['menus'] = $list;
 
         echo json_encode($results);
     }
+
     public function saveConnectHomeMenuSetting(){
         $setting_id = $this->input->post('setting_id');
         $setting_value = $this->input->post('value');
@@ -111,6 +113,47 @@ class Api extends WebController
         echo json_encode($results);
     }
 
+
+    public function updateOrderHomeMenu(){
+        $company_id = $this->input->post('company_id');
+        $menu_id = $this->input->post('menu_id');
+        $mode = $this->input->post('mode');
+        if (empty($company_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $menu = $this->connect_home_menu_model->getFromId($menu_id);
+
+        $sort = $menu['sort'];
+        if ($mode=='up'){
+            $prev_menu = $this->connect_home_menu_model->getHomePrevMenu($company_id, $sort);
+            if (!empty($prev_menu)){
+                $prev_sort = $prev_menu['sort'];
+                $prev_menu['sort'] = $sort;
+                $this->connect_home_menu_model->updateRecord($prev_menu, 'id');
+
+                $menu['sort'] = $prev_sort;
+                $this->connect_home_menu_model->updateRecord($menu, 'id');
+            }
+        }
+        if ($mode=='down'){
+            $next_menu = $this->connect_home_menu_model->getHomeNextMenu($company_id, $sort);
+            if (!empty($next_menu)){
+                $next_sort = $next_menu['sort'];
+                $next_menu['sort'] = $sort;
+                $this->connect_home_menu_model->updateRecord($next_menu, 'id');
+
+                $menu['sort'] = $next_sort;
+                $this->connect_home_menu_model->updateRecord($menu, 'id');
+            }
+        }
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+    }
 
     public function loadOrganPrintMaxOrder(){
         $organ_id = $this->input->post('organ_id');

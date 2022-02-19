@@ -459,5 +459,18 @@ class Apireserves extends WebController
 
     }
 
+    public function reserveCancel(){
+        $reserve_id = $this->input->post('reserve_id');
+
+        $reserve = $this->reserve_model->getFromId($reserve_id);
+
+        $reserve['reserve_status']=3;
+        $this->reserve_model->updateRecord($reserve, 'reserve_id');
+
+        $results['isUpdate'] = true;
+        echo json_encode($results);
+
+    }
+
 }
 ?>

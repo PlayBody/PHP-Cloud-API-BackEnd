@@ -193,9 +193,14 @@ class Reserve_model extends Base_model
             IF(staffs.staff_nick is NULL, 
                 CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
                 staffs.staff_nick
-            ) as staff_name");
+            ) as staff_name, 
+            IF(users.user_first_name is NULL, 
+                users.user_nick,
+                CONCAT(users.user_first_name,' ', users.user_last_name)
+            ) as user_name");
         $this->db->from($this->table);
         $this->db->join('staffs', 'reserves.staff_id=staffs.staff_id', 'left');
+        $this->db->join('users', 'reserves.user_id=users.user_id', 'left');
 
         if (!empty($cond['staff_id']))
             $this->db->where($this->table.'.staff_id', $cond['staff_id']);
