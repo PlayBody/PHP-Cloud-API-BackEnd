@@ -38,6 +38,7 @@ class Staff_model extends Base_model
         if (!empty($cond['staff_auth']))
             $this->db->where("staff_auth>=". $cond['staff_auth']);
 
+        $this->db->order_by('sort_no', 'asc');
         return $this->db->get()->result_array();
     }
 
@@ -46,6 +47,7 @@ class Staff_model extends Base_model
         $this->db->where('visible', '1');
 
         $this->db->where("staff_belongs like '%_".$organ_id."_%'");
+        $this->db->order_by('sort_no', 'asc');
 
         $query = $this->db->get();
         return $query->result_array();
@@ -64,5 +66,15 @@ class Staff_model extends Base_model
         return empty($query->row_array());
     }
 
+    public function getSortMax(){
+        $this->db->select('max(sort_no) as sort');
+        $this->db->from($this->table);
 
+        $query = $this->db->get();
+
+        $result = $query->row_array();
+
+        $sort = empty($result['sort']) ? 0 : $result['sort'];
+        return $sort+1;
+    }
 }

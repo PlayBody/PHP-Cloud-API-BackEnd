@@ -113,6 +113,8 @@ class Apireserves extends WebController
         $reserve_menu = $this->input->post('reserve_menu');
         $coupon_id = $this->input->post('coupon_id');
         $pay_method = $this->input->post('pay_method');
+        $coupon_use_amount = $this->input->post('coupon_use_amount');
+        $amount = $this->input->post('amount');
         $results = [];
         if (empty($organ_id) || empty($user_id)){
             $results['isSave'] = false;
@@ -136,6 +138,8 @@ class Apireserves extends WebController
             'reserve_exit_time' => $reserve_end_time,
             'coupon_id' => empty($coupon_id)?null:$coupon_id,
             'pay_method' => empty($pay_method)?null:$pay_method,
+            'coupon_use_amount' => empty($coupon_use_amount)?null:$coupon_use_amount,
+            'amount' => $amount,
 //            'end_time' => $end_time,
             'reserve_status'=>1,
             'visible' => 1,
@@ -159,6 +163,7 @@ class Apireserves extends WebController
             $insertData = array(
                 'reserve_id' => $reserve_id,
                 'menu_id' => $record->menu_id,
+                'menu_price' => $record->menu_price,
             );
 
             $insert = $this->reserve_menu_model->insertRecord($insertData);

@@ -130,6 +130,24 @@ class Apicoupons extends WebController
         echo json_encode($results);
 
     }
+
+
+    public function getUserCouponInfo(){
+        $user_id = $this->input->post('user_id');
+        $coupon_code = $this->input->post('coupon_code');
+
+        if (empty($coupon_code)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $coupon = $this->coupon_model->getUserCoupon($user_id, $coupon_code);
+        $results['isLoad'] = true;
+        $results['coupon'] = $coupon;
+        echo json_encode($results);
+        return;
+    }
     public function deleteCouponInfo(){
         $coupon_id = $this->input->post('coupon_id');
 

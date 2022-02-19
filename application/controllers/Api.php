@@ -186,5 +186,68 @@ class Api extends WebController
         echo json_encode($results);
     }
 
+    public function loadStaffSort(){
+        $staff_id = $this->input->post('staff_id');
+
+        $this->load->model('staff_shift_sort_model');
+
+        $staff_sorts = $this->staff_shift_sort_model->getSortList($staff_id);
+
+        if (empty($staff_sorts)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+        $results['isLoad'] = true;
+        $results['sorts'] = $staff_sorts;
+        echo json_encode($results);
+    }
+
+    public function saveStaffSort(){
+        $staff_id = $this->input->post('staff_id');
+        $json_sorts = $this->input->post('sorts');
+
+        $this->load->model('staff_shift_sort_model');
+
+        $sorts = json_decode($json_sorts);
+
+        for ($i=0;$i<count($sorts);$i++){
+            $sort = $sorts[$i];
+            $record = $this->staff_shift_sort_model->getOneByParam(['staff_id'=>$staff_id, 'show_staff_id'=>$sort]);
+            if (empty($record)){
+                $record['staff_id'] = $staff_id;
+                $record['show_staff_id'] = $sort;
+                $record['sort'] = $i+1;
+                $this->staff_shift_sort_model->insertRecord($record);
+            }else{
+                $record['sort'] = $i+1;
+                $this->staff_shift_sort_model->updateRecord($record, 'id');
+            }
+        }
+
+        $results['isSave'] = true;
+        echo json_encode($results);
+    }
+
+    public function exchangeSort(){
+        $staff_id = $this->input->post('staff_id');
+        $move_staff_id = $this->input->post('move_staff');
+        $target_staff_id = $this->input->post('target_staff');
+
+        $this->load->model('staff_shift_sort_model');
+
+        $move_record = $this->staff_shift_sort_model->getOneByParam(['staff_id'=>$staff_id, 'show_staff_id'=>$move_staff_id]);
+        $target_record = $this->staff_shift_sort_model->getOneByParam(['staff_id'=>$staff_id, 'show_staff_id'=>$target_staff_id]);
+
+        $target_sort = $target_record['sort'];
+        $target_record['sort'] = $move_record['sort'];
+        $move_record['sort'] = $target_sort;
+
+        $this->staff_shift_sort_model->updateRecord($move_record, 'id');
+        $this->staff_shift_sort_model->updateRecord($target_record, 'id');
+
+        $results['isSave'] = true;
+        echo json_encode($results);
+    }
 }
 ?>

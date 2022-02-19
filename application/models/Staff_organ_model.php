@@ -50,7 +50,7 @@ class Staff_organ_model extends Base_model
         if (!$isStaff)
             $this->db->where('staff_auth>1');
 
-        $this->db->order_by('sort_name', 'asc');
+        $this->db->order_by('staffs.sort_no', 'asc');
         $query = $this->db->get();
 
         return $query->result_array();

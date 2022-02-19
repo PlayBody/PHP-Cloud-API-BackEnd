@@ -61,9 +61,7 @@ class Base_model extends CI_Model
         if($param){
             $this->db->where($param);
         }
-        $result = $this->db->get($this->table)->result_array();
-        if($result)
-            return $result[0];
+        return $this->db->get($this->table)->row_array();
     }
 
     function getFromId($_id){

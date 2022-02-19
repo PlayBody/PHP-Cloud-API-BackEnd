@@ -51,4 +51,16 @@ class Coupon_model extends Base_model
         return $query->row_array();
     }
 
+    public function getUserCoupon($user_id, $coupon_code){
+        $this->db->select($this->table.'.*, user_coupons.user_id');
+        $this->db->from($this->table);
+        $this->db->join('user_coupons', 'user_coupons.coupon_id = coupons.coupon_id', 'right');
+
+        $this->db->where('coupon_code', $coupon_code);
+        $this->db->where('user_coupons.user_id', $user_id);
+
+        $query = $this->db->get();
+        return $query->row_array();
+    }
+
 }

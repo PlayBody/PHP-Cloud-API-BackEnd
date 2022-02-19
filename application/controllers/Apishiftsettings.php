@@ -238,16 +238,7 @@ class Apishiftsettings extends WebController
             return;
         }
 
-        $staff = $this->staff_model->getFromId($staff_id);
-
-        if ($staff['staff_auth']==2){
-            $organ_list = $this->staff_organ_model->getOrgansByStaff($staff_id);
-        }
-        if ($staff['staff_auth']==3){
-            $cond=[];
-            $cond['company_id'] = $staff['company_id'];
-            $organ_list = $this->organ_model->getListByCond($cond);
-        }
+        $organ_list = $this->getOrgansByStaffPermission($staff_id);
 
         if (empty($organ_id)) $organ_id = $organ_list[0]['organ_id'];
 

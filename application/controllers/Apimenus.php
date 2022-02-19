@@ -539,5 +539,24 @@ class Apimenus extends WebController
         echo json_encode($results);
     }
 
+    public function exchangeMenuSort(){
+        $move_menu_id = $this->input->post('move_menu');
+        $target_menu_id = $this->input->post('target_menu');
+
+        $move_menu = $this->menu_model->getFromId($move_menu_id);
+        $target_menu = $this->menu_model->getFromId($target_menu_id);
+
+        $move_menu_sort = $move_menu['sort_no'];
+        $move_menu['sort_no'] = $target_menu['sort_no'];
+        $target_menu['sort_no'] = $move_menu_sort;
+
+        $this->menu_model->updateRecord($move_menu, 'menu_id');
+        $this->menu_model->updateRecord($target_menu, 'menu_id');
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+    }
+
 }
 ?>

@@ -312,6 +312,7 @@ class Apistaffs extends WebController
             $staff['staff_salary_minutes'] = empty($staff_salary_minutes) ? null : $staff_salary_minutes;
             $staff['staff_salary_times'] = empty($staff_salary_times) ? null : $staff_salary_times;
             $staff['visible'] = 1;
+            $staff['sort_no'] = $this->staff_model->getSortMax();
             $staff['create_date'] = date('Y-m-d H:i:s');
             $staff['update_date'] = date('Y-m-d H:i:s');
 
@@ -895,5 +896,25 @@ class Apistaffs extends WebController
 
         echo json_encode($results);
     }
+
+    public function exchangeStaffSort(){
+        $move_staff_id = $this->input->post('move_staff');
+        $target_staff_id = $this->input->post('target_staff');
+
+        $move_staff = $this->staff_model->getFromId($move_staff_id);
+        $target_staff = $this->staff_model->getFromId($target_staff_id);
+
+        $move_staff_sort = $move_staff['sort_no'];
+        $move_staff['sort_no'] = $target_staff['sort_no'];
+        $target_staff['sort_no'] = $move_staff_sort;
+
+        $this->staff_model->updateRecord($move_staff, 'staff_id');
+        $this->staff_model->updateRecord($target_staff, 'staff_id');
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+    }
+
 }
 ?>

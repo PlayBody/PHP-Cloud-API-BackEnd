@@ -24,6 +24,7 @@ class Apishifts extends WebController
         $this->load->model('organ_shift_time_model');
         $this->load->model('shift_lock_model');
         $this->load->model('reserve_model');
+        $this->load->model('reserve_menu_model');
     }
 
     public function getShiftCounts(){
@@ -120,9 +121,16 @@ class Apishifts extends WebController
 
         $reserves = $this->reserve_model->getReserveList(['organ_id'=>$organ_id, 'staff_id'=>$staff_id, 'from_time'=>$from_time, 'to_time'=>$to_time, 'max_status'=>'2']);
 
+        $data = [];
+        foreach ($reserves as $reserve){
+            $tmp = $reserve;
+            $tmp['menus'] = $this->reserve_menu_model->getReserveMenuList($reserve['reserve_id']);
+            $data[] = $tmp;
+        }
+
         $results['isLoad'] = true;
 
-        $results['reserves'] = $reserves;
+        $results['reserves'] = $data;
 
         echo(json_encode($results));
     }
