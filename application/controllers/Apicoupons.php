@@ -50,7 +50,6 @@ class Apicoupons extends WebController
 
     }
 
-
     public function loadUserStampList(){
         $user_id = $this->input->post('user_id');
         $company_id = $this->input->post('company_id');

@@ -282,4 +282,18 @@ class Reserve_model extends Base_model
         $query = $this->db->get();
         return $query->result_array();
     }
+
+    public function getVisitCount($organ_id, $user_id){
+        $this->db->select('count(reserve_id) as cnt');
+        $this->db->from($this->table);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where('user_id', $user_id);
+        $this->db->where("visit_time like '" . date('Y-m-d') . " %'");
+
+        $query = $this->db->get();
+
+        $result = $query->row_array();
+        return empty($result['cnt']);
+
+    }
 }

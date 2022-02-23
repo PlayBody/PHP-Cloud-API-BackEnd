@@ -68,7 +68,7 @@ class Apireserves extends WebController
                 $regions[] = $tmp;
             }
 
-            $diff1Day = new DateInterval('PT30M');
+            $diff1Day = new DateInterval('PT15M');
             $curDateTime->add($diff1Day);
             $cur_date = $curDateTime->format("Y-m-d H:i:s");
         }
@@ -238,31 +238,30 @@ class Apireserves extends WebController
         $reserve_id = $this->input->post('reserve_id');
 
         $reserve = $this->reserve_model->getFromId($reserve_id);
-
         $menus = $this->reserve_menu_model->getReserveMenuList($reserve['reserve_id']);
-
-        $sum = 0;
-        foreach ($menus as $menu){
-            $price = $menu['menu_price']==null ? 0 : $menu['menu_price'];
-            $sum = $sum + $price;
-        }
-
-        $reserve_year = substr($reserve['reserve_time'],0,4);
-        $reserve['sum_amount'] = $sum;
         $reserve['menus'] = $menus;
-        $reserve['reserve_year'] = $reserve_year;
 
-        $organ = $this->organ_model->getFromId($reserve['organ_id']);
+//        $sum = 0;
+//        foreach ($menus as $menu){
+//            $price = $menu['menu_price']==null ? 0 : $menu['menu_price'];
+//            $sum = $sum + $price;
+//        }
 
-        $company = $this->company_model->getFromId($organ['company_id']);
+//        $reserve_year = substr($reserve['reserve_time'],0,4);
+//        $reserve['sum_amount'] = $sum;
+//        $reserve['reserve_year'] = $reserve_year;
 
-        $user = $this->user_model->getFromId($reserve['user_id']);
+//        $organ = $this->organ_model->getFromId($reserve['organ_id']);
+//
+//        $company = $this->company_model->getFromId($organ['company_id']);
+//
+//        $user = $this->user_model->getFromId($reserve['user_id']);
 
 
         $results['isLoad'] = true;
-        $results['company'] = $company;
-        $results['organ'] = $organ;
-        $results['user'] = $user;
+//        $results['company'] = $company;
+//        $results['organ'] = $organ;
+//        $results['user'] = $user;
         $results['reserve'] = $reserve;
 
         echo json_encode($results);
@@ -440,6 +439,41 @@ class Apireserves extends WebController
     }
 
     public function updateReserveStatus(){
+        $reserve_id = $this->input->post('reserve_id');
+
+        $reserve = $this->reserve_model->getFromID($reserve_id);
+        $reserve['reserve_status']=2;
+        $reserve['visit_time']=date('Y-m-d H:i:s');
+
+        $is_first_reserve_visit = $this->reserve_model->getVisitCount($reserve['organ_id'], $reserve['user_id']);
+
+        $this->reserve_model->updateRecord($reserve, 'reserve_id');
+
+        $results['isStampAdd'] = false;
+        if($is_first_reserve_visit){
+
+            $stamp = array(
+                'date' => Date('Y-m-d'),
+                'user_id' => $reserve['user_id'],
+                'company_id' => '',
+                'organ_id' => $reserve['organ_id'],
+                'staff_id' => $reserve['staff_id'],
+                'use_flag' => '1',
+                'stamp_count' => '1'
+            );
+
+            $this->load->model('stamp_model');
+            $this->stamp_model->insertRecord($stamp);
+            $results['isStampAdd'] = true;
+        }
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+
+    }
+
+    public function getReserveNow(){
         $user_id = $this->input->post('user_id');
         $organ_id = $this->input->post('organ_id');
 
@@ -454,10 +488,7 @@ class Apireserves extends WebController
             $results['isExistReserve'] = false;
         }else{
             $results['isExistReserve'] = true;
-            foreach ($reserves as $reserve){
-                $reserve['reserve_status']=2;
-                $this->reserve_model->updateRecord($reserve, 'reserve_id');
-            }
+            $results['reserve'] = $reserves[0];
         }
 
         echo json_encode($results);
@@ -476,6 +507,7 @@ class Apireserves extends WebController
         echo json_encode($results);
 
     }
+
 
 }
 ?>

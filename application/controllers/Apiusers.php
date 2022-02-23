@@ -371,7 +371,31 @@ class Apiusers extends WebController
         $results['isLogin'] = $is_login;
 
         echo json_encode($results);
+    }
+    
+    public function getOwnerTickets(){
+        $user_id = $this->input->post('user_id');
 
+        $tickets = $this->user_ticket_model->getListByCond(['user_id'=>$user_id]);
+
+        $results['isLoad'] = true;
+        $results['tickets'] = $tickets;
+
+        echo json_encode($results);
+    }
+
+    public function usingTicketWithCheckIn(){
+        $user_ticket_id = $this->input->post('id');
+        $use_count = $this->input->post('use_count');
+        $user_ticket = $this->user_ticket_model->getFromId($user_ticket_id);
+
+        $user_ticket['count'] = $user_ticket['count'] - $use_count;
+        if ($user_ticket['count']<0) $user_ticket['count'] = 0;
+        $this->user_ticket_model->updateRecord($user_ticket, 'id');
+
+        $results['isUsing'] = true;
+
+        echo json_encode($results);
     }
 }
 ?>
