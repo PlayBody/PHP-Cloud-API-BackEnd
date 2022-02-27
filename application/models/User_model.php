@@ -24,16 +24,27 @@ class User_model extends Base_model
 
     }
 
-    public function getUsersByCond($cond){
+    public function getUsersByCond($cond, $is_count=false, $limit='', $start_index=''){
         $this->db->from($this->table);
 
         if (!empty($cond['company_id'])){
             $this->db->where('company_id', $cond['company_id']);
         }
 
+        if(!empty($cond['search'])){
+            $search = $cond['search'];
+            $this->db->where("(user_first_name like '%$search%' or user_last_name like '%$search%' or user_nick like '%$search%' or user_email like '%$search%')");
+        }
+
+        $this->db->where('user_id != 1');
         $this->db->where('visible', 1);
 
+        if (!empty($limit)){
+            $this->db->limit($limit, $start_index);
+        }
+
         $query = $this->db->get();
+        if ($is_count) return $query->num_rows();
         return $query->result_array();
 
     }

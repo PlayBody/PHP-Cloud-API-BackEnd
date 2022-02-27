@@ -123,13 +123,40 @@
 
                     <hr/>
 
+                <?php if($staff['staff_auth']>3){ ?>
+                <li <?php if ($page == 'company'){ ?> class="active"<?php } ?> >
+                    <a href="<?php echo base_url(); ?>company">
+                        <i class="fa fa-building"></i>
+                        <span>企業管理</span>
+                    </a>
+                </li>
+                <?php } ?>
 
-                <li <?php if ($page == 'excelexport'){ ?> class="active"<?php } ?> >
-                    <a href="<?php echo base_url(); ?>excelexport">
+                <?php if($staff['staff_auth']>3){ ?>
+                    <li <?php if ($page == 'home_menu'){ ?> class="active"<?php } ?> >
+                        <a href="<?php echo base_url(); ?>homemenu">
+                            <i class="fa fa-bars"></i>
+                            <span>お店アプリメニュー</span>
+                        </a>
+                    </li>
+                <?php } ?>
+
+                <?php if($staff['staff_auth']>3){ ?>
+                <li <?php if ($page == 'user'){ ?> class="active"<?php } ?> >
+                    <a href="<?php echo base_url(); ?>user">
                         <i class="fa fa-user"></i>
                         <span>ユーザー管理</span>
                     </a>
                 </li>
+                <?php } ?>
+                <?php if($staff['staff_auth']>3){ ?>
+                    <li <?php if ($page == 'mail_text'){ ?> class="active"<?php } ?> >
+                        <a href="<?php echo base_url(); ?>mailtext">
+                            <i class="fa fa-file-text"></i>
+                            <span>メール本文管理</span>
+                        </a>
+                    </li>
+                <?php } ?>
                 <li <?php if ($page == 'excelexport'){ ?> class="active"<?php } ?> >
                     <a href="<?php echo base_url(); ?>excelexport">
                         <i class="fa fa-file-excel-o"></i>

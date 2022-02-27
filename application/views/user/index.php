@@ -3,17 +3,10 @@
     <section class="content-header">
       <h1>
         <i class="fa fa-users"></i> ユーザー管理
-        <small>作成, 編集, 削除</small>
+        <small></small>
       </h1>
     </section>
     <section class="content">
-        <div class="row">
-            <div class="col-xs-12 text-right">
-                <div class="form-group">
-                    <a class="btn btn-primary" href="<?php echo base_url(); ?>addNew"><i class="fa fa-plus"></i>追加</a>
-                </div>
-            </div>
-        </div>
         <div class="row">
             <div class="col-md-12">
                 <?php
@@ -37,12 +30,29 @@
                     <?php echo $this->session->flashdata('success'); ?>
                 </div>
                 <?php } ?>
-                
+
                 <div class="row">
                     <div class="col-md-12">
                         <?php echo validation_errors('<div class="alert alert-danger alert-dismissable">', ' <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button></div>'); ?>
                     </div>
                 </div>
+            </div>
+        </div>
+        <form method="POST" id="searchList" method="post" action="<?php echo base_url(); ?>user/index">
+        <div>
+            <div class="col-xs-12">
+                <div class="box row" style="padding: 20px; display: flex;align-items: center;">
+                    <div class="col-lg-2">企業名　：</div>
+                    <div class="col-lg-11">
+                        <select name="cond[company_id]" class="form-control" onchange="form.submit();">
+                            <?php foreach($companies as $item){ ?>
+                                <option value="<?php echo $item['company_id']; ?>" <?php if ($cond['company_id']== $item['company_id']) echo 'selected'; ?> >
+                                    <?php echo $item['company_name']; ?>
+                                </option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                </div><!-- /.box -->
             </div>
         </div>
         <div class="row">
@@ -51,43 +61,44 @@
                 <div class="box-header">
                     <h3 class="box-title">ユーザー一覧</h3>
                     <div class="box-tools">
-                        <form action="<?php echo base_url() ?>userList" method="POST" id="searchList">
                             <div class="input-group">
-                              <input type="text" name="searchText" value="<?php echo $searchText; ?>" class="form-control input-sm pull-right" style="width: 150px;" placeholder="Search"/>
+                              <input type="text" name="cond[search]" value="<?php echo $cond['search']; ?>" class="form-control input-sm pull-right" style="width: 150px;" placeholder="Search"/>
                               <div class="input-group-btn">
-                                <button class="btn btn-sm btn-default searchList"><i class="fa fa-search"></i></button>
+                                <button type="submit" class="btn btn-sm btn-default searchList"><i class="fa fa-search"></i></button>
                               </div>
                             </div>
-                        </form>
                     </div>
                 </div><!-- /.box-header -->
                 <div class="box-body table-responsive no-padding">
                   <table class="table table-hover">
                     <tr>
+                        <th>No</th>
+                        <th>ユーザーNo</th>
                         <th>ユーザー名</th>
+                        <th>ニックネーム</th>
                         <th>メール</th>
-                        <th>モバイル</th>
-                        <th>役割</th>
-                        <th>作成日付</th>
-                        <th class="text-center">アクション</th>
+                        <th>電話番号</th>
+                        <th>性別</th>
+                        <th>生年月日</th>
+                        <th>登録日</th>
                     </tr>
                     <?php
-                    if(!empty($userRecords))
+                    $i=1;
+                    if(!empty($users))
                     {
-                        foreach($userRecords as $record)
+                        foreach($users as $record)
                         {
                     ?>
                     <tr>
-                        <td><?php echo $record->name ?></td>
-                        <td><?php echo $record->email ?></td>
-                        <td><?php echo $record->mobile ?></td>
-                        <td><?php echo $record->role ?></td>
-                        <td><?php echo date("Y-m-d", strtotime($record->createdDtm)) ?></td>
-                        <td class="text-center">
-                            <a class="btn btn-sm btn-primary" href="<?= base_url().'login-history/'.$record->userId; ?>" title="Login history"><i class="fa fa-history"></i></a> | 
-                            <a class="btn btn-sm btn-info" href="<?php echo base_url().'editOld/'.$record->userId; ?>" title="Edit"><i class="fa fa-pencil"></i></a>
-                            <a class="btn btn-sm btn-danger deleteUser" href="#" data-userid="<?php echo $record->userId; ?>" title="Delete"><i class="fa fa-trash"></i></a>
-                        </td>
+                        <td><?php echo $i++; ?></td>
+                        <td><?php echo $record['user_no']; ?></td>
+                        <td><?php echo $record['user_first_name']. ' ' .$record['user_last_name']; ?></td>
+                        <td><?php echo $record['user_nick']; ?></td>
+                        <td><a href="<?php echo base_url(); ?>/user/edit?user_id=<?php echo $record['user_id']; ?>"><?php echo $record['user_email']; ?></td>
+                        <td><?php echo $record['user_tel']; ?></td>
+                        <td><?php echo $record['user_sex']==1 ? '男' : '女'; ?></td>
+                        <td><?php echo $record['user_birthday']; ?></td>
+                        <td><?php echo $record['create_date']; ?></td>
                     </tr>
                     <?php
                         }
@@ -96,12 +107,24 @@
                   </table>
                   
                 </div><!-- /.box-body -->
-                <div class="box-footer clearfix">
-                    <?php echo $this->pagination->create_links(); ?>
+                  <style>
+                      .pagenavi-bar{
+                          margin-right: 40px;
+                          text-align: right;
+                      }
+                      .pagenavi-bar a, .pagenavi-bar strong{
+                          padding: 0 8px;
+                      }
+
+
+                  </style>
+                <div class="box-footer clearfix pagenavi-bar">
+                    <?php echo $links; ?>
                 </div>
               </div><!-- /.box -->
             </div>
         </div>
+        </form>
     </section>
 </div>
 <script type="text/javascript" src="<?php echo base_url(); ?>assets/js/common.js" charset="utf-8"></script>

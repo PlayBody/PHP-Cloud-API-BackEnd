@@ -568,18 +568,22 @@ class Apishifts extends WebController
 
         $fdate = new DateTime($from_time);
         $tdate = new DateTime($to_time);
-        $curstaff = $this->staff_model->getFromId($staff_id);
-        $title = ($curstaff['staff_nick'] == null ? ($curstaff['staff_first_name'] . ' ' . $curstaff['staff_last_name']) : $curstaff['staff_nick']) .  '様からシフト入力要請が来ました。';
-        $content = $fdate->format('n月j日').'から'. $tdate->format('n月j日') . 'までの希望シフトを入力してください。';
+        $sender = $this->staff_model->getFromId($staff_id);
+
+        $this->load->model('notification_text_model');
+        $text_data = $this->notification_text_model->getRecordByCond(['company_id'=>$sender['company_id'], 'mail_type'=>'12']);
+        $title = empty($text_data['title']) ? 'タイトルなし' : $text_data['title'];
+        $content = empty($text_data['content']) ? '' : $text_data['content'];
+        $content = str_replace('$from_month', $fdate->format('n'), $content);
+        $content = str_replace('$from_day', $fdate->format('j'), $content);
+        $content = str_replace('$to_month', $tdate->format('n'), $content);
+        $content = str_replace('$to_day', $tdate->format('j'), $content);
+
         $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3, false);
+
         foreach ($staffs as $staff){
             if ($staff_id == $staff['staff_id']) continue;
-
-            $shifts = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'staff_id'=>$staff['staff_id'], 'from_time'=>$from_time, 'to_time'=>$to_time]);
-
-            if (empty($shifts)){
-                $is_fcm = $this->sendNotifications('shift_require', $title, $content, $staff_id, $staff['staff_id'], '1');
-            }
+            $is_fcm = $this->sendNotifications('12', $title, $content, $staff_id, $staff['staff_id'], '1');
         }
 
         echo json_encode(['isSend'=>true]);

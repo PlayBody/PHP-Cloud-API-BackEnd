@@ -174,7 +174,7 @@ class Apireserves extends WebController
         $this->reserve_model->updateRecord($reserveData, 'reserve_id');
 
         if (!empty($staff_id)){
-            $results['isFCM'] = $this->sendNotificationToStaffReserveRequest($user_id, $staff_id, $reserve_start_time, $reserve_end_time);
+            $results['isFCM'] = $this->sendNotificationToStaffReserveRequest($reserve_id);
         }
 
         $results['isSave'] = true;
@@ -182,17 +182,31 @@ class Apireserves extends WebController
 
     }
 
-    private function sendNotificationToStaffReserveRequest($user_id, $staff_id, $from_time, $to_time){
-        $user = $this->user_model->getFromId($user_id);
-        $title = $user['user_first_name'] . ' ' . $user['user_last_name'] .  '様から施術が予約されました。';
+    private function sendNotificationToStaffReserveRequest($reserve_id){
+        $reserve = $this->reserve_model->getFromId($reserve_id);
+        $reserve_menus = $this->reserve_menu_model->getReserveMenuList($reserve_id);
+        $str_menus = '';
+        foreach ($reserve_menus as $menu){
+            if($str_menus!='') $str_menus = $str_menus . ', ';
+            $str_menus = $str_menus . $menu['menu_title'];
+        }
 
+        $user = $this->user_model->getFromId($reserve['user_id']);
+        $organ = $this->organ_model->getFromId($reserve['organ_id']);
 
-        $fdate = new DateTime($from_time);
-        $tdate = new DateTime($to_time);
+        $reserve_time = new DateTime($reserve['reserve_time']);
 
-        $content = $fdate->format('n月j日 H時i分').'から'. $tdate->format('H時i分') . 'まで施術が予約されました。';
+        $this->load->model('notification_text_model');
+        $text_data = $this->notification_text_model->getRecordByCond(['company_id'=>$user['company_id'], 'mail_type'=>'13']);
+        $title = empty($text_data['title']) ? 'タイトルなし' : $text_data['title'];
+        $content = empty($text_data['content']) ? '' : $text_data['content'];
+        $content = str_replace('$organ_name', $organ['organ_name'], $content);
+        $content = str_replace('$user_name', $user['user_first_name'].' '.$user['user_last_name'], $content);
+        $content = str_replace('$reserve_time', $reserve_time->format('n月j日 H時i分'), $content);
+        $content = str_replace('$menus', $str_menus, $content);
+        $content = str_replace('$user_comment', '', $content);
 
-        $is_fcm = $this->sendNotifications('reserve', $title, $content, $staff_id, $user_id, '1');
+        $is_fcm = $this->sendNotifications('13', $title, $content, $reserve['staff_id'], $reserve['user_id'], '1');
 
         return true;
 

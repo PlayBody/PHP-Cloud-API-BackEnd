@@ -435,25 +435,27 @@ class WebController extends CI_Controller
 
     public function sendNotifications($n_type, $title, $content, $sender_id, $receiver_id, $receiver_type){
 
-        $notification_type = 0;
-        if ($n_type=='message') $notification_type = 1;
-        if ($n_type=='shift_require') $notification_type = 2;
-        if ($n_type=='add_point_request') $notification_type = 3;
-        if ($n_type=='shift_request') $notification_type = 4;
-        if ($n_type=='reserve') $notification_type = 5;
-        if ($n_type=='shift_accept') $notification_type = 6;
+//        $notification_type = 0;
+//        if ($n_type=='message') $notification_type = 1;
+//        if ($n_type=='shift_require') $notification_type = 2;
+//        if ($n_type=='add_point_request') $notification_type = 3;
+//        if ($n_type=='shift_request') $notification_type = 4;
+//        if ($n_type=='reserve') $notification_type = 5;
+//        if ($n_type=='shift_accept') $notification_type = 6;
 
         $isFcm = false;
 
         $this->load->model('device_token_model');
         $this->load->model('user_model');
         $mail_address="";
+        $company_id='';
         if ($receiver_type=='1'){
-            $staff_data = $this->device_token_model->getListByCondition(['user_id'=>$receiver_id, 'user_type'=>'1']);
+            $staff_data = $this->device_token_model->getRecordByCondition(['staff_id'=>$receiver_id]);
             $staff = $this->staff_model->getFromId($receiver_id);
             if (empty($staff_data)) return $isFcm;
-            $token_data = $staff_data[0]['device_token'];
+            $token_data = $staff_data['device_token'];
             $mail_address = $staff['staff_mail'];
+            $company_id = $staff['company_id'];
         }
 
         if ($receiver_type=='2'){
@@ -461,20 +463,23 @@ class WebController extends CI_Controller
             if (empty($user)) return $isFcm;
             $token_data = $user['user_device_token'];
             $mail_address = $user['user_email'];
+            $company_id = $user['company_id'];
         }
 
+        $this->load->model('company_model');
+        $company = $this->company_model->getFromId($company_id);
         if (!empty($token_data)){
             $this->load->model('notification_model');
             $cond = [];
             $cond['receiver_type'] = $receiver_type;
             $cond['receiver_id'] = $receiver_id;
-            $cond['notification_type'] = $notification_type;
+            $cond['notification_type'] = $n_type;
             $notification = $this->notification_model->getRecordByCond($cond);
             if (empty($notification)){
                 $data = array(
                     'receiver_type' => $receiver_type,
                     'receiver_id' => $receiver_id,
-                    'notification_type' => $notification_type,
+                    'notification_type' => $n_type,
                     'badge_count' => '1'
                 );
                 $this->notification_model->insertRecord($data);
@@ -488,8 +493,12 @@ class WebController extends CI_Controller
 
             $badge = $this->notification_model->getBageCount($receiver_id, $receiver_type);
 
-            $isFcm = $this->sendFireBaseMessage($n_type, $sender_id, $title, $content, $token_data, $badge);
-            $isMail = $this->sendMailMessage($title, $content, $mail_address);
+            if ($company['is_push']==1){
+                $isFcm = $this->sendFireBaseMessage($n_type, $sender_id, $title, $content, $token_data, $badge);
+            }
+            if ($company['is_mail']==1){
+                $isMail = $this->sendMailMessage($title, $content, $mail_address);
+            }
         }
 
         return $isFcm;

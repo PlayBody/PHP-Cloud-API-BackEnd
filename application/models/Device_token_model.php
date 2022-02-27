@@ -15,12 +15,12 @@ class Device_token_model extends Base_model
 
         $this->db->from($this->table);
 
-        if (!empty($cond['user_id'])){
-            $this->db->where('user_id', $cond['user_id']);
+        if (!empty($cond['staff_id'])){
+            $this->db->where('staff_id', $cond['staff_id']);
         }
 
-        if (!empty($cond['user_type'])){
-            $this->db->where('user_type', $cond['user_type']);
+        if (!empty($cond['device_token'])){
+            $this->db->where('device_token', $cond['device_token']);
         }
 
         $query = $this->db->get();

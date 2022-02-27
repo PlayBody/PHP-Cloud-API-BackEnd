@@ -48,21 +48,23 @@ class Api extends WebController
     }
 
     public function registerDeviceToken(){
-        $user_id = $this->input->post('user_id');
-        $user_type = $this->input->post('user_type');
+        $staff_id = $this->input->post('staff_id');
         $device_token = $this->input->post('device_token');
 
-        $data = $this->device_token_model->getRecordByCondition(['user_id' => $user_id, 'user_type' => $user_type]);
+        $exist = $this->device_token_model->getRecordByCondition(['device_token' => $device_token]);
+        if(!empty($exist)){
+            $this->device_token_model->delete_force($exist['id'], 'id');
+        }
+
+        $data = $this->device_token_model->getRecordByCondition(['staff_id' => $staff_id]);
         if (empty($data)){
             $data = array(
-                'user_id' => $user_id,
-                'user_type' => $user_type,
+                'staff_id' => $staff_id,
                 'device_token' => $device_token
             );
             $this->device_token_model->insertRecord($data);
         }else{
             $data['device_token'] = $device_token;
-
             $this->device_token_model->updateRecord($data, 'id');
         }
 
