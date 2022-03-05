@@ -77,4 +77,28 @@ class Staff_model extends Base_model
         $sort = empty($result['sort']) ? 0 : $result['sort'];
         return $sort+1;
     }
+
+    public function getStaffs($cond){
+        $this->db->select($this->table.'.*');
+        $this->db->from($this->table);
+        $this->db->join('staff_organs', 'staff_organs.staff_id = staffs.staff_id', 'right');
+
+        if (!empty($cond['staff_sex'])){
+            $this->db->where('staff_sex', $cond['staff_sex']);
+        }
+        if (!empty($cond['organ_id'])){
+            $this->db->where('staff_organs.organ_id', $cond['organ_id']);
+        }
+        if (!empty($cond['min_auth'])){
+            $this->db->where('staffs.staff_auth >=', $cond['min_auth']);
+        }
+        if (!empty($cond['max_auth'])){
+            $this->db->where('staffs.staff_auth <=', $cond['max_auth']);
+        }
+
+        $this->db->order_by('sort_no', 'asc');
+
+        $query = $this->db->get();
+        return $query->result_array();
+    }
 }

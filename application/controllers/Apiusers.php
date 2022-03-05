@@ -20,23 +20,44 @@ class Apiusers extends WebController
         $this->load->model('user_ticket_model');
     }
 
-//    public function getUsers(){
-//        $key_id = $this->input->post('key_id');
-//        $key_value = $this->input->post('key_value');
-//
-//        if (empty($company_id)){
-//            $results['isLoad'] = false;
-//            echo json_encode($results);
-//            return;
-//        }
-//
-//        $users = $this->user_model->getUsersByCond(['company_id'=>$company_id]);
-//
-//        $results['isLoad'] = true;
-//        $results['users'] = $users;
-//
-//        echo json_encode($results);
-//    }
+    public function getUserData(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+        $user = $this->user_model->getOneByParam($cond);
+
+        if (empty($user)){
+            $results['isLoad'] = false;
+        }else{
+            $results['isLoad'] = true;
+            $results['user'] = $user;
+        }
+        echo json_encode($results);
+    }
+
+    public function loadUserInfo(){
+        $user_id = $this->input->post('user_id');
+        if (empty($user_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $user = $this->user_model->getFromId($user_id);
+
+        $groups = $this->group_user_model->getGroupsByUser($user_id);
+
+        $ticket_reset = $this->user_ticket_reset_setting_model->getResetSetting(['user_id'=>$user_id]);
+
+        if (!empty($groups)){
+            $user['group'] = $groups[0];
+        }
+        $results['isLoad'] = true;
+        $results['user'] = $user;
+        $results['ticket_reset'] = empty($ticket_reset) ? null : $ticket_reset ;
+
+        echo json_encode($results);
+    }
+
 
     public function loadUserFromQrNo(){
         $user_no = $this->input->post('user_no');
@@ -114,30 +135,6 @@ class Apiusers extends WebController
 
         $results['isLoad'] = true;
         $results['users'] = $users;
-
-        echo json_encode($results);
-    }
-
-    public function loadUserInfo(){
-        $user_id = $this->input->post('user_id');
-        if (empty($user_id)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
-
-        $user = $this->user_model->getFromId($user_id);
-
-        $groups = $this->group_user_model->getGroupsByUser($user_id);
-
-        $ticket_reset = $this->user_ticket_reset_setting_model->getResetSetting(['user_id'=>$user_id]);
-
-        if (!empty($groups)){
-            $user['group'] = $groups[0];
-        }
-        $results['isLoad'] = true;
-        $results['user'] = $user;
-        $results['ticket_reset'] = empty($ticket_reset) ? null : $ticket_reset ;
 
         echo json_encode($results);
     }
@@ -396,6 +393,23 @@ class Apiusers extends WebController
         $results['isUsing'] = true;
 
         echo json_encode($results);
+    }
+
+    public function updateUserPush(){
+        $user_id = $this->input->post('user_id');
+        $push_key = $this->input->post('push_key');
+        $push_value = $this->input->post('push_value');
+
+        $user = $this->user_model->getFromId($user_id);
+        if ($push_key=='message') $user['is_message_push'] = $push_value;
+        if ($push_key=='reserve_request') $user['is_reserve_request_push'] = $push_value;
+        if ($push_key=='reserve_apply') $user['is_reserve_apply_push'] = $push_value;
+
+        $this->user_model->updateRecord($user, 'user_id');
+
+        $result['isUpdate'] = true;
+        echo json_encode($result);
+
     }
 }
 ?>

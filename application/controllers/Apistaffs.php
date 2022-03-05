@@ -64,6 +64,18 @@ class Apistaffs extends WebController
         echo(json_encode($results));
     }
 
+    public function getStaffs(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+
+        $staffs = $this->staff_model->getStaffs($cond);
+
+        $results['isLoad'] = true;
+        $results['staffs'] = $staffs;
+
+        echo json_encode($results);
+    }
+
     public function renderAvatar(){
 
         $staff_id = $this->input->get('staff_id');
@@ -381,6 +393,7 @@ class Apistaffs extends WebController
 
         echo(json_encode($results));
     }
+
 
     public function deleteStaffInfo(){
         $staff_id = $this->input->post('staff_id');
@@ -913,6 +926,19 @@ class Apistaffs extends WebController
 
         $results['isUpdate'] = true;
 
+        echo json_encode($results);
+    }
+
+    public function updateStaffPush(){
+        $staff_id = $this->input->post('staff_id');
+        $is_push = $this->input->post('is_push');
+
+        $staff = $this->staff_model->getFromId($staff_id);
+
+        $staff['is_push'] = $is_push;
+        $this->staff_model->updateRecord($staff, 'staff_id');
+
+        $results['isUpdate'] = true;
         echo json_encode($results);
     }
 

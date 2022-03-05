@@ -25,6 +25,7 @@ class Apireserves extends WebController
 
         $this->load->model('reserve_model');
         $this->load->model('reserve_menu_model');
+        $this->load->model('reserve_ticket_model');
 
         $this->load->model('shift_model');
         $this->load->model('organ_time_model');
@@ -111,9 +112,11 @@ class Apireserves extends WebController
         $reserve_end_time = $this->input->post('reserve_end_time');
 //        $end_time = $this->input->post('end_time');
         $reserve_menu = $this->input->post('reserve_menu');
+        $reserve_ticket = $this->input->post('use_ticket');
         $coupon_id = $this->input->post('coupon_id');
         $pay_method = $this->input->post('pay_method');
         $coupon_use_amount = $this->input->post('coupon_use_amount');
+        $ticket_amount = $this->input->post('ticket_amount');
         $amount = $this->input->post('amount');
         $results = [];
         if (empty($organ_id) || empty($user_id)){
@@ -139,6 +142,7 @@ class Apireserves extends WebController
             'coupon_id' => empty($coupon_id)?null:$coupon_id,
             'pay_method' => empty($pay_method)?null:$pay_method,
             'coupon_use_amount' => empty($coupon_use_amount)?null:$coupon_use_amount,
+            'ticket_amount' => empty($ticket_amount) ? null : $ticket_amount,
             'amount' => $amount,
 //            'end_time' => $end_time,
             'reserve_status'=>1,
@@ -172,6 +176,17 @@ class Apireserves extends WebController
         $reserveData = $this->reserve_model->getFromId($reserve_id);
         $reserveData['sum_interval'] = $interval;
         $this->reserve_model->updateRecord($reserveData, 'reserve_id');
+
+        $tickets = json_decode($reserve_ticket);
+        foreach ($tickets as $record) {
+            $insertData = array(
+                'reserve_id' => $reserve_id,
+                'ticket_id' => $record->ticket_id,
+                'use_count' => $record->use_count,
+            );
+
+            $insert = $this->reserve_ticket_model->insertRecord($insertData);
+        }
 
         if (!empty($staff_id)){
             $results['isFCM'] = $this->sendNotificationToStaffReserveRequest($reserve_id);
