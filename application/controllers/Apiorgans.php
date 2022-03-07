@@ -197,6 +197,25 @@ class Apiorgans extends WebController
         echo json_encode($results);
     }
 
+    public function loadOrganBusinessTime(){
+        $organ_id = $this->input->post('organ_id');
+
+        if (empty($organ_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $data = $this->organ_time_model->getOrganFromToTime($organ_id);
+
+        $results = [];
+        $results['isLoad'] = true;
+        $results['data'] = $data;
+
+        echo json_encode($results);
+    }
+
+
     public function saveOrganTime(){
         $time_id = $this->input->post('time_id');
         $organ_id = $this->input->post('organ_id');

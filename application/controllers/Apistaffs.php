@@ -286,6 +286,7 @@ class Apistaffs extends WebController
         $staff_salary_times = empty($this->input->post('staff_salary_times')) ? null : $this->input->post('staff_salary_times');
         $staff_shift = $this->input->post('staff_shift');
         $table_position = empty($this->input->post('table_position')) ? null : $this->input->post('table_position');
+        $staff_comment = $this->input->post('staff_comment');
 
         $staff_avatar =empty($this->input->post('staff_avatar')) ? null : $this->input->post('staff_avatar');
 
@@ -323,6 +324,7 @@ class Apistaffs extends WebController
             $staff['staff_salary_days'] = empty($staff_salary_days) ? null : $staff_salary_days;
             $staff['staff_salary_minutes'] = empty($staff_salary_minutes) ? null : $staff_salary_minutes;
             $staff['staff_salary_times'] = empty($staff_salary_times) ? null : $staff_salary_times;
+            $staff['staff_comment'] = $staff_comment;
             $staff['visible'] = 1;
             $staff['sort_no'] = $this->staff_model->getSortMax();
             $staff['create_date'] = date('Y-m-d H:i:s');
@@ -350,6 +352,7 @@ class Apistaffs extends WebController
             $staff['staff_salary_days'] = empty($staff_salary_days) ? null : $staff_salary_days;
             $staff['staff_salary_minutes'] = empty($staff_salary_minutes) ? null : $staff_salary_minutes;
             $staff['staff_salary_times'] = empty($staff_salary_times) ? null : $staff_salary_times;
+            $staff['staff_comment'] = $staff_comment;
 
             if (!empty($staff_password))
                 $staff['staff_password'] = sha1($staff_password);

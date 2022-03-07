@@ -169,10 +169,13 @@ class Reserve_model extends Base_model
         return $query->result_array();
     }
 
-    public function getUserReserveData($from_time, $to_time, $user_id){
+    public function getUserReserveData($from_time, $to_time, $user_id, $organ_id){
         $this->db->from($this->table);
         $this->db->where('user_id', $user_id);
+        $this->db->where('organ_id', $organ_id);
         $this->db->where("reserve_time >='".$from_time."' and reserve_exit_time<'".$to_time."'");
+
+        $this->db->where("reserve_status <= 3");
 
         $query = $this->db->get();
         return $query->result_array();
