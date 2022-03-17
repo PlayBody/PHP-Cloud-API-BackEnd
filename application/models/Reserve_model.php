@@ -31,7 +31,6 @@ class Reserve_model extends Base_model
     	$this->db->from($this->table);
 
     	$this->db->where('organ_id', $organ_id);
-
     	$this->db->where("reserve_time<='". $time. "' and ADDDATE(reserve_exit_time, INTERVAL sum_interval MINUTE) >'".$time."'");
     	if (!empty($staff_id)){
             $this->db->where("staff_id", $staff_id);
@@ -96,13 +95,17 @@ class Reserve_model extends Base_model
     }
 
     public function getListByCond($cond){
-        $this->db->select($this->table.'.*, organs.organ_name, users.user_first_name, users.user_last_name');
+        $this->db->select($this->table.".*, organs.organ_name, users.user_first_name, users.user_last_name, IF(staffs.staff_nick is NULL, 
+                CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
+                staffs.staff_nick
+            ) as staff_name");
         $this->db->from($this->table);
         $this->db->join('organs', 'organs.organ_id = reserves.organ_id');
+        $this->db->join('staffs', 'staffs.staff_id = reserves.staff_id');
         $this->db->join('users', 'users.user_id = reserves.user_id');
 
         if (!empty($cond['staff_id'])){
-            $this->db->where('staff_id', $cond['staff_id']);
+            $this->db->where('reserves.staff_id', $cond['staff_id']);
         }
 
         if (!empty($cond['from_time'])){

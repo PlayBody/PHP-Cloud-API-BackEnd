@@ -70,6 +70,7 @@ class Apitickets extends WebController
         $ticket_tax = $this->input->post('tax');
         $ticket_count = $this->input->post('ticket_count');
         $ticket_image_url = $this->input->post('ticket_image');
+        $ticket_disamount = $this->input->post('disamount');
 
         $price02 = 0;
         if (intval($ticket_count)>0){
@@ -91,6 +92,7 @@ class Apitickets extends WebController
                 'ticket_price02' => $price02,
                 'ticket_cost' => $ticket_cost,
                 'ticket_tax' => $ticket_tax,
+                'ticket_disamount' => $ticket_disamount,
                 'ticket_count' => $ticket_count,
             );
 
@@ -105,6 +107,7 @@ class Apitickets extends WebController
             $ticket['ticket_price02'] = $price02;
             $ticket['ticket_cost'] = $ticket_cost;
             $ticket['ticket_tax'] = $ticket_tax;
+            $ticket['ticket_disamount'] = $ticket_disamount;
             $ticket['ticket_count'] = $ticket_count;
 
             $this->ticket_model->updateRecord($ticket, 'id');

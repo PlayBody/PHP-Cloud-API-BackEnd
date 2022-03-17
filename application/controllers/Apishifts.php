@@ -410,7 +410,7 @@ class Apishifts extends WebController
     public function loadStaffManageStatus(){
         $organ_id = $this->input->post('organ_id');
 
-        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 4);
+        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 5);
 
         $results['isLoad'] = true;
         $results['staffs'] = $staffs;
@@ -430,6 +430,7 @@ class Apishifts extends WebController
 
         $update_value = '4';
         if ($shift_type=='1') $update_value = '2';
+        if ($shift_type=='3') $update_value = '2';
         if ($shift_type=='-4') $update_value = '-3';
 
         if (empty($shift_id)){
@@ -449,7 +450,7 @@ class Apishifts extends WebController
         }
 
         if ($staff_id!=$cur_staff_id){
-            if ($update_value==4 || $update_value==2){
+            if ($update_value==2){
                 $this->sendNotificationToStaffShiftRequest($organ_id, $cur_staff_id, $staff_id, $from_time, $to_time, $update_value);
             }
         }
@@ -628,6 +629,49 @@ class Apishifts extends WebController
         $results['isUpdate'] = true;
 
         echo json_encode($results);
+    }
+
+    public function updateShiftStatus(){
+        $shift_id = $this->input->post('shift_id');
+        $status = $this->input->post('status');
+
+        $shift = $this->shift_model->getFromId($shift_id);
+
+        if (empty($shift)){
+            $results['isUpdate'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $shift['shift_type'] = $status;
+
+        $this->shift_model->updateRecord($shift, 'shift_id');
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+    }
+
+    public function updateReserveStaff(){
+        $reserve_id = $this->input->post('reserve_id');
+        $staff_id = $this->input->post('staff_id');
+
+        $reserve = $this->reserve_model->getFromId($reserve_id);
+
+        if (empty($reserve)){
+            $results['isUpdate'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $reserve['staff_id'] = $staff_id;
+
+        $this->reserve_model->updateRecord($reserve, 'reserve_id');
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+
     }
 }
 ?>

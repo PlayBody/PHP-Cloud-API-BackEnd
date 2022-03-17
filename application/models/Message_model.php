@@ -12,18 +12,27 @@ class Message_model extends Base_model
     }
 
     public function getMessageList($cond){
+        $this->db->select($this->table.".*, organs.organ_name, IF(staff_nick is NULL, CONCAT(staff_first_name,' ', staff_last_name), staff_nick) as staff_name");
         $this->db->from($this->table);
+        $this->db->join('organs', 'messages.organ_id=organs.organ_id', 'left');
+        $this->db->join('staffs', 'messages.staff_id=staffs.staff_id', 'left');
+
+
         if (!empty($cond['user_id'])){
             $this->db->where('user_id', $cond['user_id']);
         }
 
-        if (!empty($cond['group_id']) || $cond['group_id']=='0'){
+        if (!empty($cond['group_id'])){
             $this->db->where('group_id', $cond['group_id']);
             $this->db->group_by('group_key');
         }
 
         if (!empty($cond['company_id'])){
-            $this->db->where('company_id', $cond['company_id']);
+            $this->db->where('messages.company_id', $cond['company_id']);
+        }
+
+        if (!empty($cond['organs'])){
+            $this->db->where('(messages.organ_id in ('.$cond['organs'].') or type=2)');
         }
 
         $this->db->order_by('create_date', 'desc');

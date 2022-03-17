@@ -23,6 +23,7 @@ class Apiusers extends WebController
     public function getUserData(){
         $condition = $this->input->post('condition');
         $cond = json_decode($condition, true);
+        if (!empty($cond['user_password'])) $cond['user_password'] = sha1($cond['user_password']);
         $user = $this->user_model->getOneByParam($cond);
 
         if (empty($user)){
@@ -216,6 +217,7 @@ class Apiusers extends WebController
             if (!empty($this->input->post('user_sex'))) $user['user_sex'] = $this->input->post('user_sex');
             if (!empty($this->input->post('user_birthday'))) $user['user_birthday'] = $this->input->post('user_birthday');
             if (!empty($this->input->post('user_ticket'))) $user['user_ticket'] = $this->input->post('user_ticket');
+            if (!empty($this->input->post('user_comment'))) $user['user_comment'] = $this->input->post('user_comment');
             if (!empty($this->input->post('user_password')) && $this->input->post('user_password')!='oldpassword'){
                 $user['user_password'] = sha1($this->input->post('user_password'));
             }
@@ -340,7 +342,7 @@ class Apiusers extends WebController
             echo json_encode(['isDelete'=>false]);
             return;
         }
-        $this->user_model->delete($user_id, 'user_id');
+        $this->user_model->delete_force($user_id, 'user_id');
 
         $user_tickets = $this->user_ticket_model->getListByCond(['user_id'=>$user_id]);
         foreach ($user_tickets as $user_ticket){
@@ -411,5 +413,207 @@ class Apiusers extends WebController
         echo json_encode($result);
 
     }
+    public function updateDeviceToken(){
+        $user_id = $this->input->post('user_id');
+        $device_token = $this->input->post('device_token');
+
+        $user = $this->user_model->getFromId($user_id);
+        $user['user_device_token'] = $device_token;
+
+        $this->user_model->updateRecord($user, 'user_id');
+
+        $result['isUpdate'] = true;
+        echo json_encode($result);
+
+    }
+
+    public function sendResetEmail(){
+        $company_id = $this->input->post('company_id');
+        $user_email = $this->input->post('email');
+        $cond['user_email'] = $user_email;
+        $cond['company_id'] = $company_id;
+        $user = $this->user_model->getOneByParam($cond);
+
+        if (empty($user)){
+            $results['isLoad'] = false;
+        }else{
+            $company = $this->company_model->getFromId($user['company_id']);
+            try {
+                $config = array(
+                    'protocol' => 'smtp', // 'mail', 'sendmail', or 'smtp'
+                    'smtp_host' => 'mail.visit-pos.net',
+                    'smtp_port' => 587,
+                    'smtp_user' => 'system@visit-pos.net',
+                    'smtp_pass' => '1#TQUr*zX-gF]Xx)',
+                );
+
+                $this->load->library('email');
+
+                $this->email->initialize($config);
+
+                $password = rand(10000, 99999);
+                $user['user_password'] = sha1($password);
+                $this->user_model->updateRecord($user, 'user_id');
+
+                $body = "「".$user['user_first_name']." ".$user['user_last_name']."」様
+
+VISITの自動送信メールです
+
+
+パスワードのリセットが完了しました。
+新しいパスワードは　「".$password."」　です。
+
+よろしくお願い致します。";
+
+                $this->email->from('system@visit-pos.net', 'Visit System');
+                $this->email->to($user_email);
+                $this->email->subject($company['company_name'].'アプリのパスワードが初期化されました。');
+                $this->email->message($body);
+                $this->email->send();
+
+                $results['isLoad'] = true;
+            }catch (Exception $e){
+                return false;
+            }
+        }
+
+        echo json_encode($results);
+    }
+
+    public function registerVerifyCode(){
+        $company_id = $this->input->post('company_id');
+        $user_email = $this->input->post('email');
+        $cond['email'] = $user_email;
+        $cond['company_id'] = $company_id;
+
+        $this->load->model('verify_code_model');
+
+        $data = $this->verify_code_model->getOneByParam($cond);
+        $code = rand(1000, 9999);
+
+        if (empty($data)){
+            $data = array(
+                'company_id' => $company_id,
+                'email' => $user_email,
+                'code' => $code
+            );
+
+            $this->verify_code_model->insertRecord($data);
+        }else{
+            $data['code'] = $code;
+            $this->verify_code_model->updateRecord($data);
+        }
+        try {
+            $config = array(
+                'protocol' => 'smtp', // 'mail', 'sendmail', or 'smtp'
+                'smtp_host' => 'mail.visit-pos.net',
+                'smtp_port' => 587,
+                'smtp_user' => 'system@visit-pos.net',
+                'smtp_pass' => '1#TQUr*zX-gF]Xx)',
+            );
+
+            $this->load->library('email');
+
+            $this->email->initialize($config);
+
+            $body = "VISITの自動送信メールです
+
+SecurityCodeは　「".$code."」　です。
+
+よろしくお願い致します。";
+
+            $company = $this->company_model->getFromId($company_id);
+            $this->email->from('system@visit-pos.net', 'Visit System');
+            $this->email->to($user_email);
+            $this->email->subject($company['company_name'].'アプリSecurity CODE');
+            $this->email->message($body);
+            $this->email->send();
+
+        }catch (Exception $e){
+            return false;
+        }
+        $results['isLoad'] = true;
+
+        echo json_encode($results);
+    }
+
+    public function userVerifyAndRegister(){
+        $company_id = $this->input->post('company_id');
+        $user_email = $this->input->post('user_email');
+        $code = $this->input->post('code');
+
+        $cond['email'] = $user_email;
+        $cond['company_id'] = $company_id;
+        $cond['code'] = $code;
+        $this->load->model('verify_code_model');
+        $data = $this->verify_code_model->getOneByParam($cond);
+        if (empty($data)){
+            $results['isVerify'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $user_code = $this->generateUserCode();
+
+        $user = array(
+            'company_id' => $company_id,
+            'user_no' => $user_code,
+            'user_grade' => '1',
+            'user_qrcode' => $this->generateUserQRCode($user_code, $company_id),
+            'user_first_name' => empty($this->input->post('user_first_name')) ? null : $this->input->post('user_first_name'),
+            'user_last_name' => empty($this->input->post('user_last_name')) ? null : $this->input->post('user_last_name'),
+            'user_nick' => $this->input->post('user_nick'),
+            'user_email' => empty($this->input->post('user_email')) ? null : $this->input->post('user_email'),
+            'user_tel' => empty($this->input->post('user_tel')) ? null : $this->input->post('user_tel'),
+            'user_sex' => empty($this->input->post('user_sex')) ? null : $this->input->post('user_sex'),
+            'user_birthday' => empty($this->input->post('user_birthday')) ? null : $this->input->post('user_birthday'),
+            'user_ticket' => 0,
+            'user_device_token' => empty($this->input->post('user_device_token')) ? '' : $this->input->post('user_device_token'),
+            'user_password' => empty($this->input->post('user_password')) ? null : sha1($this->input->post('user_password')),
+            'visible' => 1,
+        );
+        $user_id = $this->user_model->insertRecord($user);
+
+        $results['isVerify'] = true;
+        $results['user_id'] = $user_id;
+        $results['user_name'] = $this->input->post('user_first_name').' '. $this->input->post('user_last_name');
+
+        echo json_encode($results);
+
+
+    }
+
+
+    public function updateUserProfile(){
+        $user_id = $this->input->post('user_id');
+
+        $user = $this->user_model->getFromId($user_id);
+
+        if (empty($user['user_no'])){
+            $user['user_no'] = $this->generateUserCode();
+            $user['user_qrcode'] = $this->generateUserQRCode($user['user_no'], $user['company_id']);
+        }
+
+        if (!empty($this->input->post('user_first_name'))) $user['user_first_name'] = $this->input->post('user_first_name');
+        if (!empty($this->input->post('user_last_name'))) $user['user_last_name'] = $this->input->post('user_last_name');
+        if (!empty($this->input->post('user_nick'))) $user['user_nick'] = $this->input->post('user_nick');
+        if (!empty($this->input->post('user_tel'))) $user['user_tel'] = $this->input->post('user_tel');
+        if (!empty($this->input->post('user_sex'))) $user['user_sex'] = $this->input->post('user_sex');
+        if (!empty($this->input->post('user_birthday'))) $user['user_birthday'] = $this->input->post('user_birthday');
+        if (!empty($this->input->post('user_ticket'))) $user['user_ticket'] = $this->input->post('user_ticket');
+        if (!empty($this->input->post('user_password')) && $this->input->post('user_password')!='oldpassword'){
+            $user['user_password'] = sha1($this->input->post('user_password'));
+        }
+
+        $this->user_model->updateRecord($user, 'user_id');
+
+        $results['isUpdate'] = $user;
+        echo json_encode($results);
+
+
+    }
+
+
+
 }
 ?>

@@ -95,6 +95,9 @@ class Staff_model extends Base_model
         if (!empty($cond['max_auth'])){
             $this->db->where('staffs.staff_auth <=', $cond['max_auth']);
         }
+        if (!empty($cond['company_id'])){
+            $this->db->where('staffs.company_id', $cond['company_id']);
+        }
 
         $this->db->order_by('sort_no', 'asc');
 
