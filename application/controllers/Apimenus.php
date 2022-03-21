@@ -224,11 +224,14 @@ class Apimenus extends WebController
 
         $menu_title = $this->input->post('title');
         $menu_price = $this->input->post('price');
+        $menu_detail = $this->input->post('detail');
         $menu_cost = $this->input->post('cost');
         $menu_tax = $this->input->post('tax');
+        $menu_comment = $this->input->post('comment');
         $is_user_menu = empty($this->input->post('is_user_menu')) ? null : $this->input->post('is_user_menu');
         $menu_time = empty($this->input->post('menu_time')) ? null : $this->input->post('menu_time');
         $menu_interval = empty($this->input->post('menu_interval')) ? null : $this->input->post('menu_interval');
+        $menu_image = empty($this->input->post('image')) ? null : $this->input->post('image');
 
         if (empty($organ_id)){
             $results['isSave'] = false;
@@ -241,11 +244,14 @@ class Apimenus extends WebController
                 'organ_id' => $organ_id,
                 'menu_title' => $menu_title,
                 'menu_price' => $menu_price,
+                'menu_detail' => $menu_detail,
                 'menu_cost' => $menu_cost,
                 'menu_tax' => $menu_tax,
+                'menu_comment' => $menu_comment,
                 'is_user_menu' => $is_user_menu,
                 'menu_time' => $menu_time,
                 'menu_interval' => $menu_interval,
+                'menu_image' => $menu_image,
                 'sort_no' => $this->menu_model->getMaxOrder($organ_id),
                 'visible'=>'1',
             );
@@ -253,16 +259,21 @@ class Apimenus extends WebController
             $menu_id = $this->menu_model->InsertRecord($menu);
 
         }else{
-            $variation = $this->menu_model->getFromId($menu_id);
-            $variation['menu_title'] = $menu_title;
-            $variation['menu_price'] = $menu_price;
-            $variation['menu_cost'] = $menu_cost;
-            $variation['menu_tax'] = $menu_tax;
-            $variation['is_user_menu'] = $is_user_menu;
-            $variation['menu_time'] = $menu_time;
-            $variation['menu_interval'] = $menu_interval;
+            $menu = $this->menu_model->getFromId($menu_id);
+            $menu['menu_title'] = $menu_title;
+            $menu['menu_price'] = $menu_price;
+            $menu['menu_detail'] = $menu_detail;
+            $menu['menu_cost'] = $menu_cost;
+            $menu['menu_tax'] = $menu_tax;
+            $menu['menu_comment'] = $menu_comment;
+            $menu['is_user_menu'] = $is_user_menu;
+            $menu['menu_time'] = $menu_time;
+            $menu['menu_interval'] = $menu_interval;
+            if ($menu_image!=null){
+                $menu['menu_image'] = $menu_image;
+            }
 
-            $this->menu_model->updateRecord($variation, 'menu_id');
+            $this->menu_model->updateRecord($menu, 'menu_id');
 
         }
 
@@ -558,5 +569,50 @@ class Apimenus extends WebController
         echo json_encode($results);
     }
 
+    public function loadMenuInfo(){
+        $menu_id = $this->input->post('menu_id');
+
+        $results = [];
+        if (empty($menu_id) ){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+        $menu = $this->menu_model->getFromId($menu_id);
+
+        $results['isLoad'] = true;
+        $results['menu'] = $menu;
+
+        echo(json_encode($results));
+    }
+
+    public function loadVaritions(){
+        $menu_id = $this->input->post('menu_id');
+
+        $variations = $this->menu_variation_model->getVariationList(['menu_id'=>$menu_id]);
+
+        $variation_data = [];
+        foreach ($variations as $item){
+            $back_list = $this->menu_variation_back_model->getVariationBacks($item['variation_id']);
+            $item['backs'] = $back_list;
+            $variation_data[] = $item;
+        }
+
+
+        $results['isLoad'] = true;
+
+        $results['variations'] = $variation_data;
+
+        echo json_encode($results);
+
+    }
+    public function loadBackStaffs(){
+        $organ_id = $this->input->post('organ_id');
+        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 2);
+
+        $results['staffs'] = $staffs;
+
+        echo json_encode($results);
+    }
 }
 ?>

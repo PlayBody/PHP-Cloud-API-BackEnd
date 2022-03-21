@@ -92,6 +92,7 @@ class Apisettings extends WebController
         $organ['table_count'] = empty($this->input->post('table_count')) ? null : $this->input->post('table_count');
         $organ['set_time'] = empty($this->input->post('set_time')) ? null : $this->input->post('set_time');
         $organ['set_number'] =  $this->input->post('set_number');
+        $organ['is_use_set'] =  $this->input->post('is_use_set');
         $organ['set_amount'] = empty($this->input->post('set_amount')) ? null : $this->input->post('set_amount');
         $organ['table_amount'] = empty($this->input->post('table_amount')) ? null : $this->input->post('table_amount');
         $organ['active_start_time'] = empty($this->input->post('active_start_time')) ? null : $this->input->post('active_start_time');
@@ -100,6 +101,7 @@ class Apisettings extends WebController
         $organ['address'] = empty($this->input->post('address')) ? null : $this->input->post('address');
         $organ['phone'] = empty($this->input->post('tel_phone')) ? null : $this->input->post('tel_phone');
         $organ['open_balance'] = empty($this->input->post('open_balance')) ? null : $this->input->post('open_balance');
+        $organ['comment'] = empty($this->input->post('comment')) ? null : $this->input->post('comment');
         $organ['lat'] = empty($this->input->post('lat')) ? null : $this->input->post('lat');
         $organ['lon'] = empty($this->input->post('lon')) ? null : $this->input->post('lon');
         $organ['distance'] = empty($this->input->post('distance')) ? null : $this->input->post('distance');
@@ -112,6 +114,9 @@ class Apisettings extends WebController
         $organ['open_business_point'] = empty($this->input->post('open_business_point')) ? null : $this->input->post('open_business_point');
         $organ['close_business_point'] = empty($this->input->post('close_business_point')) ? null : $this->input->post('close_business_point');
         $organ['checkin_ticket_consumption'] = $this->input->post('checkin_ticket_consumption');
+        if (!empty($this->input->post('image'))){
+            $organ['image'] = $this->input->post('image');
+        }
 
         if (!empty($this->input->post('print_logo_file'))){
             $organ['print_logo_file'] = $this->input->post('print_logo_file');
@@ -149,30 +154,36 @@ class Apisettings extends WebController
     public function updateOrganTitle()
     {
         $organ_id = $this->input->post('organ_id');
+        $company_id = $this->input->post('company_id');
         $update_title = $this->input->post('update_title');
 
         $results = [];
         if (empty($organ_id)){
-            $results['isUpdate'] = false;
+            $organ = array(
+                'company_id' => $company_id,
+                'organ_name' => $update_title,
+                'organ_number' => $this->organ_model->getMaxOrganNumber($company_id)
+            );
+            $organ_id = $this->organ_model->insertRecord($organ);
+        }else{
+            $organ = $this->organ_model->getFromId($organ_id);
 
-            echo(json_encode($results));
-            exit(0);
+            if (empty($organ)){
+                $results['isUpdate'] = false;
+
+                echo(json_encode($results));
+                exit(0);
+            }
+
+            $organ['organ_name'] = $update_title;
+
+            $result = $this->organ_model->updateRecord($organ,'organ_id');
         }
 
-        $organ = $this->organ_model->getFromId($organ_id);
 
-        if (empty($organ)){
-            $results['isUpdate'] = false;
-
-            echo(json_encode($results));
-            exit(0);
-        }
-
-        $organ['organ_name'] = $update_title;
-
-        $result = $this->organ_model->updateRecord($organ,'organ_id');
 
         $results['isUpdate'] = true;
+        $results['organ_id'] = $organ_id;
         $results['title'] = $update_title;
 
         echo(json_encode($results));

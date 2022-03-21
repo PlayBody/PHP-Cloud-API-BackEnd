@@ -81,7 +81,30 @@ class Apicoupons extends WebController
 
     }
 
+    public function loadStampList(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
 
+        $stamps = $this->stamp_model->getStampList($cond);
+        $results['isLoad'] = true;
+        $results['stamps'] = $stamps;
+
+        echo json_encode($results);
+
+    }
+
+    public function loadCoupons(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+
+        $coupons = $this->user_coupon_model->getUserCoupons($cond);
+
+        $results['isLoad'] = true;
+        $results['coupons'] = $coupons;
+
+        echo json_encode($results);
+
+    }
     public function loadUserCouponList(){
 //        $company_id = $this->input->post('company_id');
         $user_id = $this->input->post('user_id');

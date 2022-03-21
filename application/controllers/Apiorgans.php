@@ -12,6 +12,7 @@ class Apiorgans extends WebController
         parent::__construct();
 
         $this->load->model('staff_model');
+        $this->load->model('table_model');
         $this->load->model('organ_model');
         $this->load->model('staff_organ_model');
         $this->load->model('organ_setting_model');
@@ -361,5 +362,64 @@ class Apiorgans extends WebController
         echo json_encode($results);
     }
 
+    public function loadBusinessTimes(){
+        $organ_id = $this->input->post('organ_id');
+
+        if (empty($organ_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $data = $this->organ_time_model->getListByCond(['organ_id'=>$organ_id]);
+
+        $results = [];
+        $results['isLoad'] = true;
+        $results['times'] = $data;
+
+        echo json_encode($results);
+    }
+
+    public function loadShiftTimes(){
+        $organ_id = $this->input->post('organ_id');
+
+        if (empty($organ_id)){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $data = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id]);
+
+        $results = [];
+        $results['isLoad'] = true;
+        $results['times'] = $data;
+
+        echo json_encode($results);
+    }
+
+
+    public function isUseSetInTable(){
+        $table_id = $this->input->post('table_id');
+
+        $table = $this->table_model->getFromId($table_id);
+
+        if (empty($table_id) || empty($table['organ_id'])){
+            $results['isLoad'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $organ = $this->organ_model->getFromId($table['organ_id']);
+
+        $isUse = true;
+        if(empty($organ) || empty($organ['is_use_set']) || $organ['is_use_set']=='0') $isUse = false;
+
+        $results = [];
+        $results['isLoad'] = true;
+        $results['isUse'] = $isUse;
+
+        echo json_encode($results);
+    }
 }
 ?>
