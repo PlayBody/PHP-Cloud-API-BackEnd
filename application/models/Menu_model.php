@@ -89,4 +89,18 @@ class Menu_model extends Base_model
 
     }
 
+    public function getCompanyUserMenuList($company_id){
+        $this->db->select('*');
+        $this->db->from($this->table);
+        $this->db->join('organs', 'organs.organ_id=menus.organ_id', 'left');
+        //$this->db->where('visible', '1');
+        $this->db->where('company_id', $company_id);
+        $this->db->where('is_user_menu', 1);
+
+        $this->db->order_by('sort_no', 'asc');
+
+        $query = $this->db->get();
+
+        return $query->result_array();
+    }
 }

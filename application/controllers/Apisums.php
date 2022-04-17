@@ -36,6 +36,7 @@ class Apisums extends WebController
             return;
         }
 
+        $weekAry = array('', '月', '火', '水', '木', '金', '土', '日');
         if ($select_month<10) $select_month = "0".$select_month;
         $graphs = [];
         for ($i=$from_day; $i<=$to_day;$i++){
@@ -47,14 +48,19 @@ class Apisums extends WebController
             $sel_date = $select_year . "-" . $select_month . "-" . $i_day;
             $amount = $this->history_table_model->getOrderAmount($organ_id, $sel_date, $sel_date);
 
-            $graphs[$i]['all'] = 0;
-            $graphs[$i]['cnt'] = 0;
-            $graphs[$i]['average'] = 0;
+            $curDateTime = new DateTime($sel_date);
+            $week = $curDateTime->format("N");
+
+
+            $key = $i."\n(".$weekAry[$week].")";
+            $graphs[$key]['all'] = 0;
+            $graphs[$key]['cnt'] = 0;
+            $graphs[$key]['average'] = 0;
             if (!empty($amount['amount'])){
-                 $graphs[$i]['all'] = (int)$amount['amount'];
-                 $graphs[$i]['cnt'] = (int)$amount['customer_count'];
+                 $graphs[$key]['all'] = (int)$amount['amount'];
+                 $graphs[$key]['cnt'] = (int)$amount['customer_count'];
                  if (!empty($amount['customer_count']))
-                    $graphs[$i]['average'] = (int)($amount['amount'] / $amount['customer_count']);
+                    $graphs[$key]['average'] = (int)($amount['amount'] / $amount['customer_count']);
             }
 
         }

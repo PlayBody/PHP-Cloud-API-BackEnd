@@ -23,6 +23,8 @@ class Apistaffs extends WebController
         $this->load->model('staff_point_setting_model');
         $this->load->model('staff_point_add_model');
         $this->load->model('reserve_model');
+        $this->load->model('staff_enable_menu_model');
+
     }
 
     public function login()
@@ -287,6 +289,10 @@ class Apistaffs extends WebController
         $staff_shift = $this->input->post('staff_shift');
         $table_position = empty($this->input->post('table_position')) ? null : $this->input->post('table_position');
         $staff_comment = $this->input->post('staff_comment');
+        $menu_response = empty($this->input->post('menu_response')) ? null : $this->input->post('menu_response');
+        $add_rate = empty($this->input->post('add_rate')) ? null : $this->input->post('add_rate');
+        $test_rate = empty($this->input->post('test_rate')) ? null : $this->input->post('test_rate');
+        $quality_rate = empty($this->input->post('quality_rate')) ? null : $this->input->post('quality_rate');
 
         $staff_avatar =empty($this->input->post('staff_avatar')) ? null : $this->input->post('staff_avatar');
 
@@ -325,6 +331,10 @@ class Apistaffs extends WebController
             $staff['staff_salary_minutes'] = empty($staff_salary_minutes) ? null : $staff_salary_minutes;
             $staff['staff_salary_times'] = empty($staff_salary_times) ? null : $staff_salary_times;
             $staff['staff_comment'] = $staff_comment;
+            $staff['menu_response'] = $menu_response;
+            $staff['add_rate'] = $add_rate;
+            $staff['test_rate'] = $test_rate;
+            $staff['quality_rate'] = $quality_rate;
             $staff['visible'] = 1;
             $staff['sort_no'] = $this->staff_model->getSortMax();
             $staff['create_date'] = date('Y-m-d H:i:s');
@@ -353,6 +363,10 @@ class Apistaffs extends WebController
             $staff['staff_salary_minutes'] = empty($staff_salary_minutes) ? null : $staff_salary_minutes;
             $staff['staff_salary_times'] = empty($staff_salary_times) ? null : $staff_salary_times;
             $staff['staff_comment'] = $staff_comment;
+            $staff['menu_response'] = $menu_response;
+            $staff['add_rate'] = $add_rate;
+            $staff['test_rate'] = $test_rate;
+            $staff['quality_rate'] = $quality_rate;
 
             if (!empty($staff_password))
                 $staff['staff_password'] = sha1($staff_password);
@@ -944,6 +958,39 @@ class Apistaffs extends WebController
         $results['isUpdate'] = true;
         echo json_encode($results);
     }
+
+    public function getStaffEnableMenus(){
+        $staff_id = $this->input->post('staff_id');
+        $organ_id = $this->input->post('organ_id');
+
+        $menus = $this->staff_enable_menu_model->getMenuList($staff_id, $organ_id);
+
+        $results['isLoad'] = !empty($menus);
+        $results['menus'] = $menus;
+
+        echo json_encode($results);
+    }
+
+    public function updateStaffEnableMenu(){
+        $staff_id = $this->input->post('staff_id');
+        $menu_id = $this->input->post('menu_id');
+
+        $menu = $this->staff_enable_menu_model->getEnableMenu($staff_id, $menu_id);
+
+        if (empty($menu)){
+            $this->staff_enable_menu_model->insertRecord([
+                'staff_id' => $staff_id,
+                'menu_id'=> $menu_id,
+            ]);
+        }else{
+            $this->staff_enable_menu_model->delete_force($menu['staff_enable_menu_id'], 'staff_enable_menu_id');
+        }
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+    }
+
 
 }
 ?>

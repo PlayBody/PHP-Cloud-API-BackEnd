@@ -614,5 +614,17 @@ class Apimenus extends WebController
 
         echo json_encode($results);
     }
+
+    public function loadCompanyUserMenus(){
+        $company_id = $this->input->post('company_id');
+
+        $menus = $this->menu_model->getCompanyUserMenuList($company_id);
+
+        $results['isLoad'] = true;
+        $results['menus'] = $menus;
+
+        echo json_encode($results);
+
+    }
 }
 ?>

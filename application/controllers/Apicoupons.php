@@ -23,6 +23,8 @@ class Apicoupons extends WebController
         $this->load->model('company_model');
 
         $this->load->model('stamp_model');
+        $this->load->model('rank_model');
+        $this->load->model('rank_prefer_model');
     }
 
     public function loadCouponList(){
@@ -263,6 +265,111 @@ class Apicoupons extends WebController
         $results['isSave'] = true;
         echo json_encode($results);
 
+    }
+
+    public function saveStamp(){
+        $rank_id = $this->input->post('rank_id');
+        $rank_name = $this->input->post('rank_name');
+        $company_id = $this->input->post('company_id');
+        $max_stamp = $this->input->post('max_stamp');
+
+        $prefer_json = $this->input->post('prefer_json');
+
+        $prefers = empty($prefer_json)? [] :json_decode($prefer_json, true);
+
+        if (empty($rank_id)){
+            $max_rank = $this->rank_model->getFromMaxLevel($company_id);
+            $rank_data = array(
+                'rank_name' => $rank_name,
+                'rank_level' => $max_rank,
+                'company_id' => $company_id,
+                'max_stamp' => $max_stamp
+            );
+
+            $rank_id = $this->rank_model->insertRecord($rank_data);
+        }else{
+            $rank_data = $this->rank_model->getFromId($rank_id);
+            $rank_data['rank_name'] = $rank_name;
+            $rank_data['max_stamp'] = $max_stamp;
+
+            $this->rank_model->updateRecord($rank_data, 'rank_id');
+        }
+
+        foreach ($prefers as $prefer){
+            if (empty($prefer['rank_prefer_id'])){
+                $prefer_data = array(
+                    'rank_id' => $rank_id,
+                    'stamp_count'=>$prefer['stamp_count'],
+                    'menu_id' => $prefer['menu_id']
+                );
+                $this->rank_prefer_model->insertRecord($prefer_data);
+            }else{
+                if ($prefer['is_delete']=='1'){
+                    $this->rank_prefer_model->delete_force($prefer['rank_prefer_id'], 'rank_prefer_id');
+                }else{
+                    $prefer_data = $this->rank_prefer_model->getFromId($prefer['rank_prefer_id']);
+                    $prefer_data['stamp_count'] = $prefer['stamp_count'];
+                    $prefer_data['menu_id'] = $prefer['menu_id'];
+
+                    $this->rank_prefer_model->updateRecord($prefer_data, 'rank_prefer_id');
+                }
+            }
+        }
+
+        $results['isSave'] = true;
+
+        echo json_encode($results);
+    }
+
+    public function loadRanks(){
+        $company_id = $this->input->post('company_id');
+        $max_rank = $this->input->post('max_rank');
+
+
+
+        $ranks = $this->rank_model->getRankList(['company_id'=>$company_id, 'max_rank'=>$max_rank]);
+        $results['ranks'] = $ranks;
+        echo json_encode($results);
+    }
+
+    public function loadRankInfo(){
+        $rank_id = $this->input->post('rank_id');
+
+        $rank = $this->rank_model->getFromId($rank_id);
+
+        $results['rank'] = $rank;
+        echo json_encode($results);
+    }
+
+    public function loadRankPrefers(){
+        $company_id = $this->input->post('company_id');
+        $rank_id = $this->input->post('rank_id');
+
+        $cond = [];
+
+        if(!empty($company_id)) $cond['company_id'] = $company_id;
+        if(!empty($rank_id)) $cond['rank_id'] = $rank_id;
+
+        $prefers = $this->rank_prefer_model->getPreferList($cond);
+
+        $results['prefers'] = $prefers;
+        echo json_encode($results);
+    }
+
+    public function deleteRanks(){
+        $rank_id = $this->input->post('rank_id');
+        $rank = $this->rank_model->getFromId($rank_id);
+        $this->rank_model->delete_force($rank_id, 'rank_id');
+        $this->rank_prefer_model->delete_force($rank_id, 'rank_id');
+
+        $after_ranks = $this->rank_model->getRankList(['company_id'=>$rank['company_id'], 'after_rank'=>$rank['rank_level']]);
+        foreach ($after_ranks as $after_rank){
+            $after_rank['rank_level']--;
+            $this->rank_model->updateRecord($after_rank, 'rank_id');
+        }
+
+        $results['isDelete'] = true;
+        echo json_encode($results);
     }
 }
 ?>

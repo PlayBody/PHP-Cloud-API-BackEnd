@@ -17,6 +17,7 @@ class Apitickets extends WebController
         $this->load->model('mst_ticket_model');
         $this->load->model('ticket_model');
         $this->load->model('user_ticket_model');
+        $this->load->model('ticket_push_setting_model');
     }
 
     public function loadMasterTicket(){
@@ -72,6 +73,10 @@ class Apitickets extends WebController
         $ticket_image_url = $this->input->post('ticket_image');
         $ticket_disamount = $this->input->post('disamount');
 
+        $is_period  = $this->input->post('is_period');
+        $period_month = $this->input->post('period_month');
+        if (empty($period_month))  $period_month = null;
+
         $price02 = 0;
         if (intval($ticket_count)>0){
             $tax_rate = 1;
@@ -94,6 +99,8 @@ class Apitickets extends WebController
                 'ticket_tax' => $ticket_tax,
                 'ticket_disamount' => $ticket_disamount,
                 'ticket_count' => $ticket_count,
+                'is_period' => $is_period,
+                'period_month' => $period_month,
             );
 
             $this->ticket_model->insertRecord($ticket);
@@ -109,6 +116,8 @@ class Apitickets extends WebController
             $ticket['ticket_tax'] = $ticket_tax;
             $ticket['ticket_disamount'] = $ticket_disamount;
             $ticket['ticket_count'] = $ticket_count;
+            $ticket['is_period'] = $is_period;
+            $ticket['period_month'] = $period_month;
 
             $this->ticket_model->updateRecord($ticket, 'id');
         }
@@ -199,6 +208,61 @@ class Apitickets extends WebController
 
         echo json_encode($results);
 
+    }
+
+
+    public function updateMaster(){
+        $master_id = $this->input->post('master_id');
+        $title = $this->input->post('title');
+        if(empty($master_id)){
+            $data = array('ticket_name'=>$title);
+            $this->mst_ticket_model->insertRecord($data);
+        }else{
+            $data = $this->mst_ticket_model->getFromId($master_id);
+            $data['ticket_name'] = $title;
+            $this->mst_ticket_model->updateRecord($data, 'id');
+        }
+        $results['isUpdate'] = true;
+        echo json_encode($results);
+
+    }
+    public function deleteMaster(){
+        $master_id = $this->input->post('master_id');
+        if(empty($master_id)){
+            $results['isDelete'] = false;
+        }else{
+            $this->mst_ticket_model->delete_force($master_id, 'id');
+            $results['isDelete'] = true;
+        }
+
+        echo json_encode($results);
+
+    }
+
+    public function savePushSetting(){
+        $ticket_id = $this->input->post('ticket_id');
+        $before_day = $this->input->post('before_day');
+        $push_time = $this->input->post('push_time');
+
+        $data = array(
+            'ticket_id' => $ticket_id,
+            'before_day'=>$before_day,
+            'push_time'=> $push_time
+        );
+        $this->ticket_push_setting_model->insertRecord($data);
+
+        $results['isSave'] = true;
+        echo json_encode($results);
+
+    }
+
+    public function loadTicketResetPushSettings(){
+        $ticket_id = $this->input->post('ticket_id');
+        $settings = $this->ticket_push_setting_model->getSettingList($ticket_id);
+        $results['isLoad'] = true;
+        $results['settings'] = $settings;
+
+        echo json_encode($results);
     }
 }
 ?>

@@ -17,6 +17,7 @@ class Apiorgans extends WebController
         $this->load->model('staff_organ_model');
         $this->load->model('organ_setting_model');
         $this->load->model('organ_time_model');
+        $this->load->model('organ_special_time_model');
         $this->load->model('organ_shift_time_model');
     }
 
@@ -233,6 +234,7 @@ class Apiorgans extends WebController
             );
 
             $time_id = $this->organ_time_model->insertRecord($data);
+
         }else{
             $data  = $this->organ_time_model->getFromId($time_id);
             $data['from_time'] = $from_time;
@@ -421,5 +423,51 @@ class Apiorgans extends WebController
 
         echo json_encode($results);
     }
+
+    public function loadOrganSpecialTimes(){
+        $organ_id = $this->input->post('organ_id');
+        $times = $this->organ_special_time_model->getTimeList($organ_id);
+
+        $results['isLoad'] = true;
+        $results['times'] = $times;
+
+        echo json_encode($results);
+    }
+
+    public function saveOrganSpecialTime(){
+        $organ_id = $this->input->post('organ_id');
+        $from_time  = $this->input->post('from_time');
+        $to_time  = $this->input->post('to_time');
+
+        $data = array(
+            'organ_id'=>$organ_id,
+            'from_time' => $from_time,
+            'to_time'=>$to_time
+        );
+
+        $this->organ_special_time_model->insertRecord($data);
+
+        $results = [];
+        $results['isSave'] = true;
+        echo json_encode($results);
+    }
+
+    public function deleteOrganSpecialTime(){
+        $time_id = $this->input->post('time_id');
+
+        if (empty($time_id)){
+            $results['isDelete'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $this->organ_special_time_model->delete_force($time_id, 'organ_special_time_id');
+
+        $results = [];
+        $results['isDelete'] = true;
+        echo json_encode($results);
+        return;
+    }
+
 }
 ?>

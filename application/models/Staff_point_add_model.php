@@ -56,4 +56,29 @@ class Staff_point_add_model extends Base_model
         return empty($results['sum_point']) ? 0 : $results['sum_point'];
     }
 
+    public function getStaffAddPoints($cond){
+        $this->db->select($this->table.".*, IF(staff_nick is NULL, CONCAT(staff_first_name,' ', staff_last_name), staff_nick) as staff_name");
+        $this->db->from($this->table);
+        $this->db->join('staffs', 'staff_point_adds.staff_id=staffs.staff_id', 'left');
+
+        if(!empty($cond['staff_id'])){
+            $this->db->where($this->table.'.staff_id', $cond['staff_id']);
+        }
+        if(!empty($cond['point_date'])){
+            $this->db->where('point_date', $cond['point_date']);
+        }
+        if(!empty($cond['point_month'])){
+            $this->db->where("point_date like '" . $cond['point_month'] . "-%'");
+        }
+        if(!empty($cond['organ_id'])){
+            $this->db->where('organ_id', $cond['organ_id']);
+        }
+        if(!empty($cond['status'])){
+            $this->db->where('status', $cond['status']);
+        }
+
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+
 }
