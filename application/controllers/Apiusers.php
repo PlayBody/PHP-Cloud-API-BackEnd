@@ -125,6 +125,7 @@ class Apiusers extends WebController
 
     public function loadUserList(){
         $company_id = $this->input->post('company_id');
+        $searchWord = $this->input->post('search_word');
 
         if (empty($company_id)){
             $results['isLoad'] = false;
@@ -132,7 +133,7 @@ class Apiusers extends WebController
             return;
         }
 
-        $users = $this->user_model->getUsersByCond(['company_id'=>$company_id]);
+        $users = $this->user_model->getUsersByCond(['company_id'=>$company_id, 'search'=>$searchWord]);
 
         $results['isLoad'] = true;
         $results['users'] = $users;

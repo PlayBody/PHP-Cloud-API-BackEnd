@@ -227,6 +227,15 @@ class Apimessages extends WebController
         echo json_encode($results);
 
     }
+    public function getUserUnreadCount(){
+        $user_id = $this->input->post('user_id');
+        $count = $this->message_model->getUnreadMessageCount('2', $user_id);
+
+        $results['count'] = empty($count)?0 : $count;
+        echo json_encode($results);
+
+    }
+
 
     function uploadAttachment() {
 

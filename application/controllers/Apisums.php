@@ -52,9 +52,10 @@ class Apisums extends WebController
             $week = $curDateTime->format("N");
 
 
-            $key = $i."\n(".$weekAry[$week].")";
+            $key = $i;
             $graphs[$key]['all'] = 0;
             $graphs[$key]['cnt'] = 0;
+            $graphs[$key]['yobi'] = $i."\n(".$weekAry[$week].")";
             $graphs[$key]['average'] = 0;
             if (!empty($amount['amount'])){
                  $graphs[$key]['all'] = (int)$amount['amount'];

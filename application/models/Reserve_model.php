@@ -101,7 +101,7 @@ class Reserve_model extends Base_model
             ) as staff_name");
         $this->db->from($this->table);
         $this->db->join('organs', 'organs.organ_id = reserves.organ_id');
-        $this->db->join('staffs', 'staffs.staff_id = reserves.staff_id');
+        $this->db->join('staffs', 'staffs.staff_id = reserves.staff_id', 'left');
         $this->db->join('users', 'users.user_id = reserves.user_id');
 
         if (!empty($cond['staff_id'])){

@@ -118,6 +118,9 @@ class Apireserves extends WebController
         $ticket_amount = $this->input->post('ticket_amount');
         $amount = $this->input->post('amount');
         $sum_time = empty($this->input->post('sum_time')) ? 0 : $this->input->post('sum_time');
+        $user_2 = empty($this->input->post('user_2')) ? null : $this->input->post('user_2');
+        $user_3 = empty($this->input->post('user_3')) ? null : $this->input->post('user_3');
+        $user_4 = empty($this->input->post('user_4')) ? null : $this->input->post('user_4');
         $results = [];
         
         if (empty($organ_id) || empty($user_id)){
@@ -146,6 +149,9 @@ class Apireserves extends WebController
             'coupon_use_amount' => empty($coupon_use_amount)?null:$coupon_use_amount,
             'ticket_amount' => empty($ticket_amount) ? null : $ticket_amount,
             'amount' => $amount,
+            'reserve_name_2' => $user_2,
+            'reserve_name_3' => $user_3,
+            'reserve_name_4' => $user_4,
             'reserve_status'=>$condition_status==1 ? 2 : 1,
             'visible' => 1,
         );
@@ -168,6 +174,7 @@ class Apireserves extends WebController
             $insertData = array(
                 'reserve_id' => $reserve_id,
                 'menu_id' => $record->menu_id,
+                'multi_number' => $record->multi_number,
                 'menu_price' => $record->menu_price,
             );
 
@@ -229,7 +236,7 @@ class Apireserves extends WebController
     }
 
     public function loadReserveList(){
-        $user_id = $this->input->post('user_id');
+        $user_id = 188; $this->input->post('user_id');
         $staff_id = $this->input->post('staff_id');
         $company_id = $this->input->post('company_id');
 
@@ -588,6 +595,7 @@ class Apireserves extends WebController
             $end_time = '24:00';
         }
 
+        //open time check
         $isActive = $this->organ_time_model->isPeriodActiveTime($organ_id, $week, $start_time, $end_time);
         if (!$isActive) return '3';
 
@@ -596,7 +604,7 @@ class Apireserves extends WebController
 
         $staff_reserve_count = $this->reserve_model->getReserveCount($organ_id, $from_time, $staff_id);
        if (empty($staff_id)) {
-           $activeStaffCount = $this->shift_model->getActiveStaffCount($organ_id, $from_time);
+            $activeStaffCount = $this->shift_model->getActiveStaffCount($organ_id, $from_time);
             if ($reserve_count>=$activeStaffCount-$staff_reserve_count){
                 return '2';
             }
@@ -611,6 +619,17 @@ class Apireserves extends WebController
        }
 
         return '1';
+    }
+
+    public function updateReceiptUserName(){
+        $reserve_id = $this->input->post('reserve_id');
+        $update_user_name = $this->input->post('update_user_name');
+        $reserve = $this->reserve_model->getFromId($reserve_id);
+        $reserve['update_user_name'] = $update_user_name;
+
+        $this->reserve_model->updateRecord($reserve, 'reserve_id');
+        $results['isUpdate'] = true;
+        echo json_encode($results);
     }
 }
 ?>
