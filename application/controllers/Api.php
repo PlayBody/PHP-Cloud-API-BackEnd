@@ -251,5 +251,32 @@ class Api extends WebController
         $results['isSave'] = true;
         echo json_encode($results);
     }
+
+    public function loadBadgeCount(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+        $this->load->model('notification_model');
+        $data = $this->notification_model->getDataByParam($cond);
+        $count = 0;
+        foreach ($data as $item) { $count += $item['badge_count'];}
+        $results['badge_count'] = $count;
+        echo json_encode($results);
+    }
+
+    public function clearBadgeCount(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+        $this->load->model('notification_model');
+        $notification = $this->notification_model->getOneByParam($cond);
+        if (empty($notification)){
+            $results['isClear'] = false;
+        }else{
+            $notification['badge_count'] = 0;
+            $this->notification_model->updateRecord($notification, 'id');
+            $results['isClear'] = true;
+        }
+        echo json_encode($results);
+    }
+
 }
 ?>

@@ -14,7 +14,7 @@ class User_coupon_model extends Base_model
     public function getUserCoupons($cond){
         $this->db->select('coupons.*');
         $this->db->from($this->table);
-        $this->db->join('coupons', 'coupons.coupon_id=user_coupons.coupon_id','left');
+        $this->db->join('coupons', 'coupons.coupon_id=user_coupons.coupon_id','inner');
 
         if (!empty($cond['user_id'])){
             $this->db->where('user_coupons.user_id', $cond['user_id']);

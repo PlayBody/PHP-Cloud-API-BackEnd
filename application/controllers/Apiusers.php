@@ -18,6 +18,8 @@ class Apiusers extends WebController
         $this->load->model('group_user_model');
         $this->load->model('user_ticket_reset_setting_model');
         $this->load->model('user_ticket_model');
+        $this->load->model('reserve_model');
+        $this->load->model('history_table_model');
     }
 
     public function getUserData(){
@@ -135,8 +137,18 @@ class Apiusers extends WebController
 
         $users = $this->user_model->getUsersByCond(['company_id'=>$company_id, 'search'=>$searchWord]);
 
+        $result_user = [];
+        foreach ($users as $user){
+            $tmp = $user;
+            $reserves = $this->reserve_model->getDataByParam(['user_id'=>$user['user_id']]);
+            $tmp['reserve_count'] = empty($reserves) ? 0 : count($reserves);
+
+            $visits = $this->history_table_model->getDataByParam(['user_id'=>$user['user_id']]);
+            $tmp['visit_count'] = empty($visits) ? 0 : count($visits);
+            $result_user[] = $tmp;
+        }
         $results['isLoad'] = true;
-        $results['users'] = $users;
+        $results['users'] = $result_user;
 
         echo json_encode($results);
     }

@@ -92,7 +92,7 @@ class Apisettings extends WebController
         $organ['table_count'] = empty($this->input->post('table_count')) ? null : $this->input->post('table_count');
         $organ['set_time'] = empty($this->input->post('set_time')) ? null : $this->input->post('set_time');
         $organ['set_number'] =  $this->input->post('set_number');
-        $organ['is_use_set'] =  $this->input->post('is_use_set');
+        $organ['is_use_set'] = $this->input->post('is_use_set');
         $organ['set_amount'] = empty($this->input->post('set_amount')) ? null : $this->input->post('set_amount');
         $organ['table_amount'] = empty($this->input->post('table_amount')) ? null : $this->input->post('table_amount');
         $organ['active_start_time'] = empty($this->input->post('active_start_time')) ? null : $this->input->post('active_start_time');
@@ -114,6 +114,7 @@ class Apisettings extends WebController
         $organ['open_business_point'] = empty($this->input->post('open_business_point')) ? null : $this->input->post('open_business_point');
         $organ['close_business_point'] = empty($this->input->post('close_business_point')) ? null : $this->input->post('close_business_point');
         $organ['checkin_ticket_consumption'] = $this->input->post('checkin_ticket_consumption');
+        $organ['sns_url'] = $this->input->post('sns_url');
         if (!empty($this->input->post('image'))){
             $organ['image'] = $this->input->post('image');
         }

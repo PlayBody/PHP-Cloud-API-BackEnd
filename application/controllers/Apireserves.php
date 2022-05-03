@@ -108,6 +108,7 @@ class Apireserves extends WebController
         $organ_id = $this->input->post('organ_id');
         $user_id = $this->input->post('user_id');
         $staff_id = $this->input->post('staff_id');
+        $sel_staff_type = $this->input->post('sel_staff_type');
         $reserve_start_time = $this->input->post('reserve_start_time');
         $reserve_end_time = $this->input->post('reserve_end_time');
         $reserve_menu = $this->input->post('reserve_menu');
@@ -141,6 +142,7 @@ class Apireserves extends WebController
         $reserve = array(
             'user_id' => $user_id,
             'organ_id' => $organ_id,
+            'sel_staff_type' => empty($sel_staff_type) ? 0 : $sel_staff_type,
             'staff_id' => empty($staff_id) ? null : $staff_id,
             'reserve_time' => $reserve_start_time,
             'reserve_exit_time' => $reserve_end_time,
@@ -236,7 +238,7 @@ class Apireserves extends WebController
     }
 
     public function loadReserveList(){
-        $user_id = 188; $this->input->post('user_id');
+        $user_id = $this->input->post('user_id');
         $staff_id = $this->input->post('staff_id');
         $company_id = $this->input->post('company_id');
 
@@ -358,9 +360,9 @@ class Apireserves extends WebController
     }
 
     public function applyReserve(){
-        $staff_id = $this->input->post('staff_id');
-        $reserve_time = $this->input->post('from_time');
-        $reserve_exit_time = $this->input->post('to_time');
+        $staff_id = $this->input->post('staff_id');//25
+        $reserve_time = $this->input->post('from_time');//'2022-04-29 16:25:00';
+        $reserve_exit_time = $this->input->post('to_time');//'2022-04-29 16:35:00';
 
         $reserve = $this->reserve_model->getReserveRecord(['staff_id'=>$staff_id, 'reserve_time'=>$reserve_time, 'reserve_exit_time'=>$reserve_exit_time]);
 
@@ -373,6 +375,16 @@ class Apireserves extends WebController
         $reserve['reserve_status'] = '2';
 
         $this->reserve_model->updateRecord($reserve);
+
+        $sender = $this->staff_model->getFromId($staff_id);
+
+        $this->load->model('notification_text_model');
+        $text_data = $this->notification_text_model->getRecordByCond(['company_id'=>$sender['company_id'], 'mail_type'=>'23']);
+        $title = empty($text_data['title']) ? 'タイトルなし' : $text_data['title'];
+        $content = empty($text_data['content']) ? '' : $text_data['content'];
+        $content = str_replace('$from_time', $reserve_time, $content);
+        $content = str_replace('$to_time', $reserve_exit_time, $content);
+        $this->sendNotifications('23', $title, $content, $staff_id, $reserve['user_id'], '2');
 
         $results['isApply'] = true;
         echo json_encode($results);

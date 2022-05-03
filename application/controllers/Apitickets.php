@@ -264,5 +264,13 @@ class Apitickets extends WebController
 
         echo json_encode($results);
     }
+
+    public function deleteTicketResetPushSettings(){
+        $setting_id = $this->input->post('setting_id');
+        $this->ticket_push_setting_model->delete_force($setting_id, 'id');
+        $results['isDelete'] = true;
+
+        echo json_encode($results);
+    }
 }
 ?>
