@@ -15,10 +15,10 @@ class Organ_model extends Base_model
         $this->db->select('organs.*');
         $this->db->from($this->table);
 
-        $this->db->join('companies', 'organs.company_id = companies.company_id', 'left');
+        $this->db->join('companies', 'organs.company_id = companies.company_id', 'inner');
 
         if (!empty($cond['company_id'])){
-            $this->db->where('companies.company_id', $cond['company_id']);
+            $this->db->where('organs.company_id', $cond['company_id']);
         }
 
         $this->db->where('companies.visible', '1');

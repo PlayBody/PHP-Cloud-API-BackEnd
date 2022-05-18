@@ -26,7 +26,7 @@ class Staff_organ_model extends Base_model
         $this->db->select('organs.*');
         $this->db->from($this->table);
 
-        $this->db->join('organs', 'organs.organ_id = staff_organs.organ_id', 'left');
+        $this->db->join('organs', 'organs.organ_id = staff_organs.organ_id', 'inner');
 
         $this->db->where('staff_id', $staff_id);
 

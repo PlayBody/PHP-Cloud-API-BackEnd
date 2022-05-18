@@ -26,12 +26,12 @@ class Reserve_model extends Base_model
     	return !empty($result);
     }
 
-    public function getReserveCount($organ_id, $time, $staff_id = ''){
+    public function getReserveCount($organ_id, $time, $to_time, $staff_id = ''){
     	$this->db->select('count(reserve_id) as count');
     	$this->db->from($this->table);
 
     	$this->db->where('organ_id', $organ_id);
-    	$this->db->where("reserve_time<='". $time. "' and ADDDATE(reserve_exit_time, INTERVAL sum_interval MINUTE) >'".$time."'");
+    	$this->db->where("(reserve_time<='". $to_time. "') AND (ADDDATE(reserve_exit_time, INTERVAL sum_interval MINUTE) >'".$time."')");
     	if (!empty($staff_id)){
             $this->db->where("staff_id", $staff_id);
         }
@@ -301,5 +301,32 @@ class Reserve_model extends Base_model
         $result = $query->row_array();
         return empty($result['cnt']);
 
+    }
+
+    public function getFreeReserve($organ_id, $date){
+        $this->db->from($this->table);
+        $this->db->where('staff_id', null);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("reserve_time like '" . $date . " %'");
+        $this->db->where("reserve_status <= 2");
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+
+    public function getLeastReserveStaff($organ_id, $date, $staff_id){
+        $this->db->select("staff_shift_sorts.show_staff_id, count(reserve_id) as reserve_count");
+        $this->db->from($this->table);
+        $this->db->join('staff_shift_sorts', 'reserves.staff_id=staff_shift_sorts.show_staff_id', 'right');
+
+        $this->db->where('staff_shift_sorts.staff_id', $staff_id);
+        $this->db->where('reserves.staff_id is not null');
+
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("reserve_time like '" . $date . " %'");
+        $this->db->where("reserve_status <= 2");
+        $query = $this->db->group_by('staff_shift_sorts.show_staff_id');
+        $query = $this->db->order_by('reserve_count');
+        $query = $this->db->get();
+        return $query->row_array();
     }
 }

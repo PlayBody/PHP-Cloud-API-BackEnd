@@ -31,12 +31,14 @@ class Apipoints extends WebController
    public function saveOrganPointSetting(){
         $organ_id = $this->input->post('organ_id');
         $title = $this->input->post('title');
-        $point_value = $this->input->post('point_value');
+       $point_value = $this->input->post('point_value');
+       $point_type = $this->input->post('point_type');
 
         $data = array(
             'organ_id'=>$organ_id,
             'point_title' => $title,
             'point_value' => $point_value,
+            'point_type' => $point_type,
         );
 
         $this->organ_point_setting_model->insertRecord($data);
@@ -74,6 +76,7 @@ class Apipoints extends WebController
             'organ_id' => $organ_id,
             'comment' => $comment,
             'point_weight' => $weight,
+            'type' => empty($point_setting['point_type']) ? '1' : $point_setting['point_type'],
             'value' => $point,
             'status' => 1
         );

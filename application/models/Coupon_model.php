@@ -13,10 +13,17 @@ class Coupon_model extends Base_model
 
     public function getListByCondition($cond){
 
+        $this->db->select($this->table.".*, IF(staffs.staff_nick is NULL, 
+                CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
+                staffs.staff_nick
+            ) as staff_name");
         $this->db->from($this->table);
 
+        $this->db->join('staffs', 'staffs.staff_id=coupons.staff_id', 'left');
+
+
         if (!empty($cond['company_id'])){
-            $this->db->where('company_id', $cond['company_id']);
+            $this->db->where('coupons.company_id', $cond['company_id']);
         }
 
         if (!empty($cond['user_id'])){
@@ -24,7 +31,7 @@ class Coupon_model extends Base_model
         }
 
         if (!empty($cond['visible'])){
-            $this->db->where('visible', $cond['visible']);
+            $this->db->where('coupons.visible', $cond['visible']);
         }
 
         $this->db->order_by('create_date', 'desc');

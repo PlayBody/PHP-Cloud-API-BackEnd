@@ -426,7 +426,9 @@ class Apiorgans extends WebController
 
     public function loadOrganSpecialTimes(){
         $organ_id = $this->input->post('organ_id');
-        $times = $this->organ_special_time_model->getTimeList($organ_id);
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+        $times = $this->organ_special_time_model->getTimeList($organ_id, $from_time, $to_time);
 
         $results['isLoad'] = true;
         $results['times'] = $times;

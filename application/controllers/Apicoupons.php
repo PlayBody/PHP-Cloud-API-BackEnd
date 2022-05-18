@@ -28,25 +28,24 @@ class Apicoupons extends WebController
     }
 
     public function loadCouponList(){
-        $staff_id = $this->input->post('staff_id');
-
-        if (empty($staff_id)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
-
-        $staff = $this->staff_model->getFromId($staff_id);
+        $company_id = $this->input->post('company_id');
+        $is_get_delete = $this->input->post('is_get_delete');
 
         $cond = [];
-        if ($staff['staff_auth']==4){
-            $cond['company_id'] = $staff['company_id'];
-        }
+        if(empty($is_get_delete)) $cond['visible'] = 1;
+        if (!empty($company_id))  $cond['company_id'] = $company_id;
 
         $coupons = $this->coupon_model->getListByCondition($cond);
+        $data = [];
+        foreach ($coupons as $coupon){
+            $tmp = $coupon;
+            $tmp['staffs'] = $this->user_coupon_model->getStaffListByCoupon(['coupon_id' =>$coupon['coupon_id']]);
+            $data[] = $tmp;
+
+        }
 
         $results['isLoad'] = true;
-        $results['coupons'] = $coupons;
+        $results['coupons'] = $data;
 
         echo json_encode($results);
 
@@ -119,6 +118,7 @@ class Apicoupons extends WebController
 
         $cond['user_id'] = $user_id;
         $cond['use_flag']='1';
+        $cond['use_date']=date('Y-m-d');
         $coupons = $this->user_coupon_model->getUserCoupons($cond);
 
         $results['isLoad'] = true;
@@ -174,6 +174,7 @@ class Apicoupons extends WebController
     }
     public function deleteCouponInfo(){
         $coupon_id = $this->input->post('coupon_id');
+        $is_force= $this->input->post('is_force');
 
         if (empty($coupon_id)){
             $results['isDelete'] = false;
@@ -181,7 +182,12 @@ class Apicoupons extends WebController
             return;
         }
 
-        $coupons = $this->coupon_model->delete_force($coupon_id, 'coupon_id');
+        if (!empty($is_force)){
+            $coupons = $this->coupon_model->delete_force($coupon_id, 'coupon_id');
+        }else{
+            $coupons = $this->coupon_model->delete($coupon_id, 'coupon_id');
+        }
+
 
         $results['isDelete'] = true;
 
@@ -200,6 +206,7 @@ class Apicoupons extends WebController
         $upper_amount = empty($this->input->post('upper_amount')) ? null : $this->input->post('upper_amount');
         $use_date = $this->input->post('use_date');
         $condition = $this->input->post('condition');
+        $staff_id = $this->input->post('staff_id');
         $use_organ = $this->input->post('use_organ');
         $comment = $this->input->post('comment');
 
@@ -219,6 +226,7 @@ class Apicoupons extends WebController
                 'upper_amount' => $upper_amount,
                 'use_date' => $use_date,
                 'condition' => $condition,
+                'staff_id' => $staff_id,
                 'use_organ_id' => $use_organ,
                 'comment' => $comment,
                 'is_use' => 1,
@@ -236,6 +244,7 @@ class Apicoupons extends WebController
             $coupon['upper_amount'] = $upper_amount;
             $coupon['use_date'] = $use_date;
             $coupon['condition'] = $condition;
+            $coupon['staff_id'] = $staff_id;
             $coupon['use_organ_id'] = $use_organ;
             $coupon['comment'] = $comment;
 
@@ -251,13 +260,14 @@ class Apicoupons extends WebController
     public function saveUserCoupons(){
         $user_ids = $this->input->post('user_ids');
         $coupon_ids = $this->input->post('coupon_ids');
+        $staff_id = $this->input->post('staff_id');
 
         $users = json_decode($user_ids);
         $coupons = json_decode($coupon_ids);
 
         foreach ($coupons as $coupon){
             foreach ($users as $user){
-                $data = array('user_id'=>$user, 'coupon_id'=>$coupon, 'use_flag'=>'1');
+                $data = array('user_id'=>$user, 'coupon_id'=>$coupon, 'use_flag'=>'1', 'staff_id'=>$staff_id);
                 $this->user_coupon_model->insertRecord($data);
             }
         }

@@ -123,7 +123,7 @@ class Apireserves extends WebController
         $user_3 = empty($this->input->post('user_3')) ? null : $this->input->post('user_3');
         $user_4 = empty($this->input->post('user_4')) ? null : $this->input->post('user_4');
         $results = [];
-        
+
         if (empty($organ_id) || empty($user_id)){
             $results['isSave'] = false;
             echo json_encode($results);
@@ -611,10 +611,10 @@ class Apireserves extends WebController
         $isActive = $this->organ_time_model->isPeriodActiveTime($organ_id, $week, $start_time, $end_time);
         if (!$isActive) return '3';
 
-        $reserve_count = $this->reserve_model->getReserveCount($organ_id, $from_time);
+        $reserve_count = $this->reserve_model->getReserveCount($organ_id, $from_time, $to_time);
         if ($reserve_count>=$table_count) return '3';
 
-        $staff_reserve_count = $this->reserve_model->getReserveCount($organ_id, $from_time, $staff_id);
+        $staff_reserve_count = $this->reserve_model->getReserveCount($organ_id, $from_time, $to_time, $staff_id);
        if (empty($staff_id)) {
             $activeStaffCount = $this->shift_model->getActiveStaffCount($organ_id, $from_time);
             if ($reserve_count>=$activeStaffCount-$staff_reserve_count){
@@ -638,6 +638,46 @@ class Apireserves extends WebController
         $update_user_name = $this->input->post('update_user_name');
         $reserve = $this->reserve_model->getFromId($reserve_id);
         $reserve['update_user_name'] = $update_user_name;
+
+        $this->reserve_model->updateRecord($reserve, 'reserve_id');
+        $results['isUpdate'] = true;
+        echo json_encode($results);
+    }
+
+    public function updateFreeReserveAuto(){
+        $reserve_date = $this->input->post('reserve_date');
+        $organ_id = $this->input->post('organ_id');
+        $staff_id = $this->input->post('staff_id');
+
+        $reserves = $this->reserve_model->getFreeReserve($organ_id, $reserve_date);
+
+        foreach ($reserves as $reserve){
+            $least_staff = $this->reserve_model->getLeastReserveStaff($organ_id, $reserve_date, $staff_id);
+            $reserve['staff_id'] = $least_staff['show_staff_id'];
+            $this->reserve_model->updateRecord($reserve, 'reserve_id');
+        }
+        $results['isUpdate'] = true;
+        echo json_encode($results);
+    }
+
+    public function updateReserveItem(){
+        $reserve_id = $this->input->post('reserve_id');
+        $staff_id = $this->input->post('staff_id');
+        $reserve_time = $this->input->post('reserve_time');
+
+        $reserve = $this->reserve_model->getFromId($reserve_id);
+        $from = $reserve['reserve_time'];
+        $to = $reserve['reserve_exit_time'];
+
+        $origin = date_create($from);
+        $target = date_create($to);
+        $interval = date_diff($origin, $target);
+        $d1 = new DateTime($reserve_time);
+        $d1->add($interval);
+
+        $reserve['staff_id'] = $staff_id;
+        $reserve['reserve_time'] = $reserve_time;
+        $reserve['reserve_exit_time'] = $d1->format('Y-m-d H:i:s');
 
         $this->reserve_model->updateRecord($reserve, 'reserve_id');
         $results['isUpdate'] = true;

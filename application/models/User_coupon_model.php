@@ -23,6 +23,28 @@ class User_coupon_model extends Base_model
             $this->db->where('user_coupons.use_flag', $cond['use_flag']);
         }
 
+        if (!empty($cond['use_date'])){
+            $this->db->where("coupons.use_date >=", $cond['use_date']);
+        }
+
+        $this->db->order_by('coupons.use_date', 'desc');
+        $query = $this->db->get();
+
+        return $query->result_array();
+
+    }
+    public function getStaffListByCoupon($cond){
+
+        $this->db->select("staffs.*");
+        $this->db->from($this->table);
+
+        $this->db->join('staffs', 'staffs.staff_id=user_coupons.staff_id', 'inner');
+
+        if (!empty($cond['coupon_id'])){
+            $this->db->where('user_coupons.coupon_id', $cond['coupon_id']);
+        }
+
+        $this->db->group_by('user_coupons.staff_id');
         $query = $this->db->get();
 
         return $query->result_array();
@@ -30,4 +52,3 @@ class User_coupon_model extends Base_model
     }
 }
 
-  

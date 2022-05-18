@@ -500,14 +500,14 @@ class Apitables extends WebController
     }
 
     public function saveRejectTable(){
-        $table_id = $this->input->post('table_id');
+        $organ_id = $this->input->post('organ_id');
 
-        $table = $this->table_model->getFromId($table_id);
+        //$table = $this->table_model->getFromId($table_id);
 
         $reject = array(
-            'organ_id' => $table['organ_id'],
-            'table_position' => $table['position'],
-            'table_title' => $table['table_title'],
+            'organ_id' => $organ_id,
+            'table_position' => null,
+            'table_title' => null,
             'is_reject' => '1',
             'start_time' => date('Y-m-d H:i:s'),
             'end_time' => date('Y-m-d H:i:s'),

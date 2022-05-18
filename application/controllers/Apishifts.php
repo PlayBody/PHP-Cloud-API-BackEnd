@@ -602,19 +602,12 @@ class Apishifts extends WebController
     }
 
     public function applyOrRejectRequestShift   (){
-        $organ_id = $this->input->post('organ_id');
-        $staff_id = $this->input->post('staff_id');
+        $shift_id = $this->input->post('shift_id');
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
         $update_shift_type = $this->input->post('update_shift_type');
 
-        $shift = $this->shift_model->getRecordByCond([
-            'staff_id' => $staff_id,
-            'organ_id' => $organ_id,
-            'from_time' => $from_time,
-            'to_time' => $to_time,
-            'shit_type' => '4'
-        ]);
+        $shift = $this->shift_model->getFromId($shift_id);
 
         if (empty($shift)){
             $results['isUpdate'] = false;
@@ -623,6 +616,8 @@ class Apishifts extends WebController
         }
 
         $shift['shift_type'] = $update_shift_type;
+        $shift['from_time'] = $from_time;
+        $shift['to_time'] = $to_time;
 
         $this->shift_model->updateRecord($shift, 'shift_id');
 
@@ -652,6 +647,28 @@ class Apishifts extends WebController
         echo json_encode($results);
     }
 
+    public function updateShiftTime(){
+        $shift_id = $this->input->post('shift_id');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+
+        $shift = $this->shift_model->getFromId($shift_id);
+
+        if (empty($shift)){
+            $results['isUpdate'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        $shift['from_time'] = $from_time;
+        $shift['to_time'] = $to_time;
+
+        $this->shift_model->updateRecord($shift, 'shift_id');
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+    }
     public function updateReserveStaff(){
         $reserve_id = $this->input->post('reserve_id');
         $staff_id = $this->input->post('staff_id');
