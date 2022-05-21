@@ -23,6 +23,9 @@ class Apitables extends WebController
         $this->load->model('history_table_menu_model');
         $this->load->model('history_table_menu_ticket_model');
         $this->load->model('user_ticket_model');
+        $this->load->model('user_model');
+        $this->load->model('reserve_model');
+        $this->load->model('reserve_menu_model');
     }
 
     public function loadTableRecord(){
@@ -63,6 +66,15 @@ class Apitables extends WebController
             }
             $table['seat_no'] = 'SEAT '.$table_position;
 
+            if (!empty($table['staff_id'])){
+                $table_staff = $this->staff_model->getFromId($table['staff_id']);
+                $staff_name = $table_staff['staff_nick'];
+                if (empty($staff_name)){
+                    $staff_name = $table_staff['staff_first_name']. ' ' .$table_staff['staff_last_name'];
+                }
+                $table['staff_name'] = $staff_name;
+            }
+
             $results['isLoad'] = true;
             $results['tables'] = [$table];
         }else{
@@ -92,6 +104,15 @@ class Apitables extends WebController
                     $tmp['table_id'] = $this->table_model->insertRecord($tmp);
                 }else{
                     $tmp = $data[$i];
+                }
+
+                if (!empty($tmp['staff_id'])){
+                    $table_staff = $this->staff_model->getFromId($tmp['staff_id']);
+                    $staff_name = $table_staff['staff_nick'];
+                    if (empty($staff_name)){
+                        $staff_name = $table_staff['staff_first_name']. ' ' .$table_staff['staff_last_name'];
+                    }
+                    $tmp['staff_name'] = $staff_name;
                 }
                 $no = $i<10 ? '0'.$i: $i;
                 $tmp['seat_no'] = 'SEAT '.$no;
@@ -185,7 +206,7 @@ class Apitables extends WebController
         $organ_id = $this->input->post('organ_id');
         $update_value = $this->input->post('update_value');
         $user_id = $this->input->post('user_id');
-        $staff_id = $this->input->post('$staff_id');
+        $staff_id = $this->input->post('staff_id');
         $pay_method = $this->input->post('pay_method');
         $person_count = $this->input->post('person_count');
         $set_number = $this->input->post('set_number');
@@ -203,6 +224,7 @@ class Apitables extends WebController
         }
 
         $table = $this->table_model->getFromId($table_id);
+        $organ_id = $table['organ_id'];
 
         if (empty($table)){
             $results['isUpdate'] = false;
@@ -230,8 +252,31 @@ class Apitables extends WebController
         if ($update_value == 1){
             $table['start_time'] = $now;
             $table['user_id'] = $user_id;
+
+            $user = $this->user_model->getFromId($user_id);
+            $user_name = $user['user_first_name'] .' '.$user['user_last_name'];
+            $table['user_name'] = $user_name;
             $table['person_count'] = $person_count;
             $table['set_num'] = empty($set_number) ? '1' : $set_number;
+
+            $reserve = $this->reserve_model->getReserveInputData(['organ_id' => $organ_id, 'user_id'=>$user_id, 'reserve_status'=>2, 'now_time'=>date('Y-m-d H:i:s')]);
+            if (!empty($reserve)){
+                $reserve_menus = $this->reserve_menu_model->getReserveMenuList($reserve['reserve_id']);
+                foreach ($reserve_menus as $menu){
+                    $table_menu = array(
+                        'table_id'=>$table['table_id'],
+                        'menu_id' => $menu['menu_id'],
+                        'quantity' => '1',
+                        'menu_title' => $menu['menu_title'],
+                        'menu_price' => $menu['menu_price'],
+                        'visible' => 1
+                    );
+                    $this->table_menu_model->insertRecord($table_menu);
+                }
+
+                $reserve['reserve_status'] = 5;
+                $this->reserve_model->updateRecord($reserve, 'reserve_id');
+            }
         }
 
         if ($update_value == 2){
@@ -243,11 +288,19 @@ class Apitables extends WebController
             $this->table_menu_model->delete_force($table_id, 'table_id');
 
             $table['user_id'] = null;
+            $table['user_name'] = null;
             $table['start_time'] = null;
             $table['end_time'] = null;
             $table['status'] = '0';
 
+            $reserve = $this->reserve_model->getReserveInputData(['organ_id' => $organ_id, 'user_id'=>$user_id, 'reserve_status'=>5, 'now_time'=>date('Y-m-d H:i:s')]);
+            if (!empty($reserve)){
+                $reserve['reserve_status'] = 10;
+                $this->reserve_model->updateRecord($reserve, 'reserve_id');
+            }
         }
+
+        $table['staff_id'] = $staff_id;
 
         $result = $this->table_model->updateRecord($table,'table_id');
 
@@ -518,6 +571,26 @@ class Apitables extends WebController
 
         $results['isSave'] = true;
 
+        echo json_encode($results);
+    }
+
+    public function updateTableData(){
+        $json_data = $this->input->post('update_data');
+
+        $update_data = json_decode($json_data, true);
+
+        $table = $this->table_model->getFromId($update_data['table_id']);
+        if (empty($table)){
+            $results['isUpdate'] = false;
+            echo json_encode($results);
+            return;
+        }
+
+        foreach ($update_data as $key => $val){
+            $table[$key] = $val;
+        }
+        $this->table_model->updateRecord($table, 'table_id');
+        $results['isUpdate'] = true;
         echo json_encode($results);
     }
 }

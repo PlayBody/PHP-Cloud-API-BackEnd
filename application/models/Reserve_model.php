@@ -329,4 +329,24 @@ class Reserve_model extends Base_model
         $query = $this->db->get();
         return $query->row_array();
     }
+
+    public function getReserveInputData($cond){
+        $this->db->from($this->table);
+        if (!empty($cond['organ_id']))
+            $this->db->where('organ_id', $cond['organ_id']);
+
+        if (!empty($cond['user_id']))
+            $this->db->where("user_id", $cond['user_id']);
+
+        if (!empty($cond['reserve_status']))
+            $this->db->where("reserve_status", $cond['reserve_status']);
+
+        if (!empty($cond['now_time'])) {
+            $this->db->where("date_add(reserve_time,interval 30 minute) >= '" . $cond['now_time'] . "'");
+            $this->db->where("date_sub(reserve_time,interval 30 minute) <= '" . $cond['now_time'] . "'");
+        }
+
+        $query = $this->db->get();
+        return $query->row_array();
+    }
 }

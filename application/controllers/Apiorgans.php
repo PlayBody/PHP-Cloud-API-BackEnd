@@ -18,6 +18,7 @@ class Apiorgans extends WebController
         $this->load->model('organ_setting_model');
         $this->load->model('organ_time_model');
         $this->load->model('organ_special_time_model');
+        $this->load->model('organ_special_shift_time_model');
         $this->load->model('organ_shift_time_model');
     }
 
@@ -435,6 +436,17 @@ class Apiorgans extends WebController
 
         echo json_encode($results);
     }
+    public function loadOrganSpecialShiftTimes(){
+        $organ_id = $this->input->post('organ_id');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+        $times = $this->organ_special_shift_time_model->getTimeList($organ_id, $from_time, $to_time);
+
+        $results['isLoad'] = true;
+        $results['times'] = $times;
+
+        echo json_encode($results);
+    }
 
     public function saveOrganSpecialTime(){
         $organ_id = $this->input->post('organ_id');
@@ -447,13 +459,48 @@ class Apiorgans extends WebController
             'to_time'=>$to_time
         );
 
-        $this->organ_special_time_model->insertRecord($data);
+        $_id = $this->organ_special_time_model->insertRecord($data);
+
+        $shift_time = $this->organ_special_shift_time_model->getFindShiftTimeOfSpecialBusiness($_id);
+        if(empty($shift_time)){
+            $_calc_from_time = new DateTime($from_time);
+            $_calc_from_time->sub(new DateInterval('P30M'));
+            $_calc_from_time->format('Y-m-d H:i:s');
+
+            if($_calc_from_time<(substr($from_time, 0, 10).' 00:00:00'))
+                $_calc_from_time = (substr($from_time, 0, 10).' 00:00:00');
+
+            $shift_time = array(
+                'organ_id' => $organ_id,
+                'special_business_id' => $_id,
+                'from_time' => $_calc_from_time,
+                'to_time' => $to_time
+            );
+            $this->organ_special_shift_time_model->insertRecord($shift_time);
+        }
 
         $results = [];
         $results['isSave'] = true;
         echo json_encode($results);
     }
 
+    public function saveOrganSpecialShiftTime(){
+        $time_id = $this->input->post('time_id');
+        $from_time  = $this->input->post('from_time');
+        $to_time  = $this->input->post('to_time');
+
+        $shift_time = $this->organ_special_shift_time_model->getFromId($time_id);
+        if(!empty($shift_time)){
+            $shift_time['from_time'] = $from_time;
+            $shift_time['to_time'] = $to_time;
+
+            $this->organ_special_shift_time_model->updateRecord($shift_time, 'id');
+        }
+
+        $results = [];
+        $results['isSave'] = true;
+        echo json_encode($results);
+    }
     public function deleteOrganSpecialTime(){
         $time_id = $this->input->post('time_id');
 
@@ -464,11 +511,32 @@ class Apiorgans extends WebController
         }
 
         $this->organ_special_time_model->delete_force($time_id, 'organ_special_time_id');
+        $this->organ_special_shift_time_model->delete_force($time_id, 'special_business_id');
 
         $results = [];
         $results['isDelete'] = true;
         echo json_encode($results);
         return;
+    }
+
+    public function loadOrganMinAndMaxShiftTime(){
+        $organ_id = $this->input->post('organ_id');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+
+        $row = $this->organ_shift_time_model->getOrganMinMaxShiftTime($organ_id, $from_time, $to_time);
+
+        $results = [];
+        if (empty($row)){
+            $results['start'] = 0;
+            $results['end'] = 24;
+        }else{
+            $results['start'] = explode(':', $row['min_time'])[0];
+            $results['end'] = explode(':', $row['max_time'])[0] + 1 ;
+        }
+
+        echo json_encode($results);
+
     }
 
 }

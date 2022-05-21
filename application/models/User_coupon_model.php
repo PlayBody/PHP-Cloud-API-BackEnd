@@ -12,7 +12,7 @@ class User_coupon_model extends Base_model
     }
 
     public function getUserCoupons($cond){
-        $this->db->select('coupons.*');
+        $this->db->select('coupons.*, user_coupons.user_coupon_id');
         $this->db->from($this->table);
         $this->db->join('coupons', 'coupons.coupon_id=user_coupons.coupon_id','inner');
 
@@ -25,6 +25,13 @@ class User_coupon_model extends Base_model
 
         if (!empty($cond['use_date'])){
             $this->db->where("coupons.use_date >=", $cond['use_date']);
+        }
+
+        if (!empty($cond['upper_amount'])){
+            $this->db->where("(coupons.upper_amount <=" . $cond['use_organ'] );
+        }
+        if (!empty($cond['use_organ'])){
+            $this->db->where("(coupons.use_organ_id =". $cond['use_organ'] ." OR coupons.use_organ_id=0)");
         }
 
         $this->db->order_by('coupons.use_date', 'desc');

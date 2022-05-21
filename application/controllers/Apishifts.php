@@ -181,6 +181,25 @@ class Apishifts extends WebController
         $to_time = $this->input->post('to_time');
         $shift_type = $this->input->post('shift_type');
 
+        if($shift_type=='6'){
+            $this->shift_model->deleteDayShift(substr($from_time, 0,10), $staff_id, $organ_id);
+            $shift = array(
+                'staff_id' => $staff_id,
+                'organ_id' => $organ_id,
+                'from_time' => $from_time,
+                'to_time' => $to_time,
+                'shift_type' => $shift_type,
+                'visible' => 1,
+            );
+            $this->shift_model->insertRecord($shift);
+            $results['isUpdate'] = true;
+            echo json_encode($results);
+            return;
+
+        }else{
+            $this->shift_model->deleteDayShift(substr($from_time, 0,10), $staff_id, $organ_id, 6);
+        }
+
 
         $shift_exist = $this->shift_model->isExist($organ_id, $staff_id, $shift_id, $from_time, $to_time);
         if ($shift_exist){
@@ -687,6 +706,20 @@ class Apishifts extends WebController
 
         $results['isUpdate'] = true;
 
+        echo json_encode($results);
+
+    }
+
+    /*--------------------common------------------------------*/
+
+    public function loadShiftDataByParam(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+
+        $shifts = $this->shift_model->getShiftDataByParam($cond);
+
+        $results['isLoad'] = true;
+        $results['shifts'] = $shifts;
         echo json_encode($results);
 
     }

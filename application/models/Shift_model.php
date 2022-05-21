@@ -272,4 +272,43 @@ order by tmp.time
 
         return $query->result_array();
     }
+
+    public function deleteDayShift($date, $staff_id, $organ_id, $type=''){
+        $this->db->where("from_time like '".$date." %'");
+        $this->db->where("staff_id", $staff_id);
+        $this->db->where("organ_id", $organ_id);
+        if (!empty($type))
+            $this->db->where("shift_type", $type);
+
+        $this->db->delete($this->table);
+
+    }
+
+    public function getShiftDataByParam($cond){
+        $this->db->select('*');
+        $this->db->from($this->table);
+
+        if(!empty($cond['organ_id'])){
+            $this->db->where('organ_id', $cond['organ_id']);
+        }
+        if(!empty($cond['staff_id'])){
+            $this->db->where('staff_id', $cond['staff_id']);
+        }
+        if(!empty($cond['from_time']) && !empty($cond['to_time'])){
+            $this->db->where("to_time > '" . $cond['from_time'] . "'");
+        }
+
+        if(!empty($cond['to_time'])){
+            $this->db->where("from_time < '". $cond['to_time']."'");
+        }
+
+        if(!empty($cond['shift_type'])){
+            $this->db->where("shift_type", $cond['shift_type']);
+        }
+
+
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+
 }

@@ -381,5 +381,15 @@ class Apicoupons extends WebController
         $results['isDelete'] = true;
         echo json_encode($results);
     }
+
+    public function useUserCoupon(){
+        $user_coupon_id = $this->input->post('user_coupon_id');
+        $user_coupon = $this->user_coupon_model->getFromId($user_coupon_id);
+        $user_coupon['use_flag'] = 0;
+        $this->user_coupon_model->updateRecord($user_coupon, 'user_coupon_id');
+
+        $results['isSave'] = true;
+        echo json_encode($results);
+    }
 }
 ?>
