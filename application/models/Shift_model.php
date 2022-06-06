@@ -239,7 +239,7 @@ order by tmp.time
             IF(staffs.staff_nick is NULL, 
                 CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
                 staffs.staff_nick
-            ) as staff_name");
+            ) as staff_name, staffs.staff_sex");
         $this->db->from($this->table);
         $this->db->join('staffs', 'shifts.staff_id=staffs.staff_id', 'left');
 
@@ -284,7 +284,7 @@ order by tmp.time
 
     }
 
-    public function getShiftDataByParam($cond){
+	public function getShiftDataByParam($cond){
         $this->db->select('*');
         $this->db->from($this->table);
 
@@ -310,5 +310,4 @@ order by tmp.time
         $query = $this->db->get();
         return $query->result_array();
     }
-
 }

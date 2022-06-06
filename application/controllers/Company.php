@@ -16,7 +16,8 @@ class Company extends AdminController
 
         $this->load->model('company_model');
 
-        $this->header['page'] = 'company';
+        $this->header['page'] = 'application';
+        $this->header['sub_page'] = 'company';
         $this->header['title'] = '企業管理';
 
         $this->load->library('excel');
@@ -62,7 +63,7 @@ class Company extends AdminController
         $this->session->set_userdata($cond);
 
 
-        $this->_load_view("company/index");
+        $this->load_view_with_menu("company/index");
     }
 
 }

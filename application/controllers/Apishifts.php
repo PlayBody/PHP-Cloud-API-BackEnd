@@ -200,7 +200,6 @@ class Apishifts extends WebController
             $this->shift_model->deleteDayShift(substr($from_time, 0,10), $staff_id, $organ_id, 6);
         }
 
-
         $shift_exist = $this->shift_model->isExist($organ_id, $staff_id, $shift_id, $from_time, $to_time);
         if ($shift_exist){
             $results['isUpdate'] = false;
@@ -709,7 +708,7 @@ class Apishifts extends WebController
         echo json_encode($results);
 
     }
-
+	
     /*--------------------common------------------------------*/
 
     public function loadShiftDataByParam(){

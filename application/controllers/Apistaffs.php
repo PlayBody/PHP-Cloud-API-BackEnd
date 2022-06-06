@@ -182,6 +182,16 @@ class Apistaffs extends WebController
             $tmp['organ_id'] = $item['organ_id'];
             $tmp['organ_name'] = $item['organ_name'];
             $staffs = $this->staff_organ_model->getStaffsByOrgan($item['organ_id'], $auth);
+			$first_staff_id = empty($staffs[0]['staff_id'])? '': $staffs[0]['staff_id'];
+			if($staff['staff_auth']>4){
+				$owner_staffs = $this->staff_model->getStaffList(['company_id'=>$item['company_id'], 'staff_auth'=>4]);
+				foreach($owner_staffs as $owner){
+					$key = array_search($owner['staff_id'], array_column($staffs, 'staff_id'));
+					if($key==false && $owner['staff_id']!=$first_staff_id){
+						array_push($staffs, $owner);
+					}
+				}
+			}
             $tmp['staffs'] = $staffs;
             $data[] = $tmp;
         }

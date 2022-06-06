@@ -49,7 +49,7 @@ class Apireserves extends WebController
         }
         $staff_list = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3, false);
 
-        $organ_time = $this->organ_time_model->getOrganFromToTime($organ_id);
+        $organ_time = $this->organ_time_model->getMinMaxTimeByCond(['organ_id' =>$organ_id]);
 
         $organ_from_time = empty($organ_time['from_time']) ? "00:00:00" : ($organ_time['from_time'].":00");
         $organ_to_time = (empty($organ_time['to_time']) || $organ_time['to_time'] == '24:00') ? "23:59:59" : ($organ_time['to_time'].":00");
@@ -643,7 +643,6 @@ class Apireserves extends WebController
         $results['isUpdate'] = true;
         echo json_encode($results);
     }
-
     public function updateFreeReserveAuto(){
         $reserve_date = $this->input->post('reserve_date');
         $organ_id = $this->input->post('organ_id');
@@ -659,7 +658,6 @@ class Apireserves extends WebController
         $results['isUpdate'] = true;
         echo json_encode($results);
     }
-
     public function updateReserveItem(){
         $reserve_id = $this->input->post('reserve_id');
         $staff_id = $this->input->post('staff_id');

@@ -80,9 +80,9 @@ class Staff_point_add_model extends Base_model
             $this->db->where($this->table.'.point_setting_id', $cond['point_setting_id']);
         }
 
+
         $this->db->order_by('point_date');
         $this->db->order_by('staff_name');
-
         $query = $this->db->get();
         return $query->result_array();
     }

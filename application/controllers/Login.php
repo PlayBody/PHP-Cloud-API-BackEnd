@@ -15,7 +15,6 @@ class Login extends AdminController
         if($this->_login_check(ROLE_COMPANY)){
            redirect('dashboard');
         }
-
     }
 
     /**

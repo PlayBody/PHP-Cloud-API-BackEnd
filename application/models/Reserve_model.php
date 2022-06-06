@@ -200,6 +200,7 @@ class Reserve_model extends Base_model
                 CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
                 staffs.staff_nick
             ) as staff_name, 
+            staffs.staff_sex,
             IF(users.user_first_name is NULL, 
                 users.user_nick,
                 CONCAT(users.user_first_name,' ', users.user_last_name)
@@ -219,6 +220,9 @@ class Reserve_model extends Base_model
 
         if (!empty($cond['to_time']))
             $this->db->where("reserve_exit_time <= '". $cond['to_time']."'");
+
+        if (!empty($cond['select_date']))
+            $this->db->where("reserve_time like '". $cond['select_date']." %'");
 
         if (!empty($cond['reserve_status']))
             $this->db->where("reserve_status", $cond['reserve_status']);
@@ -302,7 +306,6 @@ class Reserve_model extends Base_model
         return empty($result['cnt']);
 
     }
-
     public function getFreeReserve($organ_id, $date){
         $this->db->from($this->table);
         $this->db->where('staff_id', null);

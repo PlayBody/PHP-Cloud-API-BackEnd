@@ -535,4 +535,10 @@ class AdminController extends CI_Controller
             "segment" => $segment
         );
     }
+
+    function load_view_with_menu($viewName = "", $prefix = "")
+    {
+        $this->header['contents'] = $this->load->view($viewName, $this->data, true);
+        $this->load->view($prefix . 'includes/withmenu', $this->header);
+    }
 }

@@ -277,6 +277,32 @@ class Api extends WebController
         }
         echo json_encode($results);
     }
+	
+	public function testmail(){
+		try {
+            $config = array(
+                'protocol' => 'smtp', // 'mail', 'sendmail', or 'smtp'
+                'smtp_host' => 'mail.visit-pos.net',
+                'smtp_port' => 587,
+                'smtp_user' => 'system@visit-pos.net',
+                'smtp_pass' => '1#TQUr*zX-gF]Xx)',
+            );
+
+            $this->load->library('email');
+
+            $this->email->initialize($config);
+
+            $this->email->from('system@visit-pos.net', 'Visit System');
+            $this->email->to('playbody2021@gmail.com');
+            $this->email->subject('mail_test');
+            $this->email->message('send mail ok');
+            $this->email->send();
+
+        }catch (Exception $e){
+            return false;
+        }
+		echo 'ok';
+	}
 
 }
 ?>

@@ -391,5 +391,6 @@ class Apicoupons extends WebController
         $results['isSave'] = true;
         echo json_encode($results);
     }
+
 }
 ?>

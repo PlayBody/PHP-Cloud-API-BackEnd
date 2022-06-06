@@ -127,18 +127,30 @@ class Apiusers extends WebController
 
     public function loadUserList(){
         $company_id = $this->input->post('company_id');
-        $searchWord = $this->input->post('search_word');
+        $condition = $this->input->post('condition');
 
         if (empty($company_id)){
             $results['isLoad'] = false;
             echo json_encode($results);
             return;
         }
+		
+	$cond=[];
+	if(!empty($condition)){
+		$cond = json_decode($condition , true);
+	}
+	$cond['company_id'] = $company_id;
 
-        $users = $this->user_model->getUsersByCond(['company_id'=>$company_id, 'search'=>$searchWord]);
+        $users = $this->user_model->getUsersByCond($cond);
 
         $result_user = [];
         foreach ($users as $user){
+			if(!empty($cond['last_visit_date'])){
+				$visit_data = $this->history_table_model->getMaxEnteringDate($user['user_id']);
+				if (empty($visit_data) || $visit_data['last_visit_date']<$cond['last_visit_date']){
+					continue;
+				}
+			}
             $tmp = $user;
             $reserves = $this->reserve_model->getDataByParam(['user_id'=>$user['user_id']]);
             $tmp['reserve_count'] = empty($reserves) ? 0 : count($reserves);

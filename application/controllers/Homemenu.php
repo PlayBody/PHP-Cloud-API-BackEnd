@@ -16,7 +16,9 @@ class Homemenu extends AdminController
 
         $this->load->model('connect_home_menu_model');
 
-        $this->header['page'] = 'home_menu';
+        $this->header['page'] = 'application';
+        $this->header['sub_page'] = 'home_menu';
+        $this->header['title'] = 'お店アプリメニュー';
 
         $this->load->library('excel');
 
@@ -93,7 +95,7 @@ class Homemenu extends AdminController
         $this->session->set_userdata($cond);
 
 
-        $this->_load_view("homemenu/index");
+        $this->load_view_with_menu("homemenu/index");
     }
 
 }

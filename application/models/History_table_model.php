@@ -119,4 +119,13 @@ and menu_variation_backs.staff_id=$staff_id";
         $row = $query->row_array();
         return empty($row['sum_amount']) ? 0 : $row['sum_amount']*-1;
     }
+
+	public function getMaxEnteringDate($user_id){
+		$this->db->select("DATE_FORMAT(max(start_time), '%Y-%m-%d') as last_visit_date");
+		$this->db->from($this->table);
+		$this->db->where('user_id', $user_id);
+		$query = $this->db->get();
+		return $query->row_array();
+	}
+
 }

@@ -17,8 +17,9 @@ class Mailtext extends AdminController
         $this->load->model('company_model');
         $this->load->model('notification_text_model');
 
-        $this->header['page'] = 'mail_text';
-        $this->header['title'] = '企業管理';
+        $this->header['page'] = 'application';
+        $this->header['sub_page'] = 'mail_text';
+        $this->header['title'] = 'メール本文管理';
 
         $this->load->library('excel');
     }
@@ -86,7 +87,7 @@ class Mailtext extends AdminController
         $this->session->set_userdata($cond);
 
 
-        $this->_load_view("mailtext/index");
+        $this->load_view_with_menu("mailtext/index");
     }
 
 }

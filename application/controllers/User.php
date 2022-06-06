@@ -19,8 +19,9 @@ class User extends AdminController
         $this->load->library('pagination');
         $this->load->helper('url');
 
-        $this->header['page'] = 'user';
-        $this->header['title'] = '企業管理';
+        $this->header['page'] = 'application';
+        $this->header['sub_page'] = 'user';
+        $this->header['title'] = 'ユーザー管理';
 
         $this->load->library('excel');
     }
@@ -47,14 +48,7 @@ class User extends AdminController
         $all_counts = $this->user_model->getUsersByCond($cond, true);
         $limit_per_page = 10;
 
-        $config['base_url'] = base_url() . 'user/index';
-        $config['total_rows'] = $all_counts;
-        $config['per_page'] = $limit_per_page;
-        $config["uri_segment"] = 3;
-
-        $this->pagination->initialize($config);
-
-        $this->data['links'] = $this->pagination->create_links();
+        $this->_paginationCompress('user/index', $all_counts);
 
         $this->data['users'] = $this->user_model->getUsersByCond($cond, false, $limit_per_page, $start_index);
 
@@ -68,7 +62,7 @@ class User extends AdminController
 
         $this->session->set_userdata($cond);
 
-        $this->_load_view("user/index");
+        $this->load_view_with_menu("user/index");
     }
 
     public function edit(){
@@ -102,7 +96,7 @@ class User extends AdminController
 
         $this->data['user'] = $user;
 
-        $this->_load_view("user/edit");
+        $this->load_view_with_menu("user/edit");
     }
 
 }

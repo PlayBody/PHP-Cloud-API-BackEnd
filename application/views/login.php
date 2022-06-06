@@ -1,88 +1,107 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>管理画面【企業用】</title>
-    <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
-    <link href="<?php echo base_url(); ?>assets/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-    <link href="<?php echo base_url(); ?>assets/bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
-    <link href="<?php echo base_url(); ?>assets/dist/css/AdminLTE.min.css" rel="stylesheet" type="text/css" />
-
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="<?php echo base_url(); ?>assets/images/favicon.png" type="image/png">
+    <title>POSアプリ管理</title>
+    <link href="<?php echo base_url(); ?>assets/css/icons.css" rel="stylesheet">
+    <link href="<?php echo base_url(); ?>assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="<?php echo base_url(); ?>assets/css/style.css" rel="stylesheet">
+    <link href="<?php echo base_url(); ?>assets/css/responsive.css" rel="stylesheet">
     <!--[if lt IE 9]>
     <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 
     <![endif]-->
 </head>
-<body class="hold-transition login-page">
-<div class="login-box">
-    <div class="login-logo">
-        <a href="#"><b>スタッフPOSアプリ</b><br>管理システム</a>
-    </div><!-- /.login-logo -->
-    <div class="login-box-body">
-        <p class="login-box-msg" style="font-size: 18px;font-weight: 700;">ログイン</p>
+<body class="sticky-header">
+
+<!--Start login Section-->
+<section class="login-section">
+    <div class="container">
         <div class="row">
-            <div class="col-md-12">
-                <?php echo validation_errors('<div class="alert alert-danger alert-dismissable">', ' <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button></div>'); ?>
-            </div>
-        </div>
-        <?php
-        $error = $this->session->flashdata('error');
-        if($error)
-        {
-            ?>
-            <div class="alert alert-danger alert-dismissable">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                <?php echo $error; ?>
-            </div>
-        <?php }
-        $success = $this->session->flashdata('success');
-        if($success)
-        {
-            ?>
-            <div class="alert alert-success alert-dismissable">
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                <?php echo $success; ?>
-            </div>
-        <?php } ?>
-        <form action="<?php echo base_url(); ?>login" method="post">
-            <div class="form-group has-feedback">
-                <input type="email" class="form-control" placeholder="メールアドレス" name="email" required />
-                <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
-            </div>
-            <div class="form-group has-feedback">
-                <input type="password" class="form-control" placeholder="パスワード" name="password" required />
-                <span class="glyphicon glyphicon-lock form-control-feedback"></span>
-            </div>
-            <div class="row">
-                <div class="col-xs-12 text-right margin-bottom">
-                    <a href="<?php echo base_url() ?>forgotPassword">パスワードをお忘れの方 <i class="fa fa-arrow-circle-right"></i></a><br>
-                </div>
-            </div>
+            <div class="login-wrapper">
+                <div class="login-inner">
 
-            <div class="row">
-                <div class="col-xs-12">
-                    <input type="submit" class="btn btn-primary btn-lg btn-block btn-flat" style="border-radius: 5px;" value="ログイン" />
-                </div><!-- /.col -->
-            </div>
-            <div class="row margin">
-                <div class="col-xs-8">
-                    <div class="checkbox icheck">
-                        <label>
-                            <input name="remember" type="checkbox"> 次回から自動的にログイン
-                        </label>
+                    <div class="logo">
+                        VISIT-POS.NET
                     </div>
+
+                    <h2 class="header-title text-center">Login</h2>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <?php echo validation_errors('<div class="alert alert-danger alert-dismissable">', ' <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button></div>'); ?>
+                        </div>
+                    </div>
+                    <?php
+                    $error = $this->session->flashdata('error');
+                    if($error)
+                    {
+                        ?>
+                        <div class="alert alert-danger alert-dismissable">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <?php echo $error; ?>
+                        </div>
+                    <?php }
+                    $success = $this->session->flashdata('success');
+                    if($success)
+                    {
+                        ?>
+                        <div class="alert alert-success alert-dismissable">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <?php echo $success; ?>
+                        </div>
+                    <?php } ?>
+                    <form action="<?php echo base_url(); ?>login" method="post">
+                        <div class="form-group">
+                            <input type="text"  type="email" class="form-control" placeholder="メールアドレス" name="email" required >
+                        </div>
+
+                        <div class="form-group">
+                            <input type="password" class="form-control" placeholder="パスワード" name="password" required />
+                        </div>
+
+                        <div class="form-group">
+                            <div class="pull-left">
+                                <div class="checkbox primary">
+                                    <input name="remember" id="checkbox-2" type="checkbox">
+                                    <label for="checkbox-2">Remember me</label>
+                                </div>
+                            </div>
+
+                            <div class="pull-right">
+                                <a href="<?php echo base_url() ?>forgotPassword" class="a-link">
+                                    <i class="fa fa-unlock-alt"></i> Forgot password?
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="submit" class="btn btn-primary btn-block" value="ログイン" />
+                        </div>
+
+                        <div class="form-group text-center">
+                            Don't have an account?  <a href="registration.html">Sign Up </a>
+                        </div>
+
+
+                    <div class="copy-text">
+                        <p class="m-0">2022 &copy; Devotion Co., Ltd.</p>
+                    </div>
+
                 </div>
             </div>
-        </form>
 
+        </div>
+    </div>
+</section>
 
-    </div><!-- /.login-box-body -->
-</div><!-- /.login-box -->
-
-<script src="<?php echo base_url(); ?>assets/bower_components/jquery/dist/jquery.min.js"></script>
-<script src="<?php echo base_url(); ?>assets/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="<?php echo base_url(); ?>assets/js/jquery.min.js"></script>
+<script src="<?php echo base_url(); ?>assets/js/bootstrap.min.js"></script>
 </body>
 </html>

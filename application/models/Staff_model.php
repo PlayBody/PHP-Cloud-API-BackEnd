@@ -28,7 +28,7 @@ class Staff_model extends Base_model
 
     function getStaffList($cond)
     {
-        $this->db->select('*');
+        $this->db->select("*, staff_auth as auth, IF(staff_nick is NULL, CONCAT(staff_first_name,' ', staff_last_name), staff_nick) as sort_name");
         $this->db->from($this->table);
 
         if (!empty($cond['staff_mail']))

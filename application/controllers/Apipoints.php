@@ -46,7 +46,6 @@ class Apipoints extends WebController
         $results['isSave'] = true;
         echo json_encode($results);
     }
-
     public function deleteOrganPointSetting(){
         $organ_point_id = $this->input->post('organ_point_id');
 

@@ -573,7 +573,6 @@ class Apitables extends WebController
 
         echo json_encode($results);
     }
-
     public function updateTableData(){
         $json_data = $this->input->post('update_data');
 

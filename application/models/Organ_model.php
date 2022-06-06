@@ -12,7 +12,7 @@ class Organ_model extends Base_model
     }
 
     public function getListByCond($cond){
-        $this->db->select('organs.*');
+        $this->db->select('organs.*, companies.company_name');
         $this->db->from($this->table);
 
         $this->db->join('companies', 'organs.company_id = companies.company_id', 'inner');

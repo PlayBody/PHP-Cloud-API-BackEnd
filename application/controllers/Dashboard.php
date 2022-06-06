@@ -13,6 +13,7 @@ class Dashboard extends AdminController
 
         //チャットボット
         $this->header['page'] = 'dashboard';
+        $this->header['sub_page'] = 'dashboard';
         $this->header['title'] = '管理画面【企業用】';
         $this->header['staff'] = $this->staff;
 
@@ -26,21 +27,9 @@ class Dashboard extends AdminController
      */
     public function index()
     {
-        //$this->data['all_scenario_count'] =$this->scenario_model->getScenarioList($this->user['company_id'],true);
-        //$this->data['user_count'] =$this->user_model->getListCount();
 
-       // $analysisData = $this->bot_model->getAnalysisData($this->user['company_id']);
-//        var_dump($analysisData);die;
-        //セッション数、
-        $this->data['visit_count'] = empty($analysisData['visit'])?0:$analysisData['visit'];
-        //シナリオ選択数
-        $this->data['scenario_count'] =empty($analysisData['scenario'])?0:$analysisData['scenario'];
-        //FAQ数
-        $this->data['faq_count'] = empty($analysisData['faq'])?0:$analysisData['faq'];
-        //チャット数
-        $this->data['chat_count'] = empty($analysisData['chat'])?0:$analysisData['chat'];
-
-        $this->_load_view("dashboard");
+        $this->load_view_with_menu("dashboard");
+        //$this->_load_view("dashboard");
     }
 
     /**

@@ -31,9 +31,26 @@ class User_model extends Base_model
             $this->db->where('company_id', $cond['company_id']);
         }
 
-        if(!empty($cond['search'])){
-            $search = $cond['search'];
+        if (!empty($cond['user_name'])){
+            $search = $cond['user_name'];
             $this->db->where("(user_first_name like '%$search%' or user_last_name like '%$search%' or user_nick like '%$search%' or user_email like '%$search%')");
+        }
+
+        if (!empty($cond['user_search_birthday_from'])){
+            $search = $cond['user_search_birthday_from'];
+            $this->db->where("DATE_FORMAT(user_birthday, '%m-%d') >= '$search'");
+        }
+        if (!empty($cond['user_search_birthday_to'])){
+            $search = $cond['user_search_birthday_to'];
+            $this->db->where("DATE_FORMAT(user_birthday, '%m-%d') <= '$search'");
+        }
+		
+        if (!empty($cond['user_sex'])){
+            $this->db->where('user_sex', $cond['user_sex']);
+        }
+
+        if (!empty($cond['last_visit_date'])){
+            //$this->db->where('user_sex', $cond['user_sex']);
         }
 
         $this->db->where('user_id != 1');

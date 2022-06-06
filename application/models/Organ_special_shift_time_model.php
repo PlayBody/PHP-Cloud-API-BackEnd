@@ -24,7 +24,6 @@ class Organ_special_shift_time_model extends Base_model
 
         return $query->result_array();
     }
-
     public function getFindShiftTimeOfSpecialBusiness($special_business_id){
 
         $this->db->from($this->table);

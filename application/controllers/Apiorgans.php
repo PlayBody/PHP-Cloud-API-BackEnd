@@ -48,7 +48,6 @@ class Apiorgans extends WebController
         $staff_id = $this->input->post('staff_id');
         $company_id = $this->input->post('company_id');
 
-
         if (empty($staff_id)){
             $cond['company_id'] = $company_id;
             $organs = $this->organ_model->getListByCond($cond);
@@ -209,7 +208,7 @@ class Apiorgans extends WebController
             return;
         }
 
-        $data = $this->organ_time_model->getOrganFromToTime($organ_id);
+        $data = $this->organ_time_model->getMinMaxTimeByCond(['organ_id'=>$organ_id]);
 
         $results = [];
         $results['isLoad'] = true;
@@ -464,17 +463,22 @@ class Apiorgans extends WebController
         $shift_time = $this->organ_special_shift_time_model->getFindShiftTimeOfSpecialBusiness($_id);
         if(empty($shift_time)){
             $_calc_from_time = new DateTime($from_time);
-            $_calc_from_time->sub(new DateInterval('P30M'));
-            $_calc_from_time->format('Y-m-d H:i:s');
+            $_calc_from_time->sub(new DateInterval('PT30M'));
+            $input_from_time = $_calc_from_time->format('Y-m-d H:i:s');
+            if($input_from_time<(substr($from_time, 0, 10).' 00:00:00'))
+                $input_from_time = (substr($from_time, 0, 10).' 00:00:00');
 
-            if($_calc_from_time<(substr($from_time, 0, 10).' 00:00:00'))
-                $_calc_from_time = (substr($from_time, 0, 10).' 00:00:00');
+			$_calc_to_time = new DateTime($to_time);
+            $_calc_to_time->add(new DateInterval('PT30M'));
+            $input_to_time = $_calc_to_time->format('Y-m-d H:i:s');
+            if($input_to_time>(substr($to_time, 0, 10).' 23:59:59'))
+                $input_to_time = (substr($to_time, 0, 10).' 23:59:59');
 
             $shift_time = array(
                 'organ_id' => $organ_id,
                 'special_business_id' => $_id,
-                'from_time' => $_calc_from_time,
-                'to_time' => $to_time
+                'from_time' => $input_from_time,
+                'to_time' => $input_to_time
             );
             $this->organ_special_shift_time_model->insertRecord($shift_time);
         }
@@ -519,6 +523,7 @@ class Apiorgans extends WebController
         return;
     }
 
+
     public function loadOrganMinAndMaxShiftTime(){
         $organ_id = $this->input->post('organ_id');
         $from_time = $this->input->post('from_time');
@@ -538,6 +543,5 @@ class Apiorgans extends WebController
         echo json_encode($results);
 
     }
-
 }
 ?>

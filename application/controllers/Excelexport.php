@@ -23,12 +23,13 @@ class Excelexport extends AdminController
         $this->load->model('cart_model');
 //        $this->load->model('staff_organ_model');
 
-        $this->header['page'] = 'excelexport';
+        $this->header['page'] = 'application';
+        $this->header['sub_page'] = 'excel_export';
         $this->header['title'] = 'Excelエスポート';
 
         $this->load->library('excel');
     }
-    
+
     /**
      * This function used to load the first screen of the user
      */
@@ -49,7 +50,7 @@ class Excelexport extends AdminController
 //        $this->data['date_month'] = $date_month;
 //        $this->data['organ_id'] = $organ_id;
 
-        $this->_load_view("excelexport/index");
+        $this->load_view_with_menu("excelexport/index");
     }
 
     public function export1(){
@@ -226,7 +227,7 @@ class Excelexport extends AdminController
         $this->data['date_month'] = $date_month;
 
 
-        $this->_load_view("excelexport/export1");
+        $this->load_view_with_menu("excelexport/export1");
     }
 
     public function export2(){
@@ -404,7 +405,7 @@ class Excelexport extends AdminController
         $this->data['date_month'] = $date_month;
 
 
-        $this->_load_view("excelexport/export2");
+        $this->load_view_with_menu("excelexport/export2");
     }
 
     private function getPermissionAttendanceTime($date, $company_id, $auth, $paList=''){
