@@ -128,3 +128,14 @@ $attendance_status = array(
 );
 
 define('ATTENDANCE_STATUS', $attendance_status);
+
+$reserve_status = array(
+    'request' => 1,
+    'apply' => 2,
+    'reject' => 3,
+    'cancel' => 4,
+    'entering' => 5,
+    'complete' => 6
+);
+
+define('RESERVE_STATUS', $reserve_status);

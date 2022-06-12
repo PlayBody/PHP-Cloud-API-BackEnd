@@ -12,13 +12,21 @@ class Menu_model extends Base_model
     }
 
     public function getMenuList($cond, $count=''){
+        $this->db->select($this->table.'.*');
         $this->db->from($this->table);
+        $this->db->join('organ_menus', 'organ_menus.menu_id = menus.menu_id', 'left');
         $this->db->where('visible', '1');
         if (!empty($cond['organ_id'])){
-            $this->db->where('organ_id', $cond['organ_id']);
+            $this->db->where('organ_menus.organ_id', $cond['organ_id']);
+        }
+        if (!empty($cond['company_id'])){
+            $this->db->where('company_id', $cond['company_id']);
+        }
+        if (!empty($cond['is_user_menu'])){
+            $this->db->where('is_user_menu', $cond['is_user_menu']);
         }
 
-
+        $this->db->group_by('menus.menu_id');
         $this->db->order_by('sort_no', 'asc');
 
         if (!empty($count)){
@@ -71,11 +79,11 @@ class Menu_model extends Base_model
     }
 
 
-    function getMaxOrder($organ_id){
+    function getMaxOrder($company_id){
         $this->db->select('sort_no')->from($this->table);
 
         $this->db->where('visible','1');
-        $this->db->where('organ_id', $organ_id);
+        $this->db->where('company_id', $company_id);
 
         $this->db->order_by('sort_no', 'desc');
         $query = $this->db->get();
@@ -94,7 +102,7 @@ class Menu_model extends Base_model
         $this->db->from($this->table);
         $this->db->join('organs', 'organs.organ_id=menus.organ_id', 'left');
         //$this->db->where('visible', '1');
-        $this->db->where('company_id', $company_id);
+        $this->db->where('menus.company_id', $company_id);
         $this->db->where('is_user_menu', 1);
 
         $this->db->order_by('sort_no', 'asc');

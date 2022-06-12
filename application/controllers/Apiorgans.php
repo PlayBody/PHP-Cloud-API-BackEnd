@@ -532,12 +532,13 @@ class Apiorgans extends WebController
         $row = $this->organ_shift_time_model->getOrganMinMaxShiftTime($organ_id, $from_time, $to_time);
 
         $results = [];
-        if (empty($row)){
+        if (empty($row['min_time']) || empty($row['max_time'])){
             $results['start'] = 0;
             $results['end'] = 24;
         }else{
             $results['start'] = explode(':', $row['min_time'])[0];
             $results['end'] = explode(':', $row['max_time'])[0] + 1 ;
+            if ($results['end'] >24) $results['end'] = 24;
         }
 
         echo json_encode($results);

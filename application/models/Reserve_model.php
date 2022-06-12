@@ -107,26 +107,29 @@ class Reserve_model extends Base_model
         if (!empty($cond['staff_id'])){
             $this->db->where('reserves.staff_id', $cond['staff_id']);
         }
-
         if (!empty($cond['from_time'])){
             $this->db->where("reserve_time>='". $cond['from_time']."'");
         }
         if (!empty($cond['to_time'])){
             $this->db->where("reserve_time<='". $cond['to_time']."'");
         }
-
         if (!empty($cond['reserve_time'])){
             $this->db->where("reserve_time", $cond['reserve_time']);
         }
         if (!empty($cond['user_id'])){
             $this->db->where("reserves.user_id", $cond['user_id']);
         }
-
         if (!empty($cond['company_id'])){
             $this->db->where("organs.company_id",  $cond['company_id']);
         }
         if (!empty($cond['organ_ids'])){
             $this->db->where("reserves.organ_id in (". $cond['organ_ids'] .")");
+        }
+        if (!empty($cond['organ_id'])){
+            $this->db->where("reserves.organ_id", $cond['organ_id']);
+        }
+        if (!empty($cond['max_status'])){
+            $this->db->where("reserves.reserve_status  <= " . $cond['max_status']);
         }
 
 
@@ -171,19 +174,6 @@ class Reserve_model extends Base_model
         $query = $this->db->get();
         return $query->result_array();
     }
-
-    public function getUserReserveData($from_time, $to_time, $user_id, $organ_id){
-        $this->db->from($this->table);
-        $this->db->where('user_id', $user_id);
-        $this->db->where('organ_id', $organ_id);
-        $this->db->where("reserve_time >='".$from_time."' and reserve_exit_time<'".$to_time."'");
-
-        $this->db->where("reserve_status <= 3");
-
-        $query = $this->db->get();
-        return $query->result_array();
-    }
-
 
     public function getMonthReserves($staff_id, $month){
         $this->db->from($this->table);

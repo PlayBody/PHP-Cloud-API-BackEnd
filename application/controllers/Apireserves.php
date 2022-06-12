@@ -79,7 +79,13 @@ class Apireserves extends WebController
         $results['organ_from_time'] = $organ_from_time;
         $results['organ_to_time'] = $organ_to_time;
 
-        $reserves = $this->reserve_model->getUserReserveData($from_date." 00:00:00", $to_date." 23:59:59", $user_id);
+        $reserves = $this->reserve_model->getListByCond([
+            'from_time' => $from_date." 00:00:00",
+            'to_time' => $to_date." 23:59:59",
+            'user_id' => $user_id,
+            'max_status' => RESERVE_STATUS['apply']
+        ]);
+
         $results['reserves'] = $reserves;
 
         echo(json_encode($results));
@@ -136,7 +142,6 @@ class Apireserves extends WebController
                 echo json_encode($results);
                 return;
             }
-
         }
 
         $reserve = array(
@@ -154,7 +159,7 @@ class Apireserves extends WebController
             'reserve_name_2' => $user_2,
             'reserve_name_3' => $user_3,
             'reserve_name_4' => $user_4,
-            'reserve_status'=>$condition_status==1 ? 2 : 1,
+            'reserve_status'=>$condition_status==1 ? RESERVE_STATUS['apply'] : RESERVE_STATUS['request'],
             'visible' => 1,
         );
 
@@ -372,7 +377,7 @@ class Apireserves extends WebController
             return;
         }
 
-        $reserve['reserve_status'] = '2';
+        $reserve['reserve_status'] = RESERVE_STATUS['apply'];
 
         $this->reserve_model->updateRecord($reserve);
 
@@ -403,7 +408,7 @@ class Apireserves extends WebController
             return;
         }
 
-        $reserve['reserve_status'] = '3';
+        $reserve['reserve_status'] = RESERVE_STATUS['reject'];
 
         $this->reserve_model->updateRecord($reserve);
 
@@ -457,7 +462,7 @@ class Apireserves extends WebController
         $reserve_id = $this->input->post('reserve_id');
 
         $reserve = $this->reserve_model->getFromID($reserve_id);
-        $reserve['reserve_status']=2;
+        $reserve['reserve_status']=RESERVE_STATUS['complete'];
         $reserve['visit_time']=date('Y-m-d H:i:s');
 
         $is_first_reserve_visit = $this->reserve_model->getVisitCount($reserve['organ_id'], $reserve['user_id']);
@@ -495,7 +500,7 @@ class Apireserves extends WebController
         $cond = [];
         $cond['organ_id'] = $organ_id;
         $cond['user_id'] = $user_id;
-        $cond['reserve_status'] = '1';
+        $cond['reserve_status'] = RESERVE_STATUS['apply'];
         $cond['from_time'] = date('Y-m-d H:i:s', strtotime(' -30 min'));
         $cond['to_time'] = date('Y-m-d H:i:s', strtotime(' +30 min'));
         $reserves = $this->reserve_model->getReserveNowData($cond);
@@ -515,7 +520,7 @@ class Apireserves extends WebController
 
         $reserve = $this->reserve_model->getFromId($reserve_id);
 
-        $reserve['reserve_status']=5;
+        $reserve['reserve_status'] = RESERVE_STATUS['cancel'];
         $this->reserve_model->updateRecord($reserve, 'reserve_id');
 
         $results['isUpdate'] = true;
@@ -538,7 +543,14 @@ class Apireserves extends WebController
             return;
         }
 
-        $reserves = $this->reserve_model->getUserReserveData($from_date, $to_date, $user_id, $organ_id);
+        $reserves = $this->reserve_model->getListByCond([
+            'organ_id'=>$organ_id,
+            'user_id'=>$user_id,
+            'from_time'=>$from_date,
+            'to_time'=>$to_date,
+            'max_status'=>RESERVE_STATUS['apply']
+        ]);
+
         $results['isLoad'] = true;
         $results['reserves'] = $reserves;
 

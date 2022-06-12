@@ -19,6 +19,7 @@ class Apimenus extends WebController
         $this->load->model('table_menu_model');
         $this->load->model('table_menu_ticket_model');
         $this->load->model('organ_model');
+        $this->load->model('organ_menu_model');
     }
 
     public function getMenus(){
@@ -150,36 +151,13 @@ class Apimenus extends WebController
 
     public function loadMenuList(){
 
-        $staff_id = $this->input->post('staff_id');
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
 
-        $organ_list = $this->getOrgansByStaffPermission($staff_id);
+        $menus = $this->menu_model->getMenuList($cond);
 
-        $organ_id = $this->input->post('organ_id');
-
-        if (empty($organ_id)) $organ_id = $organ_list[0]['organ_id'];
-
-        $menus = $this->menu_model->getMenuList(['organ_id'=> $organ_id]);
-
-        $data = [];
-        foreach ($menus as $menu){
-            $tmp = $menu;
-            $variations = $this->menu_variation_model->getVariationList(['menu_id'=>$menu['menu_id']]);
-            if (!empty($variations)){
-                $titles= '';
-                foreach ($variations as $variation) {
-                    if ($titles != '') $titles .= ",";
-                    $titles .= $variation['variation_title'];
-                }
-                $tmp['variation_titles'] = $titles;
-            }
-
-            $data[] = $tmp;
-        }
-
-        $results['organ_list'] = $organ_list;
         $results['isLoad'] = true;
-        $results['menus'] = $data;
-        $results['organ_id'] = $organ_id;
+        $results['menus'] = $menus;
 
         echo(json_encode($results));
     }
@@ -220,71 +198,69 @@ class Apimenus extends WebController
     public function saveMenu(){
 
         $menu_id = $this->input->post('menu_id');
-        $organ_id = $this->input->post('organ_id');
+        $company_id = $this->input->post('company_id');
 
-        $menu_title = $this->input->post('title');
-        $menu_price = $this->input->post('price');
-        $menu_detail = $this->input->post('detail');
-        $menu_cost = $this->input->post('cost');
-        $menu_tax = $this->input->post('tax');
-        $menu_comment = $this->input->post('comment');
-        $is_user_menu = empty($this->input->post('is_user_menu')) ? null : $this->input->post('is_user_menu');
-        $menu_time = empty($this->input->post('menu_time')) ? null : $this->input->post('menu_time');
-        $menu_interval = empty($this->input->post('menu_interval')) ? null : $this->input->post('menu_interval');
-        $menu_image = empty($this->input->post('image')) ? null : $this->input->post('image');
 
-        if (empty($organ_id)){
+        if (empty($company_id)){
             $results['isSave'] = false;
             echo json_encode($results);
             return;
         }
 
+        $menu = [];
+        if (!empty($menu_id)) {
+            $this->menu_model->getFromId($menu_id);
+        }
+
+        $menu['company_id'] = $company_id;
+        $menu['menu_title'] = $this->input->post('title');
+        $menu['menu_detail']  = $this->input->post('detail');
+        $menu['menu_price'] = $this->input->post('price');
+        $menu['menu_comment'] = $this->input->post('comment');
+        $menu['is_user_menu'] = empty($this->input->post('is_user_menu')) ? null : $this->input->post('is_user_menu');
+        $menu['menu_time'] = empty($this->input->post('menu_time')) ? null : $this->input->post('menu_time');
+        $menu['menu_interval'] = empty($this->input->post('menu_interval')) ? null : $this->input->post('menu_interval');
+
         if (empty($menu_id)){
-            $menu = array(
-                'organ_id' => $organ_id,
-                'menu_title' => $menu_title,
-                'menu_price' => $menu_price,
-                'menu_detail' => $menu_detail,
-                'menu_cost' => $menu_cost,
-                'menu_tax' => $menu_tax,
-                'menu_comment' => $menu_comment,
-                'is_user_menu' => $is_user_menu,
-                'menu_time' => $menu_time,
-                'menu_interval' => $menu_interval,
-                'menu_image' => $menu_image,
-                'sort_no' => $this->menu_model->getMaxOrder($organ_id),
-                'visible'=>'1',
-            );
+            $menu['menu_image'] = empty($this->input->post('image')) ? null : $this->input->post('image');
+            $menu['sort_no'] = $this->menu_model->getMaxOrder($company_id);
+            $menu['visible'] = 1;
 
             $menu_id = $this->menu_model->InsertRecord($menu);
 
         }else{
             $menu = $this->menu_model->getFromId($menu_id);
-            $menu['menu_title'] = $menu_title;
-            $menu['menu_price'] = $menu_price;
-            $menu['menu_detail'] = $menu_detail;
-            $menu['menu_cost'] = $menu_cost;
-            $menu['menu_tax'] = $menu_tax;
-            $menu['menu_comment'] = $menu_comment;
-            $menu['is_user_menu'] = $is_user_menu;
-            $menu['menu_time'] = $menu_time;
-            $menu['menu_interval'] = $menu_interval;
-            if ($menu_image!=null){
-                $menu['menu_image'] = $menu_image;
+            if (!empty($this->input->post('image'))){
+                $menu['menu_image'] = $this->input->post('image');
             }
-
             $this->menu_model->updateRecord($menu, 'menu_id');
+        }
 
+        $menu_organs = $this->input->post('menu_organs');
+        $organs = json_decode($menu_organs, true);
+        $old_organ_menus = $this->organ_menu_model->getListByCond(['menu_id' => $menu_id]);
+        foreach ($old_organ_menus as $item){
+                if(empty($organs) || !array_search($item['organ_id'], $organs) && $organs[0] != $item['organ_id']){
+                    $this->organ_menu_model->delete_force($item['id'], 'id');
+                }
+        }
+
+        foreach ($organs as $organ_id){
+            if(empty($old_organ_menus) || !array_search($organ_id, array_column($old_organ_menus, 'organ_id')) && $old_organ_menus[0]['organ_id'] != $organ_id){
+                $organ_menu_data = array(
+                    'organ_id' => $organ_id,
+                    'menu_id' => $menu_id
+                );
+                $this->organ_menu_model->insertRecord($organ_menu_data);
+            }
         }
 
         $results['isSave'] = true;
-
         $results['select_menu_id'] = $menu_id;
         echo(json_encode($results));
     }
 
     public function deleteMenu(){
-
         $menu_id = $this->input->post('menu_id');
 
         $results = [];
@@ -625,6 +601,19 @@ class Apimenus extends WebController
 
         echo json_encode($results);
 
+    }
+
+    public function loadMenuOrgans(){
+
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+
+        $organ_menus = $this->organ_menu_model->getListByCond($cond);
+
+        $results['isLoad'] = true;
+        $results['organ_menus'] = $organ_menus;
+
+        echo(json_encode($results));
     }
 }
 ?>
