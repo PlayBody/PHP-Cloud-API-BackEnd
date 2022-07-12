@@ -45,6 +45,10 @@ class Setting_count_shift_model extends Base_model
             $this->db->where("to_time >='". $cond['inner_to_time'] ."'");
         }
 
+        if (!empty($cond['in_from_time']) && !empty($cond['in_to_time'])){
+            $this->db->where("((to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."') || (from_time ='". $cond['in_from_time'] ."' and to_time ='". $cond['in_to_time'] ."'))" );
+        }
+
         if (!empty($cond['submit_from_time'])){
             $this->db->where("from_time <='". $cond['submit_from_time'] ."'");
         }

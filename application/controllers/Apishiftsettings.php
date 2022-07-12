@@ -55,55 +55,13 @@ class Apishiftsettings extends WebController
         echo json_encode($results);
     }
 
+    public function loadInitShifts(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
 
+        $shifts = $this->setting_init_shift_model->getListByCond($cond);
 
-    public function loadShift(){
-        $staff_id = $this->input->post('staff_id');
-        $organ_id = $this->input->post('organ_id');
-        $pattern = $this->input->post('pattern');
-
-        $results = [];
-
-        if (empty($staff_id)){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
-
-        $staff = $this->staff_model->getFromId($staff_id);
-
-        $organ_list = $this->staff_organ_model->getOrgansByStaff($staff_id);
-
-        if (empty($organ_id)) $organ_id = $organ_list[0]['organ_id'];
-
-        $organ = $this->organ_model->getFromId($organ_id);
-
-//        if (empty($organ) || empty($staff)){
-//            $results['isLoad'] = false;
-//            echo json_encode($results);
-//            return;
-//        }
-
-        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=> $organ_id]);
-
-        $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
-        $organ_active_end = empty($organ['active_end_time']) ? '24:00' : $organ['active_end_time'];
-
-        $cond = array();
-        $cond['staff_id'] = $staff_id;
-        $cond['organ_id'] = $organ_id;
-        $cond['pattern'] = $pattern;
-        $initData = $this->setting_init_shift_model->getListByCond($cond);
-
-        $results['isLoad'] = true;
-        $results['organ_id'] = $organ_id;
-        $results['organ_list'] = $organ_list;
-
-        $results['shifts'] = $initData;
-        $results['shift_times'] = $shift_times;
-        $results['active_time']['from'] = $organ_active_start;
-        $results['active_time']['to'] = $organ_active_end;
-
+        $results['shifts'] = $shifts;
 
         echo(json_encode($results));
     }
@@ -440,5 +398,82 @@ class Apishiftsettings extends WebController
 
 
     }
+
+
+    public function saveInitShift(){
+        $staff_id = $this->input->post('staff_id');
+        $organ_id = $this->input->post('organ_id');
+        $setting_id = $this->input->post('setting_id');
+        $weekday = $this->input->post('weekday');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+        $pattern = $this->input->post('pattern');
+        $shift_type = $this->input->post('shift_type');
+
+        $setting = [];
+        if(!empty($setting_id)){
+            $setting = $this->setting_init_shift_model->getFromId($setting_id);
+            $old_type = $setting['shift_type'];
+        }
+
+        if (!empty($organ_id)) $setting['organ_id'] = $organ_id;
+        if (!empty($staff_id)) $setting['staff_id'] = $staff_id;
+        if (!empty($weekday)) $setting['weekday'] = $weekday;
+        if (!empty($from_time)) $setting['from_time'] = $from_time;
+        if (!empty($to_time)) $setting['to_time'] = $to_time;
+        if (!empty($shift_type)) $setting['shift_type'] = $shift_type;
+        if (!empty($pattern)) $setting['pattern'] = $pattern;
+
+        if($shift_type==SHIFT_STATUS_REST){
+            $shifts = $this->setting_init_shift_model->getListByCond([
+                'staff_id'=>$staff_id,
+                'organ_id' => $organ_id,
+                'weekday' => $weekday,
+                'pattern' => $pattern,
+            ]);
+
+            if(!empty($shifts)){
+                $results['isSave'] = false;
+                $results['message'] = 'シフトが存在します。 休憩を設定するには、シフトを削除してください。';
+                echo json_encode($results);
+                return;
+            }
+
+            $setting['from_time'] = '00:00:00';
+            $setting['to_time'] = '23:59:59';
+        }
+
+        $exist_other_shifts = $this->setting_init_shift_model->getListByCond([
+            'staff_id'=>$staff_id,
+            'organ_id' => $organ_id,
+            'in_from_time' => $from_time,
+            'in_to_time' => $to_time,
+            'weekday' => $weekday,
+            'no_setting' => $setting_id,
+        ]);
+
+        if (!empty($exist_other_shifts)){
+            $results['isSave'] = false;
+            $results['message'] = '入力したシフトが重複しました。時間を確認してください。';
+            echo json_encode($results);
+            return;
+        }
+
+
+        if (empty($setting_id) || $old_type == SHIFT_STATUS_REST){
+            if (!empty($setting_id)){
+                $this->setting_init_shift_model->delete_force($setting_id, 'id');
+            }
+            $setting['id'] = '';
+            $this->setting_init_shift_model->insertRecord($setting);
+        }else{
+            $this->setting_init_shift_model->updateRecord($setting, 'id');
+        }
+
+        $results['isSave'] = true;
+        echo json_encode($results);
+        return;
+    }
+
 }
 ?>

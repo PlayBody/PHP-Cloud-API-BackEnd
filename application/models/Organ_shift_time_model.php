@@ -28,14 +28,17 @@ class Organ_shift_time_model extends Base_model
 
 
     public function getOrganMinMaxShiftTime($organ_id, $from_time, $to_time){
-		$sql = "select min(from_time) as min_time, max(to_time) as max_time from
-            (select from_time, to_time from organ_shift_times where organ_id= ".$organ_id."
+        if (!empty($from_time) && !empty($to_time)) {
+            $sql = "select min(from_time) as min_time, max(to_time) as max_time from
+            (select from_time, to_time from organ_shift_times where organ_id= " . $organ_id . "
                 union 
                 select date_format(from_time, '%H:%i') as from_time, date_format(to_time, '%H:%i') as to_time from organ_special_shift_times 
-                    where organ_id=".$organ_id." 
-                        and from_time>='".$from_time."' 
-                        and to_time <='".$to_time."') tmp";
-
+                    where organ_id=" . $organ_id . " 
+                        and from_time>='" . $from_time . "' 
+                        and to_time <='" . $to_time . "') tmp";
+        }else{
+            $sql = "select min(from_time) as min_time, max(to_time) as max_time from organ_shift_times where organ_id= " . $organ_id ;
+        }
         $query = $this->db->query($sql);
 
         return $query->row_array();

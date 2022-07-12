@@ -48,6 +48,14 @@ class Setting_init_Shift_model extends Base_model
             $this->db->where("to_time >'". $cond['select_time'] ."'");
         }
 
+        if (!empty($cond['in_from_time']) && !empty($cond['in_to_time'])){
+            $this->db->where("((to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."') || (from_time ='". $cond['in_from_time'] ."' and to_time ='". $cond['in_to_time'] ."'))" );
+        }
+
+        if (!empty($cond['no_setting'])){
+            $this->db->where("id <>'". $cond['no_setting'] ."'");
+        }
+
         if (!empty($setting_id)){
             $this->db->where("id <> '". $setting_id ."'");
         }

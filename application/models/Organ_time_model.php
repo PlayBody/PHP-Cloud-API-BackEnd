@@ -17,6 +17,13 @@ class Organ_time_model extends Base_model
         if (!empty($cond['organ_id'])){
             $this->db->where('organ_id', $cond['organ_id']);
         }
+        if (!empty($cond['weekday'])){
+            $this->db->where('weekday', $cond['weekday']);
+        }
+        if (!empty($cond['select_time'])){
+            $this->db->where("from_time<= '". $cond['select_time'] . "'");
+            $this->db->where("to_time>'". $cond['select_time'] . "'");
+        }
 
         $query = $this->db->get();
         return $query->result_array();

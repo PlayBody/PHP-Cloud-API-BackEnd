@@ -19,6 +19,8 @@ class Apisums extends WebController
         $this->load->model('history_table_model');
         $this->load->model('history_table_menu_model');
         $this->load->model('user_model');
+        $this->load->model('order_model');
+        $this->load->model('order_menu_model');
     }
 
     public function loadSumSales()
@@ -46,7 +48,7 @@ class Apisums extends WebController
             if ($i_day<10) $i_day = "0".$i_day;
 
             $sel_date = $select_year . "-" . $select_month . "-" . $i_day;
-            $amount = $this->history_table_model->getOrderAmount($organ_id, $sel_date, $sel_date);
+            $amount = $this->order_model->getOrderAmountByDate($organ_id, $sel_date);
 
             $curDateTime = new DateTime($sel_date);
             $week = $curDateTime->format("N");
@@ -59,9 +61,9 @@ class Apisums extends WebController
             $graphs[$key]['average'] = 0;
             if (!empty($amount['amount'])){
                  $graphs[$key]['all'] = (int)$amount['amount'];
-                 $graphs[$key]['cnt'] = (int)$amount['customer_count'];
-                 if (!empty($amount['customer_count']))
-                    $graphs[$key]['average'] = (int)($amount['amount'] / $amount['customer_count']);
+                 $graphs[$key]['cnt'] = (int)$amount['order_count'];
+                 if (!empty($amount['order_count']))
+                    $graphs[$key]['average'] = (int)($amount['amount'] / $amount['order_count']);
             }
 
         }
@@ -86,9 +88,9 @@ class Apisums extends WebController
             return;
         }
 
-        $sales = $this->history_table_model->getSaleDetail($select_date, $organ_id);
+        $sales = $this->order_model->getSaleDetail($organ_id, $select_date);
 
-        $sum_amount = $this->history_table_model->getTodayHistoryAmount($select_date, $organ_id);
+        $sum_amount = $this->order_model->getTodayHistoryAmount($organ_id, $select_date);
 
         $results['isLoad'] = true;
         $results['sales'] = $sales;
@@ -98,45 +100,42 @@ class Apisums extends WebController
     }
 
     public function deleteSale(){
-        $history_id = $this->input->post('history_id');
-        if (empty($history_id)){
+        $order_id = $this->input->post('order_id');
+        if (empty($order_id)){
             $results['isDelete'] = false;
 
             echo json_encode($results);
             return;
         }
-        $menus = $this->history_table_menu_model->getListCond(['history_table_id'=>$history_id]);
-        foreach ($menus as $item) {
-            $this->history_table_menu_model->delete_force($item['history_table_menu_id'], 'history_table_menu_id');
-        }
-        $this->history_table_model->delete_force($history_id, 'order_table_history_id');
+        $this->order_menu_model->delete_force($order_id, 'order_id');
+        $this->order_model->delete_force($order_id, 'id');
         $results['isDelete'] = true;
         echo json_encode($results);
     }
 
     public function loadSumSaleItem()
     {
-        $order_table_history_id = $this->input->post('history_id');
+        $order_id = $this->input->post('order_id');
 
         $results = [];
-        if (empty($order_table_history_id)){
+        if (empty($order_id)){
             $results['isLoad'] = false;
             echo json_encode($results);
             return;
         }
 
-        $table = $this->history_table_model->getFromId($order_table_history_id);
+        $order = $this->order_model->getFromId($order_id);
 
         $results['isLoad'] = true;
 
-        if (!empty($table['user_id'])){
-            $user = $this->user_model->getFromId($table['user_id']);
+        if (!empty($order['user_id'])){
+            $user = $this->user_model->getFromId($order['user_id']);
             $results['user'] = $user;
         }
 
-        $menus = $this->history_table_menu_model->getListCond(['history_table_id'=>$order_table_history_id]);
+        $menus = $this->order_menu_model->getDataByParam(['order_id'=>$order_id]);
 
-        $results['table'] = $table;
+        $results['order'] = $order;
         $results['menus'] = empty($menus) ? [] : $menus;
 
         echo json_encode($results);

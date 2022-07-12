@@ -104,6 +104,11 @@ class Reserve_model extends Base_model
         $this->db->join('staffs', 'staffs.staff_id = reserves.staff_id', 'left');
         $this->db->join('users', 'users.user_id = reserves.user_id');
 
+
+        if (!empty($cond['reserve_id'])){
+            $this->db->where('reserves.reserve_id', $cond['reserve_id']);
+        }
+
         if (!empty($cond['staff_id'])){
             $this->db->where('reserves.staff_id', $cond['staff_id']);
         }
@@ -111,10 +116,13 @@ class Reserve_model extends Base_model
             $this->db->where("reserve_time>='". $cond['from_time']."'");
         }
         if (!empty($cond['to_time'])){
-            $this->db->where("reserve_time<='". $cond['to_time']."'");
+            $this->db->where("reserve_exit_time<='". $cond['to_time']."'");
         }
         if (!empty($cond['reserve_time'])){
             $this->db->where("reserve_time", $cond['reserve_time']);
+        }
+        if (!empty($cond['select_date'])){
+            $this->db->where("reserve_time like '" . $cond['select_date'] . " %'");
         }
         if (!empty($cond['user_id'])){
             $this->db->where("reserves.user_id", $cond['user_id']);
@@ -128,12 +136,18 @@ class Reserve_model extends Base_model
         if (!empty($cond['organ_id'])){
             $this->db->where("reserves.organ_id", $cond['organ_id']);
         }
+        if (!empty($cond['reserve_status'])){
+            $this->db->where("reserves.reserve_status" , $cond['reserve_status']);
+        }
         if (!empty($cond['max_status'])){
             $this->db->where("reserves.reserve_status  <= " . $cond['max_status']);
         }
+        if (!empty($cond['in_from_time']) && !empty($cond['in_to_time'])){
+            $this->db->where("((reserve_exit_time >'". $cond['in_from_time'] ."' and reserve_time <'". $cond['in_to_time'] ."') || (reserve_time ='". $cond['in_from_time'] ."' and reserve_exit_time ='". $cond['in_to_time'] ."'))" );
+        }
 
 
-        $this->db->order_by($this->table.'.update_date', 'desc');
+        $this->db->order_by($this->table.'.reserve_time', 'asc');
         $query = $this->db->get();
         $result = $query->result_array();
 
@@ -283,12 +297,34 @@ class Reserve_model extends Base_model
         return $query->result_array();
     }
 
-    public function getVisitCount($organ_id, $user_id){
+    public function getVisitCount($organ_id, $user_id, $company_id){
+        if($company_id==1){
+            $now_h = date('G');
+            $now_date = date('Y-m-d');
+            $dt = new DateTime($now_date);
+
+            if($now_h<12){
+                $dt->sub(new DateInterval("P1D")); // 2016-03-02
+                $fromDate = $dt->format("Y-m-d");
+                $from_time = $fromDate . ' 12:00:00';
+                $to_time = $now_date . ' 12:00:00';
+            }else{
+                $dt->add(new DateInterval("P1D")); // 2016-03-02
+                $toDate = $dt->format("Y-m-d");
+                $from_time = $now_date . ' 12:00:00';
+                $to_time = $toDate . ' 12:00:00';
+            }
+        }else{
+            $from_time = date('Y-m-d') . ' 00:00:00';
+            $to_time = date('Y-m-d') . ' 23:59:59';
+        }
+
         $this->db->select('count(reserve_id) as cnt');
         $this->db->from($this->table);
         $this->db->where('organ_id', $organ_id);
         $this->db->where('user_id', $user_id);
-        $this->db->where("visit_time like '" . date('Y-m-d') . " %'");
+        $this->db->where("visit_time >='" . $from_time . "'");
+        $this->db->where("visit_time <'" . $to_time . "'");
 
         $query = $this->db->get();
 
@@ -342,4 +378,6 @@ class Reserve_model extends Base_model
         $query = $this->db->get();
         return $query->row_array();
     }
+
+
 }

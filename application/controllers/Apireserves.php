@@ -28,7 +28,10 @@ class Apireserves extends WebController
         $this->load->model('reserve_ticket_model');
 
         $this->load->model('shift_model');
+        $this->load->model('order_model');
+        $this->load->model('order_menu_model');
         $this->load->model('organ_time_model');
+        $this->load->model('organ_special_time_model');
 //        $this->load->model('pos_staff_shift_model');
     }
 
@@ -110,7 +113,7 @@ class Apireserves extends WebController
 
     }
 
-    function saveUserReserve(){
+    public function saveUserReserve(){
         $organ_id = $this->input->post('organ_id');
         $user_id = $this->input->post('user_id');
         $staff_id = $this->input->post('staff_id');
@@ -124,6 +127,7 @@ class Apireserves extends WebController
         $coupon_use_amount = $this->input->post('coupon_use_amount');
         $ticket_amount = $this->input->post('ticket_amount');
         $amount = $this->input->post('amount');
+        $user_count = $this->input->post('user_count');
         $sum_time = empty($this->input->post('sum_time')) ? 0 : $this->input->post('sum_time');
         $user_2 = empty($this->input->post('user_2')) ? null : $this->input->post('user_2');
         $user_3 = empty($this->input->post('user_3')) ? null : $this->input->post('user_3');
@@ -135,7 +139,7 @@ class Apireserves extends WebController
             echo json_encode($results);
             return;
         }
-        $condition_status = $this->getReserveTimeStatus($organ_id, $staff_id, $reserve_start_time, $sum_time);
+        $condition_status = $this->getReserveTimeStatus($organ_id, $staff_id, $reserve_start_time, $user_id);
         if ($condition_status==3){
             if (empty($reserve_id)){
                 $results['isSave'] = false;
@@ -144,28 +148,40 @@ class Apireserves extends WebController
             }
         }
 
-        $reserve = array(
-            'user_id' => $user_id,
+        $pos =null;
+        if($condition_status==1){
+            $pos = $this->order_model->emptyMaxPosition([
+               'organ_id' => $organ_id,
+               'from_time' =>  $reserve_start_time,
+                'to_time' => $reserve_end_time,
+                'status_array' => [ORDER_STATUS_RESERVE_APPLY, ORDER_STATUS_TABLE_START, ORDER_STATUS_TABLE_END, ORDER_STATUS_TABLE_COMPLETE]
+            ]);
+        }
+
+        $order = array(
             'organ_id' => $organ_id,
-            'sel_staff_type' => empty($sel_staff_type) ? 0 : $sel_staff_type,
-            'staff_id' => empty($staff_id) ? null : $staff_id,
-            'reserve_time' => $reserve_start_time,
-            'reserve_exit_time' => $reserve_end_time,
+            'table_position' => $pos,
+            'amount' => $amount,
+            'user_id' => $user_id,
+            'select_staff_type' => empty($sel_staff_type) ? 0 : $sel_staff_type,
+            'select_staff_id' => empty($staff_id) ? null : $staff_id,
+            'user_count'=>$user_count,
+            'other_name_1' => $user_2,
+            'other_name_2' => $user_3,
+            'other_name_3' => $user_4,
+            'from_time' => $reserve_start_time,
+            'to_time' => $reserve_end_time,
             'coupon_id' => empty($coupon_id)?null:$coupon_id,
-            'pay_method' => empty($pay_method)?null:$pay_method,
+            'pay_method' => empty($pay_method)?null:($pay_method==1 ? 1: null),
             'coupon_use_amount' => empty($coupon_use_amount)?null:$coupon_use_amount,
             'ticket_amount' => empty($ticket_amount) ? null : $ticket_amount,
-            'amount' => $amount,
-            'reserve_name_2' => $user_2,
-            'reserve_name_3' => $user_3,
-            'reserve_name_4' => $user_4,
-            'reserve_status'=>$condition_status==1 ? RESERVE_STATUS['apply'] : RESERVE_STATUS['request'],
-            'visible' => 1,
+            'status'=>$condition_status==1 ? ORDER_STATUS_RESERVE_APPLY : ORDER_STATUS_RESERVE_REQUEST,
+            'is_reserve'=>1,
         );
 
-        $reserve_id = $this->reserve_model->insertRecord($reserve);
+        $order_id = $this->order_model->insertRecord($order);
 
-        if (empty($reserve_id)){
+        if (empty($order_id)){
             $results['isSave'] = false;
             echo json_encode($results);
             return;
@@ -179,23 +195,24 @@ class Apireserves extends WebController
             if ($interval<$menu_interval) $interval = $menu_interval;
             $insertData = [];
             $insertData = array(
-                'reserve_id' => $reserve_id,
+                'order_id' => $order_id,
                 'menu_id' => $record->menu_id,
-                'multi_number' => $record->multi_number,
+                'menu_title' => $menu['menu_title'],
                 'menu_price' => $record->menu_price,
+                'quantity' => 11
             );
 
-            $insert = $this->reserve_menu_model->insertRecord($insertData);
+            $insert = $this->order_menu_model->insertRecord($insertData);
         }
 
-        $reserveData = $this->reserve_model->getFromId($reserve_id);
-        $reserveData['sum_interval'] = $interval;
-        $this->reserve_model->updateRecord($reserveData, 'reserve_id');
+        $reserveData = $this->order_model->getFromId($order_id);
+        $reserveData['interval'] = $interval;
+        $this->order_model->updateRecord($reserveData);
 
         $tickets = json_decode($reserve_ticket);
         foreach ($tickets as $record) {
             $insertData = array(
-                'reserve_id' => $reserve_id,
+                'reserve_id' => $order_id,
                 'ticket_id' => $record->ticket_id,
                 'use_count' => $record->use_count,
             );
@@ -204,7 +221,7 @@ class Apireserves extends WebController
         }
 
         if (!empty($staff_id)){
-            $results['isFCM'] = $this->sendNotificationToStaffReserveRequest($reserve_id);
+            $results['isFCM'] = $this->sendNotificationToStaffReserveRequest($order_id);
         }
 
         $results['isSave'] = true;
@@ -365,11 +382,8 @@ class Apireserves extends WebController
     }
 
     public function applyReserve(){
-        $staff_id = $this->input->post('staff_id');//25
-        $reserve_time = $this->input->post('from_time');//'2022-04-29 16:25:00';
-        $reserve_exit_time = $this->input->post('to_time');//'2022-04-29 16:35:00';
-
-        $reserve = $this->reserve_model->getReserveRecord(['staff_id'=>$staff_id, 'reserve_time'=>$reserve_time, 'reserve_exit_time'=>$reserve_exit_time]);
+        $reserve_id = $this->input->post('reserve_id');//25
+        $reserve = $this->reserve_model->getFromId($reserve_id);
 
         if (empty($reserve)){
             $results['isApply'] = false;
@@ -381,26 +395,24 @@ class Apireserves extends WebController
 
         $this->reserve_model->updateRecord($reserve);
 
-        $sender = $this->staff_model->getFromId($staff_id);
+        $sender = $this->staff_model->getFromId($reserve['staff_id']);
 
         $this->load->model('notification_text_model');
         $text_data = $this->notification_text_model->getRecordByCond(['company_id'=>$sender['company_id'], 'mail_type'=>'23']);
         $title = empty($text_data['title']) ? 'タイトルなし' : $text_data['title'];
         $content = empty($text_data['content']) ? '' : $text_data['content'];
-        $content = str_replace('$from_time', $reserve_time, $content);
-        $content = str_replace('$to_time', $reserve_exit_time, $content);
-        $this->sendNotifications('23', $title, $content, $staff_id, $reserve['user_id'], '2');
+        $content = str_replace('$from_time', $reserve['reserve_time'], $content);
+        $content = str_replace('$to_time', $reserve['reserve_exit_time'], $content);
+        $this->sendNotifications('23', $title, $content, $reserve['staff_id'], $reserve['user_id'], '2');
 
         $results['isApply'] = true;
         echo json_encode($results);
     }
 
     public function rejectReserve(){
-        $staff_id = $this->input->post('staff_id');
-        $reserve_time = $this->input->post('from_time');
-        $reserve_exit_time = $this->input->post('to_time');
+        $reserve_id = $this->input->post('reserve_id');//25
 
-        $reserve = $this->reserve_model->getReserveRecord(['staff_id'=>$staff_id, 'reserve_time'=>$reserve_time, 'reserve_exit_time'=>$reserve_exit_time]);
+        $reserve = $this->reserve_model->getFromId($reserve_id);
 
         if (empty($reserve)){
             $results['isReject'] = false;
@@ -464,8 +476,9 @@ class Apireserves extends WebController
         $reserve = $this->reserve_model->getFromID($reserve_id);
         $reserve['reserve_status']=RESERVE_STATUS['complete'];
         $reserve['visit_time']=date('Y-m-d H:i:s');
+        $user = $this->user_model->getFromId($reserve['user_id']);
 
-        $is_first_reserve_visit = $this->reserve_model->getVisitCount($reserve['organ_id'], $reserve['user_id']);
+        $is_first_reserve_visit = $this->reserve_model->getVisitCount($reserve['organ_id'], $reserve['user_id'], $user['company_id']);
 
         $this->reserve_model->updateRecord($reserve, 'reserve_id');
 
@@ -493,6 +506,124 @@ class Apireserves extends WebController
 
     }
 
+    public function enteringOrgan(){
+        $organ_id = $this->input->post('organ_id');
+        $user_id = $this->input->post('user_id');
+        $order_id = $this->input->post('order_id');
+        $menu_id_string = $this->input->post('menu_ids');
+
+        $user = $this->user_model->getFromId($user_id);
+
+        $cond = [];
+        $cond['organ_id'] = $organ_id;
+        $cond['user_id'] = $user_id;
+        $cond['status_array'] = [ORDER_STATUS_TABLE_START, ORDER_STATUS_TABLE_END, ORDER_STATUS_TABLE_COMPLETE];
+        if($user['company_id']==1){
+            $now_h = date('G');
+            $now_date = date('Y-m-d');
+            $dt = new DateTime($now_date);
+
+            if($now_h<12){
+                $dt->sub(new DateInterval("P1D")); // 2016-03-02
+                $fromDate = $dt->format("Y-m-d");
+                $from_time = $fromDate . ' 12:00:00';
+                $to_time = $now_date . ' 12:00:00';
+            }else{
+                $dt->add(new DateInterval("P1D")); // 2016-03-02
+                $toDate = $dt->format("Y-m-d");
+                $from_time = $now_date . ' 12:00:00';
+                $to_time = $toDate . ' 12:00:00';
+            }
+        }else{
+            $from_time = date('Y-m-d') . ' 00:00:00';
+            $to_time = date('Y-m-d') . ' 23:59:59';
+        }
+        $cond['from_time'] = $from_time;
+        $cond['to_time'] = $to_time;
+
+        $today_orders = $this->order_model->getListByCond($cond);
+//        $is_first_reserve_visit = $this->order_model->getVisitCount($organ_id, $user_id, $user['company_id']);
+
+        if(empty($order_id)){
+            $menu_ids = explode(',', $menu_id_string);
+            $menus = [];
+            $sum_time = 0;
+            $interval = 0;
+            $amount = 0;
+            foreach ($menu_ids as $menu_id){
+                $menu = $this->menu_model->getFromId($menu_id);
+                $sum_time += $menu['menu_time'];
+                $amount += $menu['menu_price'];
+                if ($interval<$menu['menu_interval']) $interval = $menu['menu_interval'];
+            }
+            $sum_time += $interval;
+
+            $now = new DateTime();
+            $min = $now->format('i');
+            if($min>55){
+                $now->add(new DateInterval('PT5M'));
+                $from_time = $now->format('Y-m-d H:00:00');
+            }else{
+                if ($min%5>0){
+                    $min = ($min+5) - $min%5;
+                    if ($min<10) $min = '0'.$min;
+                }
+                $now->add(new DateInterval('PT5M'));
+                $from_time = $now->format('Y-m-d H:'.$min.':00');
+            }
+            $now = new DateTime($from_time);
+            $now->add(new DateInterval('PT'.$sum_time.'M'));
+            $to_time = $now->format('Y-m-d H:i:00');
+
+            $pos = $this->order_model->emptyMaxPosition([
+                'organ_id' => $organ_id,
+                'from_time' =>  $from_time,
+                'to_time' => $to_time,
+                'status_array' => [ORDER_STATUS_RESERVE_APPLY, ORDER_STATUS_TABLE_START, ORDER_STATUS_TABLE_END, ORDER_STATUS_TABLE_COMPLETE]
+            ]);
+
+            $order = array(
+                'user_id' => $user_id,
+                'table_position' => $pos,
+                'organ_id' => $organ_id,
+                'from_time' => $from_time,
+                'to_time' => $to_time,
+                'interval' => $interval,
+                'amount' => $amount,
+                'status' => ORDER_STATUS_TABLE_END,
+            );
+            $this->order_model->insertRecord($order);
+
+
+        }else{
+            $order = $this->order_model->getFromId($order_id);
+            $order['status'] = ORDER_STATUS_TABLE_END;
+
+            $this->order_model->updateRecord($order);
+        }
+
+        $results['isStampAdd'] = false;
+        if(empty($today_orders)){
+            $stamp = array(
+                'date' => Date('Y-m-d'),
+                'user_id' => $user_id ,
+                'company_id' => '',
+                'organ_id' => $organ_id,
+                'use_flag' => '1',
+                'stamp_count' => '1'
+            );
+
+            $this->load->model('stamp_model');
+            $this->stamp_model->insertRecord($stamp);
+            $results['isStampAdd'] = true;
+        }
+
+        $results['isUpdate'] = true;
+
+        echo json_encode($results);
+
+    }
+
     public function getReserveNow(){
         $user_id = $this->input->post('user_id');
         $organ_id = $this->input->post('organ_id');
@@ -504,12 +635,14 @@ class Apireserves extends WebController
         $cond['from_time'] = date('Y-m-d H:i:s', strtotime(' -30 min'));
         $cond['to_time'] = date('Y-m-d H:i:s', strtotime(' +30 min'));
         $reserves = $this->reserve_model->getReserveNowData($cond);
+
         if (empty($reserves)){
             $results['isExistReserve'] = false;
         }else{
             $results['isExistReserve'] = true;
             $results['reserve'] = $reserves[0];
         }
+
 
         echo json_encode($results);
 
@@ -564,12 +697,10 @@ class Apireserves extends WebController
         $staff_id = $this->input->post('staff_id');
         $from_date = $this->input->post('from_date');
         $to_date = $this->input->post('to_date');
-        $sum_time = $this->input->post('sum_time');
-        $time_diff = $this->input->post('time_diff');
+        $user_id = $this->input->post('user_id');
 
         $results = [];
         $regions = [];
-
 
         $cur_date = $from_date;
 
@@ -579,7 +710,7 @@ class Apireserves extends WebController
             if ($curDateTime > new DateTime()){
                 $tmp = [];
                 $tmp['time'] = $cur_date;
-                $tmp['type'] = $this->getReserveTimeStatus($organ_id, $staff_id, $cur_date, $sum_time);
+                $tmp['type'] = $this->getReserveTimeStatus($organ_id, $staff_id, $cur_date, $user_id);
                 $regions[] = $tmp;
             }else{
                 $tmp = [];
@@ -599,50 +730,65 @@ class Apireserves extends WebController
 
     }
 
-    private function getReserveTimeStatus($organ_id, $staff_id, $cur_date, $sum_time){
+    private function getReserveTimeStatus($organ_id, $staff_id, $cur_date, $user_id){
         $curFromTime = new DateTime($cur_date);
-        $curToTime = new DateTime($cur_date);
-        $menuTimeDiff = new DateInterval('PT'.$sum_time.'M');
-        $curToTime->add($menuTimeDiff);
-
         $from_time = $curFromTime->format("Y-m-d H:i:s");
-        $to_time = $curToTime->format("Y-m-d H:i:s");
 
         $organ = $this->organ_model->getFromId($organ_id);
         $table_count = $organ['table_count'] == null ? 10 : $organ['table_count'];
-
         $week = date('N', strtotime($from_time));
-
         $start_time = $curFromTime->format("H:i");
-        $end_time = $curToTime->format("H:i");
-        if ($end_time<$start_time) {
-            $end_time = '24:00';
-        }
 
-        //open time check
-        $isActive = $this->organ_time_model->isPeriodActiveTime($organ_id, $week, $start_time, $end_time);
-        if (!$isActive) return '3';
+        /* business time check */
+        $open_times = $this->organ_time_model->getListByCond(['organ_id' => $organ_id, 'weekday' => $week, 'select_time' => $start_time]);
+        $special_times = $this->organ_special_time_model->getListByCond(['organ_id' => $organ_id, 'select_time' => $from_time]);
 
-        $reserve_count = $this->reserve_model->getReserveCount($organ_id, $from_time, $to_time);
+        if(empty($open_times) && empty($special_times)) return '3';
+        //--------------------------------------------------------------------
+
+        /* my reserve exist check */
+        $cond_my_order = [];
+        $cond_my_order['organ_id'] = $organ_id;
+        $cond_my_order['user_id'] = $user_id;
+        $cond_my_order['select_time'] = $from_time;
+        $cond_my_order['status_array'] = [ORDER_STATUS_RESERVE_APPLY, ORDER_STATUS_RESERVE_REQUEST];
+        $myorders = $this->order_model->getListByCond($cond_my_order);
+        if (!empty($myorders)) return 3;
+        //---------------------------------------------------------------------
+
+        /* reserve count is over */
+        $cond_order = [];
+        $cond_order['organ_id'] = $organ_id;
+        $cond_order['select_time'] = $from_time;
+        $cond_order['status_array'] = [ORDER_STATUS_RESERVE_APPLY];
+        $reserves = $this->order_model->getListByCond($cond_order);
+        $reserve_count = count($reserves);
         if ($reserve_count>=$table_count) return '3';
 
-        $staff_reserve_count = $this->reserve_model->getReserveCount($organ_id, $from_time, $to_time, $staff_id);
-       if (empty($staff_id)) {
-            $activeStaffCount = $this->shift_model->getActiveStaffCount($organ_id, $from_time);
-            if ($reserve_count>=$activeStaffCount-$staff_reserve_count){
+        //--------------------------------
+
+        if(empty($staff_id)){
+            $cond_order['is_select_staff'] = 1;
+            $staff_reserves = $this->order_model->getListByCond($cond_order);
+
+            $apply_shifts = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'select_datetime'=>$from_time, 'is_apply' => 1]);
+
+            if (count($staff_reserves)>=count($apply_shifts)){
                 return '2';
             }
-       }else{
-           if ($staff_reserve_count > 0) return '3';
+            return 1;
+        }else{
+            $cond_order['select_staff_id'] = $staff_id;
+            $staff_reserves = $this->order_model->getListByCond($cond_order);
+            if(!empty($staff_reserves)) return 3;
 
-           $isRejectActive = $this->shift_model->isStaffRejectReserve($organ_id, $staff_id, $from_time);
-           if ($isRejectActive) return '2';
+            $staff_shift = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'staff_id'=>$staff_id, 'select_datetime'=>$from_time, 'is_apply' => 1]);
 
-           $isActive = $this->shift_model->isStaffActiveReserve($organ_id, $staff_id, $from_time);
-           if (!$isActive) return '2';
-       }
+            if(empty($staff_shift)) return 2;
 
-        return '1';
+            return 1;
+        }
+        return 1;
     }
 
     public function updateReceiptUserName(){
@@ -691,6 +837,18 @@ class Apireserves extends WebController
 
         $this->reserve_model->updateRecord($reserve, 'reserve_id');
         $results['isUpdate'] = true;
+        echo json_encode($results);
+    }
+
+    public function loadReserves(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+
+        $reserves = $this->reserve_model->getListByCond($cond);
+
+        $results['isLoad'] = true;
+        $results['reserves'] = $reserves;
+
         echo json_encode($results);
     }
 }

@@ -11,6 +11,24 @@ class User_model extends Base_model
         $this->primary_key = 'user_id';
     }
 
+    public function getListByCond($cond){
+        $this->db->from($this->table);
+        $this->db->where('visible', '1');
+
+        if (!empty($cond['company_id'])){
+            $this->db->where('company_id', $cond['company_id']);
+        }
+
+        if (!empty($cond['user_name'])){
+            $namestr = '%'.$cond['user_name'].'%';
+            $this->db->where("(user_first_name like '$namestr' OR user_last_name like '$namestr' OR user_nick like '$namestr')");
+        }
+
+        $query = $this->db->get();
+        return $query->result_array();
+
+    }
+
     public function getRecordByCond($cond){
         $this->db->from($this->table);
         $this->db->where('visible', '1');
@@ -44,7 +62,7 @@ class User_model extends Base_model
             $search = $cond['user_search_birthday_to'];
             $this->db->where("DATE_FORMAT(user_birthday, '%m-%d') <= '$search'");
         }
-		
+
         if (!empty($cond['user_sex'])){
             $this->db->where('user_sex', $cond['user_sex']);
         }
@@ -114,4 +132,3 @@ class User_model extends Base_model
 
 }
 
-  

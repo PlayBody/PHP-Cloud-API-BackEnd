@@ -139,3 +139,33 @@ $reserve_status = array(
 );
 
 define('RESERVE_STATUS', $reserve_status);
+
+define('SHIFT_STATUS_SUBMIT', 1);
+define('SHIFT_STATUS_REJECT', 2);
+define('SHIFT_STATUS_OUT', 3);
+define('SHIFT_STATUS_REST', 4);
+define('SHIFT_STATUS_REQUEST', 5);
+define('SHIFT_STATUS_ME_REJECT', 6);
+define('SHIFT_STATUS_ME_APPLY', 9);
+define('SHIFT_STATUS_APPLY', 10);
+
+define('STAFF_AUTH_GUEST', 0);
+define('STAFF_AUTH_STAFF', 1);
+define('STAFF_AUTH_BOSS', 2);
+define('STAFF_AUTH_MANAGER', 3);
+define('STAFF_AUTH_OWNER', 4);
+define('STAFF_AUTH_ADMIN', 5);
+
+define('ORDER_STATUS_NONE', 0);
+define('ORDER_STATUS_RESERVE_REQUEST', 1);
+define('ORDER_STATUS_RESERVE_REJECT', 2);
+define('ORDER_STATUS_RESERVE_CANCEL', 3);
+define('ORDER_STATUS_RESERVE_APPLY', 4);
+define('ORDER_STATUS_TABLE_REJECT', 5);
+define('ORDER_STATUS_TABLE_START', 6);
+define('ORDER_STATUS_TABLE_END', 7);
+define('ORDER_STATUS_TABLE_COMPLETE', 8);
+
+define('PAY_METHOD_CREDIT', 1);
+define('PAY_METHOD_CASH', 2);
+define('PAY_METHOD_OTHER', 3);

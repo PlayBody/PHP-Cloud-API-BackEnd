@@ -299,17 +299,6 @@ class Apishifts extends WebController
         return;
     }
 
-    public function deleteShift(){
-        $shift_id = $this->input->post('shift_id');
-
-        if (!empty($shift_id)){
-            $this->shift_model->delete_force($shift_id, 'shift_id');
-        }
-
-        $results['isDelete'] = true;
-        echo json_encode($results);
-        return;
-    }
 
     public function actionStaffShift(){
         $shift_id = $this->input->post('shift_id');
@@ -344,84 +333,125 @@ class Apishifts extends WebController
 
     public function loadShiftManage(){
         $organ_id = $this->input->post('organ_id');
-        $staff_id = $this->input->post('staff_id');
-        $from_date = $this->input->post('from_date');
-        $to_date = $this->input->post('to_date');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
 
-        $staff = $this->staff_model->getFromId($staff_id);
+        $counts = $this->setting_count_shift_model->getListByCond(['organ_id' => $organ_id, 'from_time' => $from_time, 'to_time' => $to_time]);
+        $times = [];
 
-        if ($staff['staff_auth']>3){
-            $cond = [];
-            if ($staff['staff_auth']<5) $cond['company_id'] = $staff['company_id'];
-            $organ_list = $this->organ_model->getListByCond($cond);
-        }else{
-            $organ_list = $this->staff_organ_model->getOrgansByStaff($staff_id);
+        foreach($counts as $count){
+            if(!array_search($count['from_time'], $times) && (empty($times) || $times[0]!=$count['from_time'])) $times[] = $count['from_time'];
+            if(!array_search($count['to_time'], $times) && (empty($times) || $times[0]!=$count['to_time'])) $times[] = $count['to_time'];
         }
 
-        if (empty($organ_id)) $organ_id=$organ_list[0]['organ_id'];
+        $shifts = $this->shift_model->getListByCond(['organ_id' => $organ_id, 'from_time' => $from_time, 'to_time' => $to_time, 'is_apply_enable' => '1']);
 
-        $organ = $this->organ_model->getFromId($organ_id);
-
-        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id]);
-        $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
-        $organ_active_end = empty($organ['active_end_time']) ? '23:59' : $organ['active_end_time'];
-
-        $shift_inactive = [];
-        $cur_date = $from_date;
-
-        $divide_shift = [];
-        while($cur_date<=$to_date){
-            $area_list = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$cur_date. ' 00:00:00', 'to_time'=>$cur_date. ' 23:59:59']);
-
-            foreach ($area_list as $area){
-                $divide_list = $this->shift_model->getDivideShifts($area['from_time'], $area['to_time'], $organ_id);
-
-                $old_time ='';
-                foreach ($divide_list as $item){
-                    if ($old_time==''){
-                        $old_time = $item['time'];
-                    }else if($item['time']==$old_time){
-                        continue;
-                    }else{
-                        $tmp = [];
-                        $tmp['from'] = $old_time;
-                        $tmp['to'] = $item['time'];
-                        $tmp['count'] = $area['count'];
-
-                        $tmp['exist_count'] = $this->shift_model->getExistCount(['organ_id'=>$organ_id, 'from_time'=>$tmp['from'], 'to_time'=>$tmp['to']]);
-
-                        $divide_shift[] = $tmp;
-                        $old_time = $item['time'];
-                    }
-
-                }
-
-            }
-
-
-            $diff1Day = new DateInterval('P1D');
-
-            $curDateTime = new DateTime($cur_date);
-
-            $curDateTime->add($diff1Day);
-            $cur_date = $curDateTime->format("Y-m-d");
+        foreach($shifts as $shift){
+            if(!array_search($shift['from_time'], $times) && (empty($times) || $times[0]!=$shift['from_time'])) $times[] = $shift['from_time'];
+            if(!array_search($shift['to_time'], $times) && (empty($times) || $times[0]!=$shift['to_time'])) $times[] = $shift['to_time'];
         }
 
-        $shift_counts = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_time'=>$to_date. ' 23:59:59']);
-        $shifts = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_time'=>$to_date. ' 23:59:59']);
+        sort($times);
 
-        $results['isLoad'] = true;
-        $results['active_time']['from'] = $organ_active_start;
-        $results['active_time']['to'] = $organ_active_end;
+        $data = [];
+        for($i=0; $i<count($times)-1; $i++){
+            $tmp = [];
+            $tmp['from_time'] = $times[$i];
+            $tmp['to_time'] = $times[$i+1];
+            $_counts = $this->setting_count_shift_model->getListByCond(['organ_id' => $organ_id, 'in_from_time' => $times[$i], 'in_to_time' => $times[$i+1]]);
+            $tmp['count'] = empty($_counts) ? 0 : $_counts[0]['count'];
 
-        $results['shift_counts'] = $shift_counts;
-        $results['shifts'] = $shifts;
-        $results['divide_shift'] = $divide_shift;
-        $results['shift_times'] = $shift_times;
-        $results['organ_list'] = $organ_list;
-        $results['shift_inactive'] = $shift_inactive;
+            $_applies = $this->shift_model->getListByCond(['organ_id' => $organ_id, 'in_from_time' => $times[$i], 'in_to_time' => $times[$i+1], 'is_apply' => '1']);
+            $tmp['apply'] = empty($_applies) ? 0 : count($_applies);
+
+            $_shifts = $this->shift_model->getListByCond(['organ_id' => $organ_id, 'in_from_time' => $times[$i], 'in_to_time' => $times[$i+1], 'is_apply_enable' => '1']);
+            $tmp['shift'] = empty($_shifts) ? 0 : count($_shifts);
+
+            if(!empty($_shifts))  $tmp['shifts'] = $_shifts;
+            if($tmp['count']==0 && $tmp['shift']==0) continue;
+
+            $data[] = $tmp;
+        }
+
+        $results['data'] = $data;
 
         echo json_encode($results);
+
+//
+//        $staff = $this->staff_model->getFromId($staff_id);
+//
+//        if ($staff['staff_auth']>3){
+//            $cond = [];
+//            if ($staff['staff_auth']<5) $cond['company_id'] = $staff['company_id'];
+//            $organ_list = $this->organ_model->getListByCond($cond);
+//        }else{
+//            $organ_list = $this->staff_organ_model->getOrgansByStaff($staff_id);
+//        }
+//
+//        if (empty($organ_id)) $organ_id=$organ_list[0]['organ_id'];
+//
+//        $organ = $this->organ_model->getFromId($organ_id);
+//
+//        $shift_times = $this->organ_shift_time_model->getListByCond(['organ_id'=>$organ_id]);
+//        $organ_active_start = empty($organ['active_start_time']) ? '00:00' : $organ['active_start_time'];
+//        $organ_active_end = empty($organ['active_end_time']) ? '23:59' : $organ['active_end_time'];
+//
+//        $shift_inactive = [];
+//        $cur_date = $from_date;
+//
+//        $divide_shift = [];
+//        while($cur_date<=$to_date){
+//            $area_list = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$cur_date. ' 00:00:00', 'to_time'=>$cur_date. ' 23:59:59']);
+//
+//            foreach ($area_list as $area){
+//                $divide_list = $this->shift_model->getDivideShifts($area['from_time'], $area['to_time'], $organ_id);
+//
+//                $old_time ='';
+//                foreach ($divide_list as $item){
+//                    if ($old_time==''){
+//                        $old_time = $item['time'];
+//                    }else if($item['time']==$old_time){
+//                        continue;
+//                    }else{
+//                        $tmp = [];
+//                        $tmp['from'] = $old_time;
+//                        $tmp['to'] = $item['time'];
+//                        $tmp['count'] = $area['count'];
+//
+//                        $tmp['exist_count'] = $this->shift_model->getExistCount(['organ_id'=>$organ_id, 'from_time'=>$tmp['from'], 'to_time'=>$tmp['to']]);
+//
+//                        $divide_shift[] = $tmp;
+//                        $old_time = $item['time'];
+//                    }
+//
+//                }
+//
+//            }
+//
+//
+//            $diff1Day = new DateInterval('P1D');
+//
+//            $curDateTime = new DateTime($cur_date);
+//
+//            $curDateTime->add($diff1Day);
+//            $cur_date = $curDateTime->format("Y-m-d");
+//        }
+//
+//        $shift_counts = $this->setting_count_shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_time'=>$to_date. ' 23:59:59']);
+//        $shifts = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'from_time'=>$from_date. ' 00:00:00', 'to_time'=>$to_date. ' 23:59:59']);
+//
+//        $results['isLoad'] = true;
+//        $results['active_time']['from'] = $organ_active_start;
+//        $results['active_time']['to'] = $organ_active_end;
+//
+//        $results['shift_counts'] = $shift_counts;
+//        $results['shifts'] = $shifts;
+//        $results['divide_shift'] = $divide_shift;
+//        $results['shift_times'] = $shift_times;
+//        $results['organ_list'] = $organ_list;
+//        $results['shift_inactive'] = $shift_inactive;
+//
+//        echo json_encode($results);
 
     }
 
@@ -708,7 +738,7 @@ class Apishifts extends WebController
         echo json_encode($results);
 
     }
-	
+
     /*--------------------common------------------------------*/
 
     public function loadShiftDataByParam(){
@@ -722,5 +752,356 @@ class Apishifts extends WebController
         echo json_encode($results);
 
     }
+
+    public function loadShiftCounts(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+
+        $shift_counts = $this->setting_count_shift_model->getListByCond($cond);
+
+        $results['counts'] = $shift_counts;
+
+        echo json_encode($results);
+    }
+
+    public function loadShifts(){
+        $condition = $this->input->post('condition');
+        $cond = json_decode($condition, true);
+
+        $shifts = $this->shift_model->getListByCond($cond);
+
+        $results['shifts'] = $shifts;
+
+        echo json_encode($results);
+    }
+
+    public function saveShift(){
+        $shift_id = $this->input->post('shift_id');
+        $organ_id = $this->input->post('organ_id');
+        $staff_id = $this->input->post('staff_id');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+        $shift_type = $this->input->post('shift_type');
+
+        $shift = [];
+        $old_shift_type = 0;
+        if (!empty($shift_id)){
+            $shift = $this->shift_model->getFromId($shift_id);
+            $old_shift_type = $shift['shift_type'];
+        }
+
+
+        if (!empty($organ_id)) $shift['organ_id'] = $organ_id;
+        if (!empty($staff_id)) $shift['staff_id'] = $staff_id;
+        if (!empty($from_time)) $shift['from_time'] = $from_time;
+        if (!empty($to_time)) $shift['to_time'] = $to_time;
+        if (!empty($shift_type)) $shift['shift_type'] = $shift_type;
+        $shift['visible'] = 1;
+
+        if($shift_type==SHIFT_STATUS_REST){
+            $shifts = $this->shift_model->getListByCond([
+                'staff_id'=>$staff_id,
+                'organ_id' => $organ_id,
+                'select_date' => substr($from_time, 0,10),
+            ]);
+
+            if(!empty($shifts)){
+                $results['isSave'] = false;
+                $results['message'] = 'シフトが存在します。 休憩を設定するには、シフトを削除してください。';
+                echo json_encode($results);
+                return;
+            }
+
+            $shift = array(
+                'staff_id' => $staff_id,
+                'organ_id' => $organ_id,
+                'from_time' => substr($from_time, 0,10). ' 00:00:00',
+                'to_time' => substr($from_time, 0,10). ' 23:59:59',
+                'shift_type' => $shift_type,
+                'visible' => 1,
+            );
+            $this->shift_model->insertRecord($shift);
+            $results['isSave'] = true;
+            echo json_encode($results);
+            return;
+
+        }else{
+            $this->shift_model->deleteDayShift(substr($from_time, 0,10), $staff_id, $organ_id, SHIFT_STATUS_REST);
+        }
+
+        $exist_other_shifts = $this->shift_model->getListByCond([
+            'staff_id'=>$staff_id,
+            'organ_id' => $organ_id,
+            'in_from_time' => $from_time,
+            'in_to_time' => $to_time,
+            'no_shift' => $shift_id,
+        ]);
+
+        if (!empty($exist_other_shifts)){
+            $results['isSave'] = false;
+            $results['message'] = '入力したシフトが重複しました。時間を確認してください。';
+            echo json_encode($results);
+            return;
+        }
+
+        $counts = $this->setting_count_shift_model->getListByCond([
+            'organ_id'=>$organ_id,
+            'in_from_time'=>$from_time,
+            'in_to_time'=>$to_time,
+        ]);
+
+        if (empty($counts)){
+            $results['isSave'] = false;
+            $results['message'] = '勤務計画が準備されていません。';
+            echo json_encode($results);
+            return;
+        }
+
+        if (!empty($shift_id)){
+            $this->shift_model->delete_force($shift_id, 'shift_id');
+        }
+
+        foreach ($counts as $count){
+            $_start = $count['from_time'];
+            $_end = $count['to_time'];
+            $from = $from_time;
+            $to = $to_time;
+
+            if ($from>=$_end || $to<=$_start) continue;
+            if ($from>$_start) $input_from = $from; else $input_from = $_start;
+            if ($to>$_end) $input_to = $_end; else $input_to = $to;
+
+            $shift = array(
+                'staff_id' => $staff_id,
+                'organ_id' => $organ_id,
+                'from_time' => $input_from,
+                'to_time' => $input_to,
+                'shift_type' => $shift_type,
+                'visible' => 1,
+            );
+            $this->shift_model->insertRecord($shift);
+        }
+
+        $result['isSave'] = true;
+        echo json_encode($result);
+    }
+
+    public function initShift(){
+        $from_date = $this->input->post('from_date');
+        $to_date = $this->input->post('to_date');
+        $organ_id = $this->input->post('organ_id');
+        $staff_id = $this->input->post('staff_id');
+        $pattern = $this->input->post('pattern');
+
+        $from_time = $from_date . ' 00:00:00';
+        $to_time = $to_date . ' 23:59:59';
+
+        $counts = $this->setting_count_shift_model->getListByCond([
+            'organ_id'=>$organ_id,
+            'from_time'=>$from_time,
+            'to_time'=>$to_time,
+        ]);
+
+        if (empty($counts)){
+            $results['isSave'] = false;
+            $results['message'] = '勤務計画が準備されていません。';
+            echo json_encode($results);
+            return;
+        }
+
+        $apply_shifts = $this->shift_model->getListByCond([
+            'staff_id'=>$staff_id,
+            'organ_id' => $organ_id,
+            'from_time' => $from_time,
+            'to_time' => $to_time,
+            'no_edit' => 1
+        ]);
+
+        if (!empty($apply_shifts)){
+            $results['isSave'] = false;
+            $results['message'] = '確定したシフトが存在するため、初期設定を適用できません。';
+            echo json_encode($results);
+            return;
+        }
+        $pattern = empty($pattern) ? 1 : $pattern;
+
+        $shifts = $this->shift_model->getListByCond([
+            'staff_id'=>$staff_id,
+            'organ_id' => $organ_id,
+            'from_time' => $from_time,
+            'to_time' => $to_time,
+        ]);
+
+        foreach ($shifts as $shift) {
+            $this->shift_model->delete_force($shift['shift_id'], 'shift_id');
+        }
+
+        $condInit['staff_id'] = $staff_id;
+        $condInit['organ_id'] = $organ_id;
+        $condInit['pattern'] = $pattern;
+        $initData = $this->setting_init_shift_model->getListByCond([
+            'staff_id' => $staff_id,
+            'organ_id' => $organ_id,
+            'pattern' => $pattern
+        ]);
+
+        foreach ($initData as $item){
+            $diff1Day = new DateInterval('P'.($item['weekday']-1).'D');
+            $curDateTime = new DateTime($from_time);
+            $curDateTime->add($diff1Day);
+            $sel_date = $curDateTime->format("Y-m-d");
+
+            if($item['shift_type']==SHIFT_STATUS_REST){
+                $add_shift = array(
+                    'from_time'=> $sel_date . ' 00:00:00',// $input_from,
+                    'to_time' => $sel_date . ' 23:59:59', //$input_to,
+                    'staff_id' => $staff_id,
+                    'organ_id' => $organ_id,
+                    'visible' => 1,
+                    'shift_type' => empty($item['shift_type']) ? SHIFT_STATUS_SUBMIT : $item['shift_type'],
+                );
+                $this->shift_model->insertRecord($add_shift);
+
+
+                continue;
+            }
+
+            $item_from = $sel_date . ' ' . $item['from_time'];
+            $item_to = $sel_date . ' ' . $item['to_time'];
+
+            $inner_counts = $this->setting_count_shift_model->getListByCond([
+                'organ_id'=>$organ_id,
+                'in_from_time'=>$item_from,
+                'in_to_time'=>$item_to,
+            ]);
+            if(empty($inner_counts)) continue;
+
+            foreach ($inner_counts as $count){
+                $_from  = $item_from>=$count['from_time'] ? $item_from : $count['from_time'];
+                $_to  = $item_to<=$count['to_time'] ? $item_to : $count['to_time'];
+                $add_shift = array(
+                    'from_time'=> $_from,// $input_from,
+                    'to_time' => $_to, //$input_to,
+                    'staff_id' => $staff_id,
+                    'organ_id' => $organ_id,
+                    'visible' => 1,
+                    'shift_type' => empty($item['shift_type']) ? SHIFT_STATUS_SUBMIT : $item['shift_type'],
+                );
+
+                $this->shift_model->insertRecord($add_shift);
+            }
+
+        }
+
+        $result['isSave'] = true;
+        echo json_encode($result);
+    }
+
+    public function deleteShift(){
+        $shift_id = $this->input->post('shift_id');
+
+        if (!empty($shift_id)){
+            $this->shift_model->delete_force($shift_id, 'shift_id');
+        }
+
+        $results['isDelete'] = true;
+        echo json_encode($results);
+        return;
+    }
+
+    public function updateShiftChange(){
+        $organ_id = $this->input->post('organ_id');
+        $json = $this->input->post('data');
+        $datas = json_decode($json, true);
+        foreach ($datas as $data){
+            $staff_id = $data['staff_id'];
+            $from_time = $data['from_time'];
+            $to_time = $data['to_time'];
+            $shift_type = $data['shift_type'];
+
+            $old_shift = $this->shift_model->getRecordByCond(['staff_id'=>$staff_id, 'organ_id'=>$organ_id, 'in_from_time'=>$from_time, 'in_to_time'=>$to_time]);
+
+            if(empty($old_shift)){
+                $shift = array(
+                    'staff_id' => $staff_id,
+                    'organ_id' => $organ_id,
+                    'from_time' => $from_time,
+                    'to_time' => $to_time,
+                    'shift_type' => $shift_type,
+                    'visible' => 1
+                );
+                $this->shift_model->insertRecord($shift);
+            }else{
+                if ($old_shift['from_time']==$from_time && $old_shift['to_time']==$to_time){
+                    $old_shift['shift_type'] = $shift_type;
+                    $this->shift_model->updateRecord($old_shift, 'shift_id');
+                }else if($old_shift['from_time']==$from_time || $old_shift['to_time']==$to_time) {
+                    if($old_shift['from_time']==$from_time){
+                        $old_shift['from'] = $to_time;
+                    }
+                    if($old_shift['to_time']==$to_time){
+                        $old_shift['to_time'] = $from_time;
+                    }
+
+                    $this->shift_model->updateRecord($old_shift, 'shift_id');
+
+                    $shift = array(
+                        'staff_id' => $staff_id,
+                        'organ_id' => $organ_id,
+                        'from_time' => $from_time,
+                        'to_time' => $to_time,
+                        'shift_type' => $shift_type,
+                        'visible' => 1
+                    );
+                    $this->shift_model->insertRecord($shift);
+                }else{
+                    $tmp = $old_shift;
+                    $old_shift['to_time'] = $from_time;
+                    $this->shift_model->updateRecord($old_shift, 'shift_id');
+
+                    $shift = array(
+                        'staff_id' => $staff_id,
+                        'organ_id' => $organ_id,
+                        'from_time' => $from_time,
+                        'to_time' => $to_time,
+                        'shift_type' => $shift_type,
+                        'visible' => 1
+                    );
+                    $this->shift_model->insertRecord($shift);
+
+                    $shift = array(
+                        'staff_id' => $staff_id,
+                        'organ_id' => $organ_id,
+                        'from_time' => $to_time,
+                        'to_time' => $tmp['to_time'],
+                        'shift_type' => $tmp['shift_type'],
+                        'visible' => 1
+                    );
+                    $this->shift_model->insertRecord($shift);
+                }
+            }
+        }
+
+        $this->shift_model->delete_force('0', 'shift_type');
+
+        echo json_encode(['isUpdate' => true]);
+    }
+
+    public function autoControlShift(){
+        $organ_id = $this->input->post('organ_id');
+        $from_time = $this->input->post('from_time');
+        $to_time = $this->input->post('to_time');
+        $in_from_time = $this->input->post('in_from_time');
+        $in_to_time = $this->input->post('in_to_time');
+        $type = $this->input->post('type');
+
+        $data = $this->shift_model->getStaffOrderForAuto($organ_id, $from_time, $to_time, $in_from_time, $in_to_time, $type);
+
+        $results['data'] = $data;
+
+        echo json_encode($results);
+
+    }
+
 }
 ?>

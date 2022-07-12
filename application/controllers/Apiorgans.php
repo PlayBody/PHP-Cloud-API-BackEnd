@@ -402,17 +402,17 @@ class Apiorgans extends WebController
 
 
     public function isUseSetInTable(){
-        $table_id = $this->input->post('table_id');
+        $organ_id = $this->input->post('organ_id');
+//
+//        $table = $this->table_model->getFromId($table_id);
+//
+//        if (empty($table_id) || empty($table['organ_id'])){
+//            $results['isLoad'] = false;
+//            echo json_encode($results);
+//            return;
+//        }
 
-        $table = $this->table_model->getFromId($table_id);
-
-        if (empty($table_id) || empty($table['organ_id'])){
-            $results['isLoad'] = false;
-            echo json_encode($results);
-            return;
-        }
-
-        $organ = $this->organ_model->getFromId($table['organ_id']);
+        $organ = $this->organ_model->getFromId($organ_id);
 
         $isUse = true;
         if(empty($organ) || empty($organ['is_use_set']) || $organ['is_use_set']=='0') $isUse = false;

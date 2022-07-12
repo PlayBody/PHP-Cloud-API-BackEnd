@@ -11,6 +11,27 @@ class Organ_special_time_model extends Base_model
         $this->primary_key = 'organ_special_time_id';
     }
 
+    public function getListByCond($cond){
+
+        $this->db->from($this->table);
+
+        if(!empty($cond['organ_id'])){
+            $this->db->where('organ_id', $cond['organ_id']);
+        }
+        if(!empty($cond['select_date'])){
+            $this->db->where("from_time like '" . $cond['select_date'] . " %'");
+        }
+        if(!empty($cond['select_time'])){
+            $this->db->where("from_time<= '". $cond['select_time'] . "'");
+            $this->db->where("to_time>'". $cond['select_time'] . "'");
+        }
+        $this->db->order_by('from_time');
+
+        $query = $this->db->get();
+
+        return $query->result_array();
+    }
+
     public function getTimeList($organ_id, $from_time='', $to_time=''){
 
         $this->db->from($this->table);

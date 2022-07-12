@@ -209,7 +209,7 @@ class Apimenus extends WebController
 
         $menu = [];
         if (!empty($menu_id)) {
-            $this->menu_model->getFromId($menu_id);
+            $menu = $this->menu_model->getFromId($menu_id);
         }
 
         $menu['company_id'] = $company_id;
@@ -218,6 +218,7 @@ class Apimenus extends WebController
         $menu['menu_price'] = $this->input->post('price');
         $menu['menu_comment'] = $this->input->post('comment');
         $menu['is_user_menu'] = empty($this->input->post('is_user_menu')) ? null : $this->input->post('is_user_menu');
+        $menu['is_goods'] = empty($this->input->post('is_goods')) ? 0 : $this->input->post('is_goods');
         $menu['menu_time'] = empty($this->input->post('menu_time')) ? null : $this->input->post('menu_time');
         $menu['menu_interval'] = empty($this->input->post('menu_interval')) ? null : $this->input->post('menu_interval');
 
@@ -229,7 +230,6 @@ class Apimenus extends WebController
             $menu_id = $this->menu_model->InsertRecord($menu);
 
         }else{
-            $menu = $this->menu_model->getFromId($menu_id);
             if (!empty($this->input->post('image'))){
                 $menu['menu_image'] = $this->input->post('image');
             }

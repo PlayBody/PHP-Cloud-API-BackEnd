@@ -32,6 +32,33 @@ class Shift_model extends Base_model
             $this->db->where("from_time <='". $cond['select_datetime'] ."'");
             $this->db->where("to_time >'". $cond['select_datetime'] ."'");
         }
+        if (!empty($cond['select_date'])){
+            $this->db->where("from_time like '". $cond['select_date'] ." %'");
+        }
+        if (!empty($cond['in_from_time']) && !empty($cond['in_to_time'])){
+            $this->db->where("((to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."') || (from_time ='". $cond['in_from_time'] ."' and to_time ='". $cond['in_to_time'] ."'))" );
+        }
+        if (!empty($cond['no_shift'])){
+            $this->db->where("shift_id <>'". $cond['no_shift'] ."'");
+        }
+        if (!empty($cond['eq_from_time'])){
+            $this->db->where("from_time", $cond['eq_from_time']);
+        }
+        if (!empty($cond['eq_to_time'])){
+            $this->db->where("to_time", $cond['eq_to_time']);
+        }
+
+        if (!empty($cond['no_edit'])){
+            $this->db->where("shift_type in (".SHIFT_STATUS_REQUEST.",".SHIFT_STATUS_ME_APPLY.",".SHIFT_STATUS_APPLY.")");
+        }
+
+        if (!empty($cond['is_apply'])){
+            $this->db->where("shift_type in (".SHIFT_STATUS_ME_APPLY.",".SHIFT_STATUS_APPLY.")");
+        }
+
+        if (!empty($cond['is_apply_enable'])){
+            $this->db->where("shift_type in (".SHIFT_STATUS_SUBMIT.",".SHIFT_STATUS_REQUEST.",".SHIFT_STATUS_ME_APPLY.",".SHIFT_STATUS_APPLY.")");
+        }
 
         $this->db->where('visible', '1');
 
@@ -64,8 +91,16 @@ class Shift_model extends Base_model
     }
 
     public function getRecordByCond($cond){
-
+        $this->db->select($this->table.".*, IF(staffs.staff_nick is NULL, 
+                CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
+                staffs.staff_nick
+            ) as staff_name");
         $this->db->from($this->table);
+        $this->db->join('staffs', 'staffs.staff_id = shifts.staff_id', 'left');
+
+        if (!empty($cond['shift_id'])){
+            $this->db->where('shift_id', $cond['shift_id']);
+        }
 
         if (!empty($cond['staff_id'])){
             $this->db->where('staff_id', $cond['staff_id']);
@@ -89,8 +124,11 @@ class Shift_model extends Base_model
             $this->db->where("from_time <='". $cond['select_datetime'] ."'");
             $this->db->where("to_time >'". $cond['select_datetime'] ."'");
         }
+        if (!empty($cond['in_from_time']) && !empty($cond['in_to_time'])){
+            $this->db->where("((to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."') || (from_time ='". $cond['in_from_time'] ."' and to_time ='". $cond['in_to_time'] ."'))" );
+        }
 
-        $this->db->where('visible', '1');
+        $this->db->where('shifts.visible', '1');
 
         $query = $this->db->get();
 
@@ -200,7 +238,7 @@ order by tmp.time
         $this->db->where('staff_id', $staff_id);
         $this->db->where("from_time<='".$time."' and to_time>'".$time."'");
 
-        $this->db->where('shift_type', 2);
+        $this->db->where('shift_type in ('.SHIFT_STATUS_APPLY.','.SHIFT_STATUS_ME_APPLY.')');
 
         $query = $this->db->get();
         return !empty($query->row_array());
@@ -213,7 +251,7 @@ order by tmp.time
         $this->db->where('organ_id', $organ_id);
         $this->db->where("from_time<='".$time."' and to_time>'".$time."'");
 
-        $this->db->where('shift_type', 2);
+        $this->db->where('(shift_type = '. SHIFT_STATUS_APPLY .' or shift_type = '. SHIFT_STATUS_ME_APPLY . ')');
 
         $query = $this->db->get();
         $result = $query->row_array();
@@ -227,8 +265,7 @@ order by tmp.time
         $this->db->where('organ_id', $organ_id);
         $this->db->where('staff_id', $staff_id);
         $this->db->where("from_time<='".$time."' and to_time>'".$time."'");
-
-        $this->db->where('shift_type', '-3');
+        $this->db->where('shift_type in (' . SHIFT_STATUS_REJECT.','.SHIFT_STATUS_REST.','.SHIFT_STATUS_OUT.')');
 
         $query = $this->db->get();
         return !empty($query->row_array());
@@ -310,4 +347,72 @@ order by tmp.time
         $query = $this->db->get();
         return $query->result_array();
     }
+
+    public function getShiftTimeOverData($from_time, $to_time, $staffs){
+        $this->db->select('shifts.staff_id,  (sum(TIMESTAMPDIFF(MINUTE, from_time, to_time)) - staffs.staff_shift*60) as diff');
+        $this->db->from($this->table);
+        $this->db->join('staffs', 'shifts.staff_id=staffs.staff_id', 'left');
+        $this->db->where("from_time>='".$from_time."'");
+        $this->db->where("to_time<='".$to_time."'");
+        $this->db->where("shift_type in (9, 10)");
+        $this->db->where("staffs.staff_id in (". $staffs . ")");
+        $this->db->group_by('staffs.staff_id');
+        $this->db->order_by('diff', 'desc');
+
+        $query = $this->db->get();
+        return $query->result_array();
+    }
+
+    public function getStaffOrderForAuto($organ_id, $from_time, $to_time, $in_from_time, $in_to_time, $type){
+        $strSql = "select final.*
+                    from 
+                        (select tmp.staff_id, sum(tmp.all_shift - tmp.hope_time) as time, if(sum(tmp.reserve)>0, 1,0) as reserve, if(sum(tmp.submit)>0,1,0) as submit, if(sum(tmp.pshift)>0,1,0) as pshift, if(sum(tmp.rest)>0, 1,0) as rest
+                        from
+                            (
+                            select staffs.staff_id, 0 as all_shift,  staffs.staff_shift*60 as hope_time, 0 as reserve,  0 as submit, 0 as pshift, 0 as rest
+                            from staffs left join staff_organs on staffs.staff_id=staff_organs.staff_id
+                            where staff_organs.organ_id=".$organ_id."
+                            union
+                            select staff_id, sum(TIMESTAMPDIFF(MINUTE, from_time, to_time)) as all_shift, 0 as hope_time, 0 as reserve,  0 as submit, 0 as pshift, 0 as rest
+                            from shifts 
+                            where from_time >='".$from_time."' and to_time<= '".$to_time."' and shifts.organ_id=".$organ_id."
+                            group by staff_id
+                            union
+                            select reserves.staff_id,  0 as all_shift, 0 as hope_time, 1 as reserve, 0 as submit, 0 as pshift, 0 as rest 
+                                from reserves 
+                                    where organ_id=".$organ_id." and
+                                        ((reserve_exit_time >'".$in_from_time."' and reserve_time <'".$in_to_time."') || (reserve_time ='".$in_from_time."' and reserve_exit_time ='".$in_to_time."'))
+                                        and reserve_status <= 2 and staff_id is not null
+                            union 
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 1 as submit, 0 as pshift, 0 as rest from shifts
+                            where organ_id = ".$organ_id." and 
+                            ((from_time >'".$in_from_time."' and to_time <'".$in_to_time."') || (from_time ='".$in_from_time."' and to_time ='".$in_to_time."')) and shift_type = ".SHIFT_STATUS_SUBMIT."
+                            union 
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 0 as submit, 0 as pshift, 1 as rest 
+                                from shifts
+                                    where organ_id <> ".$organ_id." and 
+                                        ((from_time >'".$in_from_time."' and to_time <'".$in_to_time."') || (from_time ='".$in_from_time."' and to_time ='".$in_to_time."')) 
+                                        and shift_type in (".SHIFT_STATUS_SUBMIT.", ".SHIFT_STATUS_REQUEST.", ".SHIFT_STATUS_ME_APPLY.", ".SHIFT_STATUS_APPLY.")
+                            union 
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve,0 as submit, 1 as pshift, 0 as rest 
+                                from shifts
+                                    where organ_id= ".$organ_id." and (from_time = '".$in_to_time."' || to_time = '".$in_from_time."') and shift_type in (".SHIFT_STATUS_REQUEST.", ".SHIFT_STATUS_ME_APPLY.", ".SHIFT_STATUS_APPLY.")
+                            union
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 0 as submit, 0 as pshift, 1 as rest 
+                                from shifts
+                                    where organ_id = ".$organ_id." and from_time like '".substr($in_from_time, 0, 10)." %' and shift_type = ".SHIFT_STATUS_REST."
+                            ) as tmp
+                    group by tmp.staff_id) as final
+                    where final.rest = 0";
+        if ($type == "over"){
+            $strSql .=" ORDER BY reserve asc, time desc";
+        }else{
+            $strSql .=" ORDER BY rest asc, reserve desc, submit desc, pshift desc, time asc ";
+        }
+
+        $query = $this->db->query($strSql);
+
+        return $query->result_array();
+    }
+
 }
