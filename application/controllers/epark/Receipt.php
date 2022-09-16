@@ -33,6 +33,7 @@ class Receipt extends AdminController
         $this->load->model('staff_organ_model');
         $this->load->model('staff_shift_sort_model');
         $this->load->model('table_name_model');
+        $this->load->model('shift_lock_model');
 
     }
 
@@ -152,6 +153,7 @@ class Receipt extends AdminController
                 $reserve_length_time = $diff->h * 60 + $diff->i;
                 $reserve_start_time = $datetime1->format('H') * 60 + $datetime1->format('i');
 
+
                 if(empty($order['select_staff_id'])){
                     $order['select_staff_id'] = 0;
                     $order['staff_name'] = 'フーリ';
@@ -204,6 +206,8 @@ class Receipt extends AdminController
         }
 
 
+        $isLock  = $this->shift_lock_model->isLockSelectDate($select_date, $organ_id);
+
         /* sum_amount */
         $cond_sum_amount=[];
         $cond_sum_amount['select_date'] = $select_date;
@@ -239,6 +243,7 @@ class Receipt extends AdminController
         $this->data['select_date'] = $select_date;
         $this->data['organs'] = $organ_list;
         $this->data['menus'] = $organ_menus;
+        $this->data['is_lock'] = $isLock;
 
         $this->data['available_time_from'] = $organ_time_from;
         $this->data['available_time_to'] = $organ_time_to;

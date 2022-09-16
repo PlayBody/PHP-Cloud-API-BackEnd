@@ -31,4 +31,20 @@ class Shift_lock_model extends Base_model
         return $query->row_array();
     }
 
+
+    public function isLockSelectDate($date, $organ_id){
+
+        $this->db->from($this->table);
+
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("from_time<='".$date." 00:00:00'");
+        $this->db->where("to_time>'".$date." 00:00:00'");
+        $this->db->where('lock_status', '1');
+
+        $query = $this->db->get()->result_array();
+
+        return !empty($query);
+    }
+
+
 }

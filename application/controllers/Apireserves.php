@@ -158,6 +158,24 @@ class Apireserves extends WebController
             ]);
         }
 
+        if(empty($staff_id)){
+            $shifts = $this->shift_model->getEnableShifts($organ_id, $reserve_start_time, $reserve_end_time);
+            foreach ($shifts as $shift){
+                if (($sel_staff_type == '1' || $sel_staff_type == '2') && $shift['staff_sex']!=$sel_staff_type) continue;
+
+                $orders = $this->order_model->getListByCond([
+                    'staff_id' => $shift['staff_id'],
+                    'in_from_time' => $reserve_start_time,
+                    'in_to_time' => $reserve_end_time
+                ]);
+
+                if (!empty($orders)) continue;
+
+                $staff_id = $shift['staff_id'];
+                break;
+            }
+        }
+
         $order = array(
             'organ_id' => $organ_id,
             'table_position' => $pos,

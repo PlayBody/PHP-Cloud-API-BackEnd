@@ -18,7 +18,6 @@ class Message_model extends Base_model
         $this->db->join('staffs', 'messages.staff_id=staffs.staff_id', 'left');
         $this->db->join('users', 'messages.user_id=users.user_id', 'left');
 
-
         if (!empty($cond['user_id'])){
             $this->db->where($this->table.'.user_id', $cond['user_id']);
         }
@@ -33,7 +32,7 @@ class Message_model extends Base_model
         }
 
         if (!empty($cond['organs'])){
-            $this->db->where('(messages.organ_id in ('.$cond['organs'].') or type=1)');
+            $this->db->where('(messages.organ_id in ('.$cond['organs'].') or type=2)');
         }
 
         $this->db->order_by('create_date', 'desc');

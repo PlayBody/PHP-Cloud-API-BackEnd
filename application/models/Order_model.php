@@ -20,6 +20,7 @@ class Order_model extends Base_model
                 CONCAT(staffs.staff_first_name,' ', staffs.staff_last_name), 
                 staffs.staff_nick
             ) as staff_name, users.user_sex,
+            staffs.staff_sex,
             if(table_names.table_name is NULL, CONCAT('seat', orders.table_position), table_names.table_name) as table_name
             ");
         $this->db->from($this->table);

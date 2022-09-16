@@ -449,6 +449,7 @@ class Apishiftsettings extends WebController
             'in_from_time' => $from_time,
             'in_to_time' => $to_time,
             'weekday' => $weekday,
+			'pattern' => $pattern,
             'no_setting' => $setting_id,
         ]);
 

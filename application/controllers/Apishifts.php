@@ -25,6 +25,7 @@ class Apishifts extends WebController
         $this->load->model('shift_lock_model');
         $this->load->model('reserve_model');
         $this->load->model('reserve_menu_model');
+		$this->load->model('notification_text_model');
     }
 
     public function getShiftCounts(){
@@ -628,11 +629,13 @@ class Apishifts extends WebController
         $content = str_replace('$to_month', $tdate->format('n'), $content);
         $content = str_replace('$to_day', $tdate->format('j'), $content);
 
-        $staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, 3, false);
+        //$staffs = $this->staff_organ_model->getStaffsByOrgan($organ_id, STAFF_AUTH_ADMIN, false, true);
+        $datas = $this->shift_model->getRequestStaffs($organ_id, $from_time. ' 00:00:00', $to_time. ' 23:59:59');
 
-        foreach ($staffs as $staff){
-            if ($staff_id == $staff['staff_id']) continue;
-            $is_fcm = $this->sendNotifications('12', $title, $content, $staff_id, $staff['staff_id'], '1');
+        foreach ($datas as $data){
+            if ($staff_id == $data['staff_id']) continue;
+            $content = str_replace('$hope_time', $data['time'], $content);
+            $is_fcm = $this->sendNotifications('12', $title, $content, $staff_id, $data['staff_id'], '1');
         }
 
         echo json_encode(['isSend'=>true]);
@@ -782,6 +785,31 @@ class Apishifts extends WebController
         $from_time = $this->input->post('from_time');
         $to_time = $this->input->post('to_time');
         $shift_type = $this->input->post('shift_type');
+
+        if ($shift_type==SHIFT_STATUS_ME_REJECT){
+            $shift = $this->shift_model->getFromId($shift_id);
+
+            if (empty($shift['old_shift'])){
+                $this->shift_model->delete_force($shift_id, 'shift_id');
+            }else{
+                $shift['shift_type'] = $shift['old_shift'];
+                $shift['old_shift'] = null;
+                $this->shift_model->updateRecord($shift, 'shift_id');
+            }
+            $results['isSave'] = true;
+            echo json_encode($results);
+            return;
+        }
+        if ($shift_type==SHIFT_STATUS_ME_REPLY){
+            $shift = $this->shift_model->getFromId($shift_id);
+
+            $shift['shift_type'] = $shift_type;
+            $this->shift_model->updateRecord($shift, 'shift_id');
+
+            $results['isSave'] = true;
+            echo json_encode($results);
+            return;
+        }
 
         $shift = [];
         $old_shift_type = 0;
@@ -1011,6 +1039,8 @@ class Apishifts extends WebController
 
     public function updateShiftChange(){
         $organ_id = $this->input->post('organ_id');
+		$organ = $this->organ_model->getFromId($organ_id);
+		$company_id = $organ['company_id'];
         $json = $this->input->post('data');
         $datas = json_decode($json, true);
         foreach ($datas as $data){
@@ -1019,7 +1049,19 @@ class Apishifts extends WebController
             $to_time = $data['to_time'];
             $shift_type = $data['shift_type'];
 
-            $old_shift = $this->shift_model->getRecordByCond(['staff_id'=>$staff_id, 'organ_id'=>$organ_id, 'in_from_time'=>$from_time, 'in_to_time'=>$to_time]);
+            $old_shift = $this->shift_model->getRecordByCond(['staff_id'=>$staff_id, 'organ_id'=>$organ_id, 'in_from_time'=>$from_time, 'in_to_time'=>$to_time], true);
+
+            if ($shift_type == SHIFT_STATUS_ME_REJECT){
+                if (empty($old_shift['old_shift'])){
+                    $this->shift_model->delete_force($old_shift['shift_id'], 'shift_id');
+                }else{
+                    $old_shift['shift_type'] = $old_shift['old_shift'];
+                    $old_shift['old_shift'] = null;
+
+                    $this->shift_model->updateRecord($old_shift, 'shift_id');
+                }
+                continue;
+            }
 
             if(empty($old_shift)){
                 $shift = array(
@@ -1032,12 +1074,15 @@ class Apishifts extends WebController
                 );
                 $this->shift_model->insertRecord($shift);
             }else{
+                $old_type = SHIFT_STATUS_REQUEST == $shift_type ? $old_shift['shift_type'] : $old_shift['old_shift'];
                 if ($old_shift['from_time']==$from_time && $old_shift['to_time']==$to_time){
+                    $old_shift['old_shift'] = $old_type;
                     $old_shift['shift_type'] = $shift_type;
+
                     $this->shift_model->updateRecord($old_shift, 'shift_id');
                 }else if($old_shift['from_time']==$from_time || $old_shift['to_time']==$to_time) {
                     if($old_shift['from_time']==$from_time){
-                        $old_shift['from'] = $to_time;
+                        $old_shift['from_time'] = $to_time;
                     }
                     if($old_shift['to_time']==$to_time){
                         $old_shift['to_time'] = $from_time;
@@ -1050,6 +1095,7 @@ class Apishifts extends WebController
                         'organ_id' => $organ_id,
                         'from_time' => $from_time,
                         'to_time' => $to_time,
+                        'old_shift' => $old_type,
                         'shift_type' => $shift_type,
                         'visible' => 1
                     );
@@ -1064,6 +1110,7 @@ class Apishifts extends WebController
                         'organ_id' => $organ_id,
                         'from_time' => $from_time,
                         'to_time' => $to_time,
+                        'old_shift' => $old_type,
                         'shift_type' => $shift_type,
                         'visible' => 1
                     );
@@ -1080,6 +1127,27 @@ class Apishifts extends WebController
                     $this->shift_model->insertRecord($shift);
                 }
             }
+
+			$notify_type = '';
+			//if($shift_type == SHIFT_STATUS_APPLY)
+            //    $notify_type = '17';
+			//if($shift_type == SHIFT_STATUS_REJECT)
+            //    $notify_type = '18';
+			if($shift_type == SHIFT_STATUS_REQUEST)
+                $notify_type = '19';
+			if (!empty($notify_type)){
+
+
+                $text_data = $this->notification_text_model->getRecordByCond(['company_id'=>$company_id, 'mail_type'=> $notify_type]);
+
+                $title = empty($text_data['title']) ? 'タイトルなし' : $text_data['title'];
+                $content = empty($text_data['content']) ? 'タイトルなし' : $text_data['content'];
+                $content = str_replace('$select_month', substr($from_time, 5,2), $content);
+                $content = str_replace('$select_day', substr($from_time, 8,2), $content);
+                $content = str_replace('$from_time', substr($from_time, 11,5), $content);
+                $content = str_replace('$to_time', substr($to_time, 11,5), $content);
+				$is_fcm = $this->sendNotifications($notify_type, $title, $content, '', $staff_id, '1');
+			}
         }
 
         $this->shift_model->delete_force('0', 'shift_type');

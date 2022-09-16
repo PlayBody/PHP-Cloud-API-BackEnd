@@ -146,6 +146,7 @@ define('SHIFT_STATUS_OUT', 3);
 define('SHIFT_STATUS_REST', 4);
 define('SHIFT_STATUS_REQUEST', 5);
 define('SHIFT_STATUS_ME_REJECT', 6);
+define('SHIFT_STATUS_ME_REPLY', 7);
 define('SHIFT_STATUS_ME_APPLY', 9);
 define('SHIFT_STATUS_APPLY', 10);
 
@@ -169,3 +170,9 @@ define('ORDER_STATUS_TABLE_COMPLETE', 8);
 define('PAY_METHOD_CREDIT', 1);
 define('PAY_METHOD_CASH', 2);
 define('PAY_METHOD_OTHER', 3);
+
+define('SQUARE_ENDPOINT_HOST', 'https://connect.squareupsandbox.com/');
+
+$week_array = array('日', '月', '火', '水', '木', '金', '土');
+
+define('WEEKS', $week_array);

@@ -116,6 +116,9 @@ class Apisettings extends WebController
         $organ['close_business_point'] = empty($this->input->post('close_business_point')) ? null : $this->input->post('close_business_point');
         $organ['checkin_ticket_consumption'] = $this->input->post('checkin_ticket_consumption');
         $organ['sns_url'] = $this->input->post('sns_url');
+        $organ['access'] = $this->input->post('access');
+        $organ['parking'] = $this->input->post('parking');
+
         if (!empty($this->input->post('image'))){
             $organ['image'] = $this->input->post('image');
         }

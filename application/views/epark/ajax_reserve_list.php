@@ -18,6 +18,8 @@
                         <i class="fa fa-check fa-2x"></i>
                     <?php }else if($order['status'] == ORDER_STATUS_RESERVE_APPLY){ ?>
                         <i class="fa fa-clock-o fa-2x"></i>
+                    <?php }else if($order['status'] == ORDER_STATUS_RESERVE_CANCEL){ ?>
+                        <i class="fa fa-minus-circle fa-2x" style="color: grey"></i>
                     <?php }else{ ?>
                         <i class="fa fa-inbox fa-2x"></i>
                     <?php } ?>

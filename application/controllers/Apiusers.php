@@ -540,17 +540,23 @@ VISITの自動送信メールです
             $this->load->library('email');
 
             $this->email->initialize($config);
+			
+			$company_name = 'VISITの自動送信メール';
+			if ($company_id == '1') $company_name = 'Shangri-La group アプリ';
+			if ($company_id == '2') $company_name = 'Shangri-La group アプリ';
+			if ($company_id == '3') $company_name = 'Shangri-La group アプリ';
+			if ($company_id == '4') $company_name = 'Shangri-La group アプリ';
 
-            $body = "VISITの自動送信メールです
+            $body = $company_name . "
 
-SecurityCodeは　「".$code."」　です。
-
-よろしくお願い致します。";
+セキュリティコードは
+「".$code."」　
+です。";
 
             $company = $this->company_model->getFromId($company_id);
             $this->email->from('system@visit-pos.net', 'Visit System');
             $this->email->to($user_email);
-            $this->email->subject($company['company_name'].'アプリSecurity CODE');
+            $this->email->subject($company_name.'アプリセキュリティコード');
             $this->email->message($body);
             $this->email->send();
 

@@ -47,6 +47,8 @@ class Apiorders extends WebController
             if ($staff['staff_auth']==4){
                 $cond['company_id'] = $company_id;
             }
+
+            $cond['staff_id'] = $staff_id;
         }
 
         if (!empty($user_id)) $cond['user_id'] = $user_id;

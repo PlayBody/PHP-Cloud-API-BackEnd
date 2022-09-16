@@ -134,13 +134,23 @@
                                 } ?>
 
                                 <div data="<?php echo $shift['shift_id']; ?>" class="div_shift <?php
-                                if($shift['shift_type']==SHIFT_STATUS_SUBMIT){ echo 'shift-submit'; }
-                                if($shift['shift_type']==SHIFT_STATUS_REJECT){ echo 'shift-reject'; }
-                                if($shift['shift_type']==SHIFT_STATUS_OUT){ echo 'shift-out'; }
-                                if($shift['shift_type']==SHIFT_STATUS_REST){ echo 'shift-rest'; }
-                                if($shift['shift_type']==SHIFT_STATUS_REQUEST){ echo 'shift-request'; }
-                                if($shift['shift_type']==SHIFT_STATUS_ME_APPLY){ echo 'shift-apply'; }
-                                if($shift['shift_type']==SHIFT_STATUS_APPLY){ echo 'shift-apply'; }
+                                if($is_lock || $shift['shift_type']==SHIFT_STATUS_OUT){
+                                    if($shift['shift_type']==SHIFT_STATUS_OUT){
+                                        echo 'shift-out';
+                                    }else {
+                                        echo 'shift-grey';
+                                    }
+
+                                }else{
+                                    if($shift['shift_type']==SHIFT_STATUS_SUBMIT){ echo 'shift-submit'; }
+                                    if($shift['shift_type']==SHIFT_STATUS_REJECT){ echo 'shift-reject'; }
+                                    if($shift['shift_type']==SHIFT_STATUS_OUT){ echo 'shift-out'; }
+                                    if($shift['shift_type']==SHIFT_STATUS_REST){ echo 'shift-rest'; }
+                                    if($shift['shift_type']==SHIFT_STATUS_REQUEST){ echo 'shift-request'; }
+                                    if($shift['shift_type']==SHIFT_STATUS_ME_APPLY){ echo 'shift-apply'; }
+                                    if($shift['shift_type']==SHIFT_STATUS_APPLY){ echo 'shift-apply'; }
+
+                                }
                                 ?>" style="left: <?php echo $one_minute_length * ($shift['start']-$available_time_from*60); ?>%;  width: <?php echo $one_minute_length * $shift['width']; ?>%; height: 50px; display: flex; position: absolute;">
                                     <?php if($shift['shift_type']==SHIFT_STATUS_ME_APPLY || $shift['shift_type']==SHIFT_STATUS_APPLY){ ?>
                                         <?php for($t = $shift['start']; $t<$shift['start'] + $shift['width']; $t+=5){ ?>
@@ -151,9 +161,9 @@
                                             <span>
                                                 <?php
                                                     if($shift['shift_type']==SHIFT_STATUS_SUBMIT){ echo '申請中'; }
-                                                    if($shift['shift_type']==SHIFT_STATUS_REJECT){ echo '保留'; }
+                                                    if($shift['shift_type']==SHIFT_STATUS_REJECT){ echo '拒否'; }
                                                     if($shift['shift_type']==SHIFT_STATUS_OUT){ echo '店外待機'; }
-                                                    if($shift['shift_type']==SHIFT_STATUS_REST){ echo '休憩'; }
+                                                    if($shift['shift_type']==SHIFT_STATUS_REST){ echo '休み'; }
                                                     if($shift['shift_type']==SHIFT_STATUS_REQUEST){ echo '出勤依頼'; }
                                                 ?>
                                             </span>
@@ -166,7 +176,10 @@
                                 </div>
                         <?php } ?>
                         <?php if (!empty($staff['reserves']))
-                            foreach ($staff['reserves'] as $reserve) { ?>
+                            foreach ($staff['reserves'] as $reserve) {
+                                if ($reserve['status']==ORDER_STATUS_RESERVE_CANCEL || $reserve['status']==ORDER_STATUS_RESERVE_REJECT) continue;
+                                ?>
+
                             <div data="<?php echo $reserve['id']; ?>" time_length="<?php echo  $reserve['width']; ?>" user_id="<?php echo $reserve['user_id']; ?>" class="reserve_item_<?php echo $reserve['id']; ?> reserve_item_main <?php
                                 if($reserve['is_before']){
                                     echo 'reserve-before';
@@ -190,8 +203,13 @@
                                     <div class="reserve_time">
                                         <span><?php echo $reserve['from'].'~'.$reserve['to']; ?></span>
                                     </div>
+
                                     <div class="sel_staff">
-                                        <span class="sel_staff_mark">指名</span>
+                                        <?php if($staff['sex']==1){ ?>
+                                            <span class="sel_staff_mark_blue">希望</span>
+                                        <?php }else if($staff['sex']==2){ ?>
+                                            <span class="sel_staff_mark_red">希望</span>
+                                        <?php } ?>
                                     </div>
                                 </div>
                             </div>
@@ -220,7 +238,9 @@
                             <?php } ?>
                         </div>
                         <?php if (!empty($table['data']))
-                            foreach ($table['data'] as $reserve) { ?>
+                            foreach ($table['data'] as $reserve) {
+                                if ($reserve['status']==ORDER_STATUS_RESERVE_CANCEL || $reserve['status']==ORDER_STATUS_RESERVE_REJECT) continue;
+                                ?>
                                 <div data="<?php echo $reserve['id']; ?>" time_length="<?php echo  $reserve['width']; ?>" user_id="<?php echo $reserve['user_id']; ?>" class="reserve_item_<?php echo $reserve['id']; ?> reserve_item_main <?php
                                 if($reserve['is_before']){
                                     echo 'reserve-before';
@@ -245,7 +265,11 @@
                                             <span><?php echo $reserve['from'].'~'.$reserve['to']; ?></span>
                                         </div>
                                         <div class="sel_staff">
-                                            <span class="sel_staff_mark">指名</span>
+                                            <?php if($reserve['staff_sex']==1){ ?>
+                                                <span class="sel_staff_mark_blue">希望</span>
+                                            <?php }else if($reserve['staff_sex']==2){ ?>
+                                                <span class="sel_staff_mark_red">希望</span>
+                                            <?php } ?>
                                         </div>
                                     </div>
                                 </div>
@@ -295,6 +319,7 @@
 
 <?php include 'new_shift.php'; ?>
 <?php include 'new_reserve.php'; ?>
+<?php include 'reserve_move_confirm.php'; ?>
 
 <style>
     #sum_view{
@@ -371,6 +396,7 @@
     .shift-apply{ background-color:white; }
     .shift-reject{ background-color:#a14040; }
     .shift-out{ background-color:#d325a5; }
+    .shift-grey{ background-color:#b9b9b9; }
     .shift-reply{ background-color:#cbcbcb; }
     .shift-request{ background-color:#20a379; }
     .shift-rest{ background-color:#af9462; }
@@ -391,7 +417,8 @@
     .reserve_item .sex { color: white; padding: 1px 2px;border-radius: 3px;}
     .reserve_item .sex_1 { background-color: #348add;}
     .reserve_item .sex_1 { background-color: #954a4a;}
-    .reserve_item .sel_staff_mark{color: white; background-color: #c77016; padding: 0px 1px;border-radius: 3px;}
+    .reserve_item .sel_staff_mark_blue{color: white; background-color: #3579cf; padding: 0px 1px;border-radius: 3px;}
+    .reserve_item .sel_staff_mark_red{color: white; background-color: #d93790; padding: 0px 1px;border-radius: 3px;}
     .reserve-before .reserve_item span{ color: #eeeeee;}
     .reserve-before .sex, .reserve-before .sel_staff_mark{background-color: grey;}
 
@@ -611,6 +638,16 @@
     var time_length;
     var move_from_time;
     var isDragReserve = false;
+
+    var select_reserve_staff_id;
+    var select_reserve_from;
+    var select_reserve_id;
+    var select_reserve_time_length;
+    var select_reserve_obj_original_left;
+    var select_reserve_obj_original_top;
+    var select_reserve_obj;
+
+
     $('.reserve_item_main').draggable({
         start: function(event, ui) {
             isDragReserve = true;
@@ -627,25 +664,39 @@
                 $(this).css('top', ui.originalPosition.top);
             }
             if(isReserveDrop){
-                $.ajax({
-                    url: base_url + "epark/receipt/ajaxUpdateReserveTime",
-                    type: 'post',
-                    data : {
-                        'staff_id' : reserve_move_obj.parent().parent().children('.staff_drag_item').attr('data'),
-                        'reserve_time' : '<?php echo $select_date; ?>'+' ' + move_from_time+':00',
-                        'reserve_id' : $(this).attr('data'),
-                        'time_length' : time_length
-                    },
-                }).done(function(res) {
-                    data = JSON.parse(res);
-                    if(data['isSave']){
-                        refresh_load();
-                    }else{
-                      alert('選択した時間には予約できません。');
-                        $(this).css('left', ui.originalPosition.left);
-                        $(this).css('top', ui.originalPosition.top);
-                    }
-                });
+                var strText = '開始時間を'+move_from_time+'に変更になりますか、よろしいですか？';
+                $('#reserve_confirm_message').html(strText);
+                $('#widget_back').show();
+                $('#widget_reserve_move_confirm').show();
+
+                select_reserve_obj_original_left = ui.originalPosition.left;
+                select_reserve_obj_original_top = ui.originalPosition.top;
+                select_reserve_obj = $(this);
+
+                select_reserve_staff_id = reserve_move_obj.parent().parent().children('.staff_drag_item').attr('data');
+                select_reserve_from = '<?php echo $select_date; ?>'+' ' + move_from_time+':00';
+                select_reserve_id = $(this).attr('data');
+                select_reserve_time_length = time_length;
+
+                //$.ajax({
+                //    url: base_url + "epark/receipt/ajaxUpdateReserveTime",
+                //    type: 'post',
+                //    data : {
+                //        'staff_id' : reserve_move_obj.parent().parent().children('.staff_drag_item').attr('data'),
+                //        'reserve_time' : '<?php //echo $select_date; ?>//'+' ' + move_from_time+':00',
+                //        'reserve_id' : $(this).attr('data'),
+                //        'time_length' : time_length
+                //    },
+                //}).done(function(res) {
+                //    data = JSON.parse(res);
+                //    if(data['isSave']){
+                //        refresh_load();
+                //    }else{
+                //      alert('選択した時間には予約できません。');
+                //        $(this).css('left', ui.originalPosition.left);
+                //        $(this).css('top', ui.originalPosition.top);
+                //    }
+                //});
             }
             isReserveDrop = false;
             isDragReserve = false;
