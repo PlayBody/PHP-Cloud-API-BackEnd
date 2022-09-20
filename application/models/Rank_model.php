@@ -47,4 +47,19 @@ class Rank_model extends Base_model
 
     }
 
+    public function getRankRecord($condition){
+        $this->db->select();
+        $this->db->from($this->table);
+
+        if(!empty($condition['company_id'])){
+            $this->db->where('company_id', $condition['company_id']);
+        }
+
+        if(!empty($condition['rank_level'])){
+            $this->db->where('rank_level', $condition['rank_level']);
+        }
+
+        $query = $this->db->get();
+        return $query->row_array();
+    }
 }

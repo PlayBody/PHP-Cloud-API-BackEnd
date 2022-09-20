@@ -575,4 +575,37 @@ class WebController extends CI_Controller
         return $organs;
     }
 
+    public function updateStampRanking($user_id){
+        $user = $this->user_model->getFromId($user_id);
+        if (empty($user)) return false;
+
+        $company_id = $user['company_id'];
+        $grade = $user['user_grade'];
+
+        $this->load->model('rank_model');
+        $this->load->model('stamp_model');
+        $rank_data = $this->rank_model->getRankRecord(['company_id' => $company_id, 'rank_level' => $grade]);
+        if (empty($rank_data)) return false;
+
+        $user_stamps = $this->stamp_model->getStampList(['company_id' => $company_id, 'user_id' => $user_id, 'use_flag' => 0]);
+        if (count($user_stamps) >= $rank_data['max_stamp']){
+            $next_grade = intval($grade) + 1;
+            $update_rank_data = $this->rank_model->getRankRecord(['company_id' => $company_id, 'rank_level' => $next_grade]);
+            if (empty($update_rank_data)) return false;
+            $user['user_grade'] = $update_rank_data['rank_level'];
+            $this->user_model->updateRecord($user, 'user_id');
+            $remove_count = 0;
+            foreach ($user_stamps as $user_stamp){
+                $remove_count++;
+                if ($remove_count > $rank_data['max_stamp']) break;
+                $user_stamp['use_flag'] = 1;
+                $this->stamp_model->updateRecord($user_stamp, 'stamp_id');
+            }
+            return true;
+        }
+
+        return false;
+
+    }
+
 }

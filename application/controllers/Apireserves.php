@@ -32,7 +32,7 @@ class Apireserves extends WebController
         $this->load->model('order_menu_model');
         $this->load->model('organ_time_model');
         $this->load->model('organ_special_time_model');
-//        $this->load->model('pos_staff_shift_model');
+        //        $this->load->model('pos_staff_shift_model');
     }
 
     public function loadUserReserveData()
@@ -621,25 +621,27 @@ class Apireserves extends WebController
         }
 
         $results['isStampAdd'] = false;
+        $results['isUpdateGrade'] = false;
         if(empty($today_orders)){
             $stamp = array(
                 'date' => Date('Y-m-d'),
                 'user_id' => $user_id ,
-                'company_id' => '',
+                'company_id' => $user['company_id'],
                 'organ_id' => $organ_id,
-                'use_flag' => '1',
+                'use_flag' => '0',
                 'stamp_count' => '1'
             );
 
             $this->load->model('stamp_model');
             $this->stamp_model->insertRecord($stamp);
             $results['isStampAdd'] = true;
+
+            $results['isUpdateGrade'] = $this->updateStampRanking($user_id);
         }
 
         $results['isUpdate'] = true;
 
         echo json_encode($results);
-
     }
 
     public function getReserveNow(){

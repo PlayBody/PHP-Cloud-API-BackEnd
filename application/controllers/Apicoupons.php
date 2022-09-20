@@ -65,6 +65,8 @@ class Apicoupons extends WebController
 
         $cond = [];
         $cond['user_id'] = $user_id;
+        $cond['company_id'] = $company_id;
+        $cond['use_flag'] = '0';
         //$cond['use_flag'] = 1;
         $stamps = $this->stamp_model->getStampList($cond);
 
@@ -392,5 +394,16 @@ class Apicoupons extends WebController
         echo json_encode($results);
     }
 
+    public function loadUserRank(){
+        $company_id = $this->input->post('company_id');
+        $user_id = $this->input->post('user_id');
+        $user = $this->user_model->getFromId($user_id);
+        $user_grade = empty($user['user_grade']) ? 1 : $user['user_grade'];
+
+        $rank_data = $this->rank_model->getRankRecord(['company_id' => $company_id, 'rank_level' => $user_grade]);
+
+        $results['rank'] = $rank_data;
+        echo json_encode($results);
+    }
 }
 ?>

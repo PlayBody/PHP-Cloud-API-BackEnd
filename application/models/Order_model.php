@@ -72,7 +72,7 @@ class Order_model extends Base_model
         if(!empty($cond['status_array'])){
             $this->db->where('orders.status in ('. join(',', $cond['status_array']).')');
         }
-        $this->db->where('orders.from_time <> orders.to_time');
+        //$this->db->where('orders.from_time <> orders.to_time');
 
         $this->db->order_by($this->table.'.from_time', 'asc');
         $query = $this->db->get();

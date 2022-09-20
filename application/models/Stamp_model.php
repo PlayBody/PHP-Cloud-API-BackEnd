@@ -17,8 +17,11 @@ class Stamp_model extends Base_model
         if (!empty($cond['user_id'])){
             $this->db->where('user_id', $cond['user_id']);
         }
+        if (!empty($cond['company_id'])){
+            $this->db->where('company_id', $cond['company_id']);
+        }
 
-        if (!empty($cond['use_flag'])){
+        if ($cond['use_flag']=='0' || !empty($cond['use_flag'])){
             $this->db->where('use_flag', $cond['use_flag']);
         }
 
