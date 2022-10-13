@@ -104,4 +104,21 @@ class Staff_model extends Base_model
         $query = $this->db->get();
         return $query->result_array();
     }
+
+    /*
+     * new.list
+     */
+    function getPosStaffListByOrgan($organ_id, $auth)
+    {
+        $this->db->select("*, staff_auth as auth, IF(staff_nick is NULL, CONCAT(staff_first_name,' ', staff_last_name), staff_nick) as sort_name");
+        $this->db->from($this->table);
+        $this->db->join('staff_organs', 'staff_organs.staff_id = staffs.staff_id');
+
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where('staff_auth1 <'.$auth);
+
+        $this->db->order_by('sort_no', 'asc');
+        return $this->db->get()->result_array();
+    }
+
 }

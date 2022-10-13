@@ -544,5 +544,28 @@ class Apiorgans extends WebController
         echo json_encode($results);
 
     }
+
+    public function renderPrintLogo(){
+
+        $organ_id = $this->input->get('organ_id');
+        if($organ_id == null)
+        {
+            $file = 'noImage.jpg';
+        }else{
+            $organ = $this->organ_model->getFromId($organ_id);
+            if (empty($organ) || empty($organ['print_logo_file'])){
+                $file = 'noImage.jpg';
+            }else{
+                $file = $organ['print_logo_file'];
+            }
+        }
+        $file = './assets/images/prints/'.$file;
+        if (!is_file($file)) $file = './assets/images/prints/no_image.png';
+
+        header("Content-Type: image/png");
+        header("Content-Length: " . filesize($file));
+        echo file_get_contents($file);
+        exit;
+    }
 }
 ?>

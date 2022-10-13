@@ -369,52 +369,58 @@ order by tmp.time
     public function getStaffOrderForAuto($organ_id, $from_time, $to_time, $in_from_time, $in_to_time, $type){
         $strSql = "select final.*
                     from 
-                        (select tmp.staff_id, sum(tmp.all_shift - tmp.hope_time) as time, if(sum(tmp.reserve)>0, 1,0) as reserve, if(sum(tmp.submit)>0,1,0) as submit, if(sum(tmp.apply)>0,1,0) as apply, if(sum(tmp.pshift)>0,1,0) as pshift, if(sum(tmp.rest)>0, 1,0) as rest
+                        (select tmp.staff_id, sum(tmp.all_shift - tmp.hope_time) as time, if(sum(tmp.reserve)>0, 1,0) as reserve, if(sum(tmp.submit)>0,1,0) as submit, if(sum(tmp.apply)>0,1,0) as apply, if(sum(tmp.pshift)>0,1,0) as pshift, if(sum(tmp.rest)>0, 1,0) as rest, if(sum(tmp.link)>0, 1,0) as link
                         from
                             (
-                            select staffs.staff_id, 0 as all_shift,  staffs.staff_shift*60 as hope_time, 0 as reserve,  0 as submit, 0 as apply, 0 as pshift, 0 as rest
+                            select staffs.staff_id, 0 as all_shift,  staffs.staff_shift*60 as hope_time, 0 as reserve,  0 as submit, 0 as apply, 0 as pshift, 0 as rest, 0 as link
                             from staffs left join staff_organs on staffs.staff_id=staff_organs.staff_id
                             where staff_organs.organ_id=".$organ_id."
                             union
-                            select staff_id, sum(TIMESTAMPDIFF(MINUTE, from_time, to_time)) as all_shift, 0 as hope_time, 0 as reserve,  0 as submit, 0 as apply, 0 as pshift, 0 as rest
+                            select staff_id, sum(TIMESTAMPDIFF(MINUTE, from_time, to_time)) as all_shift, 0 as hope_time, 0 as reserve,  0 as submit, 0 as apply, 0 as pshift, 0 as rest, 0 as link
                             from shifts 
                             where from_time >='".$from_time."' and to_time<= '".$to_time."' and shifts.organ_id=".$organ_id."
                             group by staff_id
                             union
-                            select reserves.staff_id,  0 as all_shift, 0 as hope_time, 1 as reserve, 0 as submit, 0 as apply, 0 as pshift, 0 as rest 
+                            select reserves.staff_id,  0 as all_shift, 0 as hope_time, 1 as reserve, 0 as submit, 0 as apply, 0 as pshift, 0 as rest, 0 as link 
                                 from reserves 
                                     where organ_id=".$organ_id." and
                                         ((reserve_exit_time >'".$in_from_time."' and reserve_time <'".$in_to_time."') || (reserve_time ='".$in_from_time."' and reserve_exit_time ='".$in_to_time."'))
                                         and reserve_status <= 2 and staff_id is not null
                             union 
-                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 1 as submit, 0 as apply, 0 as pshift, 0 as rest from shifts
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 1 as submit, 0 as apply, 0 as pshift, 0 as rest, 0 as link from shifts
                             where organ_id = ".$organ_id." and 
                             ((from_time <'".$in_to_time."' and to_time >'".$in_from_time."') || (from_time ='".$in_from_time."' and to_time ='".$in_to_time."')) and shift_type = ".SHIFT_STATUS_SUBMIT."
                             union 
-                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 0 as submit, 0 as apply, 0 as pshift, 1 as rest 
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 0 as submit, 0 as apply, 0 as pshift, 1 as rest, 0 as link 
                                 from shifts
                                     where organ_id <> ".$organ_id." and 
                                         ((from_time >'".$in_from_time."' and to_time <'".$in_to_time."') || (from_time ='".$in_from_time."' and to_time ='".$in_to_time."')) 
                                         and shift_type in (".SHIFT_STATUS_SUBMIT.", ".SHIFT_STATUS_REQUEST.", ".SHIFT_STATUS_ME_APPLY.", ".SHIFT_STATUS_APPLY.")
                             union 
-                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve,0 as submit, 0 as apply, 1 as pshift, 0 as rest 
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve,0 as submit, 0 as apply, 1 as pshift, 0 as rest, 0 as link 
                                 from shifts
                                     where organ_id= ".$organ_id." and ((from_time <'".$in_to_time."' and to_time >'".$in_from_time."') || (from_time ='".$in_from_time."' and to_time ='".$in_to_time."')) and shift_type in (".SHIFT_STATUS_REQUEST.")
                             union
-                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve,0 as submit, 1 as apply, 1 as pshift, 0 as rest 
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve,0 as submit, 1 as apply, 1 as pshift, 0 as rest, 0 as link 
                                 from shifts
                                     where organ_id= ".$organ_id." and ((from_time <'".$in_to_time."' and to_time >'".$in_from_time."') || (from_time ='".$in_from_time."' and to_time ='".$in_to_time."')) and shift_type in (".SHIFT_STATUS_ME_APPLY.", ".SHIFT_STATUS_APPLY.")
                             union
-                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 0 as submit, 0 as apply, 0 as pshift, 1 as rest 
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 0 as submit, 0 as apply, 0 as pshift, 1 as rest, 0 as link 
                                 from shifts
                                     where organ_id = ".$organ_id." and from_time like '".substr($in_from_time, 0, 10)." %' and shift_type = ".SHIFT_STATUS_REST."
+                            union
+                            select shifts.staff_id, 0 as all_shift, 0 as hope_time, 0 as reserve, 0 as submit, 0 as apply, 0 as pshift, 0 as rest, 1 as link
+                                from shifts
+                                    where organ_id = ".$organ_id." and (from_time = '".$in_to_time."' or to_time = '".$in_from_time."') and shift_type in (".SHIFT_STATUS_APPLY.", ".SHIFT_STATUS_ME_APPLY.")
+
                             ) as tmp
                     group by tmp.staff_id) as final
                     where final.rest = 0";
+
         if ($type == "over"){
             $strSql .=" ORDER BY reserve asc, pshift desc, apply asc, time desc";
         }else{
-            $strSql .=" ORDER BY apply desc, rest asc, reserve desc, submit desc, pshift desc, time asc ";
+            $strSql .=" ORDER BY apply desc, rest asc, reserve desc, link desc, submit desc, pshift desc, time asc ";
         }
 
         $query = $this->db->query($strSql);

@@ -118,6 +118,17 @@ class Apisettings extends WebController
         $organ['sns_url'] = $this->input->post('sns_url');
         $organ['access'] = $this->input->post('access');
         $organ['parking'] = $this->input->post('parking');
+        $organ['reserve_menu_response_1_point'] = $this->input->post('reserve_menu_response_1_point');
+        $organ['reserve_menu_response_2_point'] = $this->input->post('reserve_menu_response_2_point');
+        $organ['attend_point'] = $this->input->post('attend_point');
+        $organ['grade_1_point'] = $this->input->post('grade_1_point');
+        $organ['grade_2_point'] = $this->input->post('grade_2_point');
+        $organ['grade_3_point'] = $this->input->post('grade_3_point');
+        $organ['entering_1_point'] = $this->input->post('entering_1_point');
+        $organ['entering_2_point'] = $this->input->post('entering_2_point');
+        $organ['entering_3_point'] = $this->input->post('entering_3_point');
+        $organ['entering_4_point'] = $this->input->post('entering_4_point');
+        $organ['entering_5_point'] = $this->input->post('entering_5_point');
 
         if (!empty($this->input->post('image'))){
             $organ['image'] = $this->input->post('image');

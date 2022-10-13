@@ -74,7 +74,8 @@
             <option <?php if ($shift['shift_type']==SHIFT_STATUS_OUT) echo 'selected'; ?> value="<?php echo SHIFT_STATUS_OUT; ?>">店外待機</option>
             <option <?php if ($shift['shift_type']==SHIFT_STATUS_REST) echo 'selected'; ?> value="<?php echo SHIFT_STATUS_REST; ?>">休憩</option>
             <option <?php if ($shift['shift_type']==SHIFT_STATUS_REQUEST) echo 'selected'; ?> value="<?php echo SHIFT_STATUS_REQUEST; ?>">出勤依頼</option>
-            <option <?php if ($shift['shift_type']==SHIFT_STATUS_ME_APPLY) echo 'selected'; ?> value="<?php echo SHIFT_STATUS_ME_APPLY; ?>">回答済み</option>
+            <option <?php if ($shift['shift_type']==SHIFT_STATUS_ME_REPLY) echo 'selected'; ?> value="<?php echo SHIFT_STATUS_ME_REPLY; ?>">回答済み</option>
+            <option <?php if ($shift['shift_type']==SHIFT_STATUS_ME_APPLY) echo 'selected'; ?> value="<?php echo SHIFT_STATUS_ME_APPLY; ?>">回答済み-承認</option>
             <option <?php if ($shift['shift_type']==SHIFT_STATUS_APPLY) echo 'selected'; ?> value="<?php echo SHIFT_STATUS_APPLY; ?>">承認</option>
         </select>
     </div>

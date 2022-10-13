@@ -244,4 +244,17 @@ class Order_model extends Base_model
             $this->db->where("from_time like '" . $cond['select_date']." %'");
         }
     }
+
+    public function getCompleteOrdersByStaff($staff_id, $organ_id, $from_time, $to_time){
+        $this->db->from($this->table);
+        $this->db->where('select_staff_id', $staff_id);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where('status', ORDER_STATUS_TABLE_COMPLETE);
+
+        $this->db->where("from_time < '$to_time'");
+        $this->db->where("to_time > '$from_time'");
+
+        $query = $this->db->get();
+        return $query->result_array();
+    }
 }

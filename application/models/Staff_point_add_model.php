@@ -79,6 +79,12 @@ class Staff_point_add_model extends Base_model
         if(!empty($cond['point_setting_id'])){
             $this->db->where($this->table.'.point_setting_id', $cond['point_setting_id']);
         }
+        if(!empty($cond['from_date'])){
+            $this->db->where("point_date >='" . $cond['from_date'] . "'");
+        }
+        if(!empty($cond['to_date'])){
+            $this->db->where("point_date <='" . $cond['to_date'] . "'");
+        }
 
 
         $this->db->order_by('point_date');

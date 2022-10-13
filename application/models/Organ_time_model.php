@@ -25,6 +25,9 @@ class Organ_time_model extends Base_model
             $this->db->where("to_time>'". $cond['select_time'] . "'");
         }
 
+        $this->db->order_by('weekday');
+        $this->db->order_by('from_time');
+
         $query = $this->db->get();
         return $query->result_array();
 

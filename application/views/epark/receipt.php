@@ -147,6 +147,7 @@
                                     if($shift['shift_type']==SHIFT_STATUS_OUT){ echo 'shift-out'; }
                                     if($shift['shift_type']==SHIFT_STATUS_REST){ echo 'shift-rest'; }
                                     if($shift['shift_type']==SHIFT_STATUS_REQUEST){ echo 'shift-request'; }
+                                    if($shift['shift_type']==SHIFT_STATUS_ME_REPLY){ echo 'shift-reply'; }
                                     if($shift['shift_type']==SHIFT_STATUS_ME_APPLY){ echo 'shift-apply'; }
                                     if($shift['shift_type']==SHIFT_STATUS_APPLY){ echo 'shift-apply'; }
 
@@ -165,6 +166,7 @@
                                                     if($shift['shift_type']==SHIFT_STATUS_OUT){ echo '店外待機'; }
                                                     if($shift['shift_type']==SHIFT_STATUS_REST){ echo '休み'; }
                                                     if($shift['shift_type']==SHIFT_STATUS_REQUEST){ echo '出勤依頼'; }
+                                                    if($shift['shift_type']==SHIFT_STATUS_ME_REPLY){ echo '承認 確定待ち'; }
                                                 ?>
                                             </span>
                                             <p>
@@ -394,10 +396,12 @@
     .div_shift{border: solid #333333 1px; cursor: pointer;}
     .shift-submit{ background-color:#1f5f9d; }
     .shift-apply{ background-color:white; }
-    .shift-reject{ background-color:#a14040; }
+    .shift-reply{ background-color:#a96716; }
+    .shift-reject{ background-color:#dddddd;}
+    .shift-reject p, .shift-reject span{ color:#666666;}
+
     .shift-out{ background-color:#d325a5; }
     .shift-grey{ background-color:#b9b9b9; }
-    .shift-reply{ background-color:#cbcbcb; }
     .shift-request{ background-color:#20a379; }
     .shift-rest{ background-color:#af9462; }
 

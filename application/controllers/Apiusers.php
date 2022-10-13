@@ -608,6 +608,7 @@ VISITの自動送信メールです
         $results['isVerify'] = true;
         $results['user_id'] = $user_id;
         $results['user_name'] = $this->input->post('user_first_name').' '. $this->input->post('user_last_name');
+        $results['user_nick'] = $this->input->post('user_nick');
 
         echo json_encode($results);
 
