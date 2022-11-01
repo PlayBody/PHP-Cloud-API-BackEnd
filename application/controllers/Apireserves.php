@@ -139,7 +139,7 @@ class Apireserves extends WebController
             echo json_encode($results);
             return;
         }
-        $condition_status = $this->getReserveTimeStatus($organ_id, $staff_id, $reserve_start_time, $user_id);
+        $condition_status = $this->getReserveTimeStatus($organ_id, $staff_id, $reserve_start_time, $user_id, $sum_time, $sel_staff_type);
         if ($condition_status==3){
             if (empty($reserve_id)){
                 $results['isSave'] = false;
@@ -718,6 +718,8 @@ class Apireserves extends WebController
         $from_date = $this->input->post('from_date');
         $to_date = $this->input->post('to_date');
         $user_id = $this->input->post('user_id');
+        $duration = $this->input->post('duration');
+        $staff_type = $this->input->post('sel_staff_type');
 
         $results = [];
         $regions = [];
@@ -730,7 +732,7 @@ class Apireserves extends WebController
             if ($curDateTime > new DateTime()){
                 $tmp = [];
                 $tmp['time'] = $cur_date;
-                $tmp['type'] = $this->getReserveTimeStatus($organ_id, $staff_id, $cur_date, $user_id);
+                $tmp['type'] = $this->getReserveTimeStatus($organ_id, $staff_id, $cur_date, $user_id, $duration, $staff_type);
                 $regions[] = $tmp;
             }else{
                 $tmp = [];
@@ -750,65 +752,98 @@ class Apireserves extends WebController
 
     }
 
-    private function getReserveTimeStatus($organ_id, $staff_id, $cur_date, $user_id){
+    private function getReserveTimeStatus($organ_id, $staff_id, $cur_date, $user_id, $duration, $staff_type){
         $curFromTime = new DateTime($cur_date);
+        $curToTime = new DateTime($cur_date);
         $from_time = $curFromTime->format("Y-m-d H:i:s");
+        $curToTime->add(new DateInterval('PT'.$duration.'M'));
+        $to_time = $curToTime->format("Y-m-d H:i:s");
 
         $organ = $this->organ_model->getFromId($organ_id);
         $table_count = $organ['table_count'] == null ? 10 : $organ['table_count'];
         $week = date('N', strtotime($from_time));
         $start_time = $curFromTime->format("H:i");
+        $end_time = $curToTime->format("H:i");
 
-        /* business time check */
-        $open_times = $this->organ_time_model->getListByCond(['organ_id' => $organ_id, 'weekday' => $week, 'select_time' => $start_time]);
-        $special_times = $this->organ_special_time_model->getListByCond(['organ_id' => $organ_id, 'select_time' => $from_time]);
+        /* ------------------open Time check-------------------------- */
+        $isInOpenTime = $this->organ_time_model->isInOpenTime($organ_id, $week, $start_time, $end_time);
+        if (!$isInOpenTime){
+            $isInOpenTime = $this->organ_special_time_model->isInOpenTime($organ_id, $from_time, $to_time);
+        }
+        if(!$isInOpenTime) return '3';
 
-        if(empty($open_times) && empty($special_times)) return '3';
-        //--------------------------------------------------------------------
+        /* ------------------is my order check-------------------------- */
+        $my_reserves = $this->order_model->getListByCond([
+            'user_id' => $user_id,
+            'in_from_time' => $from_time,
+            'in_to_time' => $to_time,
+            'is_with_interval' => 1,
+            'status_array' => [ORDER_STATUS_RESERVE_APPLY, ORDER_STATUS_RESERVE_REQUEST],
+        ]);
+        if (!empty($my_reserves)) return 3;
 
-        /* my reserve exist check */
-        $cond_my_order = [];
-        $cond_my_order['organ_id'] = $organ_id;
-        $cond_my_order['user_id'] = $user_id;
-        $cond_my_order['select_time'] = $from_time;
-        $cond_my_order['status_array'] = [ORDER_STATUS_RESERVE_APPLY, ORDER_STATUS_RESERVE_REQUEST];
-        $myorders = $this->order_model->getListByCond($cond_my_order);
-        if (!empty($myorders)) return 3;
-        //---------------------------------------------------------------------
-
-        /* reserve count is over */
-        $cond_order = [];
-        $cond_order['organ_id'] = $organ_id;
-        $cond_order['select_time'] = $from_time;
-        $cond_order['status_array'] = [ORDER_STATUS_RESERVE_APPLY];
-        $reserves = $this->order_model->getListByCond($cond_order);
-        $reserve_count = count($reserves);
-        if ($reserve_count>=$table_count) return '3';
+        /* ------------------is count check-------------------------- */
+        $position_count = $this->order_model->getPositionCountByPeriod($organ_id, $from_time, $to_time);
+        if ($position_count>=$table_count) return '3';
 
         //--------------------------------
 
         if(empty($staff_id)){
-            $cond_order['is_select_staff'] = 1;
-            $staff_reserves = $this->order_model->getListByCond($cond_order);
+            if ($staff_type == '1' || $staff_type == '2'){
+               $staffs = $this->staff_model->getStaffs([
+                    'organ_id' => $organ_id,
+                    'min_auth' => STAFF_AUTH_STAFF,
+                    'max_auth' => STAFF_AUTH_OWNER,
+                    'staff_sex' => $staff_type,
+               ]);   
+               $reserve_result = 3;
+               foreach($staffs as $staff){
+                    $isStaffInReserve = $this->order_model->isStaffInReserve($staff['staff_id'], $from_time, $to_time);
+                    if ($isStaffInReserve){
+                        $tmp_reserve_result = 3;
+                    }else{
+                        $isStaffInApply = $this->shift_model->isStaffInApply($staff['staff_id'], $organ_id, $from_time, $to_time);
+                        if ($isStaffInApply){
+                            $tmp_reserve_result = 1;
+                        }else{
+                            $isStaffInRequest = $this->shift_model->isStaffInRequest($staff['staff_id'], $organ_id, $from_time, $to_time);
+                            if ($isStaffInRequest){
+                                $tmp_reserve_result = 2;
+                            }
+                        }
+                    }
 
-            $apply_shifts = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'select_datetime'=>$from_time, 'is_apply' => 1]);
+                    if ($tmp_reserve_result==1){
+                        $reserve_result = 1;
+                        break;
+                    }
 
-            if (count($staff_reserves)>=count($apply_shifts)){
-                return '2';
+                    if ($tmp_reserve_result==2){
+                        $reserve_result = 2;
+                    }
+               }
+
+               return $reserve_result;
+
             }
-            return 1;
+
+            return '2';
         }else{
-            $cond_order['select_staff_id'] = $staff_id;
-            $staff_reserves = $this->order_model->getListByCond($cond_order);
-            if(!empty($staff_reserves)) return 3;
+            /* is select staff */
+            // $isStaffInReserve = $this->order_model->isStaffInReserve($staff_id, $from_time, $to_time);
+            // if ($isStaffInReserve) return 3;
 
-            $staff_shift = $this->shift_model->getListByCond(['organ_id'=>$organ_id, 'staff_id'=>$staff_id, 'select_datetime'=>$from_time, 'is_apply' => 1]);
+            // $isStaffInRequest = $this->shift_model->isStaffInRequest($staff_id, $organ_id, $from_time, $to_time);
+            // if ($isStaffInReject) return 2;
 
-            if(empty($staff_shift)) return 2;
+            // $isStaffInReject = $this->shift_model->isStaffInReject($staff_id, $organ_id, $from_time, $to_time);
+            // if ($isStaffInReject) return 3;
 
-            return 1;
+            $isStaffInApply = $this->shift_model->isStaffInApply($staff_id, $organ_id, $from_time, $to_time);
+            if ($isStaffInApply) return 1;
+
+            return 3;
         }
-        return 1;
     }
 
     public function updateReceiptUserName(){
@@ -836,6 +871,7 @@ class Apireserves extends WebController
         $results['isUpdate'] = true;
         echo json_encode($results);
     }
+
     public function updateReserveItem(){
         $reserve_id = $this->input->post('reserve_id');
         $staff_id = $this->input->post('staff_id');

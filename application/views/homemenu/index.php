@@ -46,18 +46,18 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row"  style ="max-width:800px;">
         <div class="col-md-12">
             <div class="white-box form-horizontal">
 
                 <div class="table-wrap">
-                    <table class="table table-striped">
+                    <table class="table table-striped" >
                         <thead>
                         <tr>
                             <th>No</th>
                             <th>タイトル</th>
-                            <th width="130">使用可能</th>
-                            <th>順序</th>
+                            <th width="180">使用可能</th>
+                            <th width="90">順序</th>
                             <th width="60"></th>
                             <th width="60"></th>
                         </tr>
@@ -80,8 +80,9 @@
                                                 $('#mode').val('save');
                                                 form.submit();
                                                 ">
-                                            <option value="1" <?php if($record['is_use']==1){ echo 'selected';} ?>>ON</option>
-                                            <option value="0" <?php if($record['is_use']==0){ echo 'selected';} ?>>OFF</option>
+                                            <option value="0" <?php if($record['is_use']==0){ echo 'selected';} ?>>使用しない</option>
+                                            <option value="1" <?php if($record['is_use']==1){ echo 'selected';} ?>>使用する</option>
+                                            <option value="2" <?php if($record['is_use']==2){ echo 'selected';} ?>>ユーザー限定</option>
                                         </select>
                                     </td>
                                     <td><?php echo $record['sort']; ?></td>

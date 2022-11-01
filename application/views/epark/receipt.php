@@ -134,9 +134,9 @@
                                 } ?>
 
                                 <div data="<?php echo $shift['shift_id']; ?>" class="div_shift <?php
-                                if($is_lock || $shift['shift_type']==SHIFT_STATUS_OUT){
-                                    if($shift['shift_type']==SHIFT_STATUS_OUT){
-                                        echo 'shift-out';
+                                if($is_lock || $shift['shift_type']==SHIFT_STATUS_APPLY){
+                                    if($shift['shift_type']==SHIFT_STATUS_APPLY){
+                                        echo 'shift-apply';
                                     }else {
                                         echo 'shift-grey';
                                     }
@@ -166,7 +166,7 @@
                                                     if($shift['shift_type']==SHIFT_STATUS_OUT){ echo '店外待機'; }
                                                     if($shift['shift_type']==SHIFT_STATUS_REST){ echo '休み'; }
                                                     if($shift['shift_type']==SHIFT_STATUS_REQUEST){ echo '出勤依頼'; }
-                                                    if($shift['shift_type']==SHIFT_STATUS_ME_REPLY){ echo '承認 確定待ち'; }
+                                                    if($shift['shift_type']==SHIFT_STATUS_ME_REPLY){ echo '承認待ち'; }
                                                 ?>
                                             </span>
                                             <p>
@@ -207,9 +207,11 @@
                                     </div>
 
                                     <div class="sel_staff">
-                                        <?php if($staff['sex']==1){ ?>
+                                        <?php if($reserve['select_staff_type']==3){ ?>
+                                            <span class="sel_staff_mark_red">指名</span>
+                                        <?php }else if($reserve['select_staff_type']==1 ){ ?>
                                             <span class="sel_staff_mark_blue">希望</span>
-                                        <?php }else if($staff['sex']==2){ ?>
+                                        <?php }else if($reserve['select_staff_type']==2 ){ ?>
                                             <span class="sel_staff_mark_red">希望</span>
                                         <?php } ?>
                                     </div>
@@ -396,12 +398,10 @@
     .div_shift{border: solid #333333 1px; cursor: pointer;}
     .shift-submit{ background-color:#1f5f9d; }
     .shift-apply{ background-color:white; }
-    .shift-reply{ background-color:#a96716; }
-    .shift-reject{ background-color:#dddddd;}
-    .shift-reject p, .shift-reject span{ color:#666666;}
-
+    .shift-reject{ background-color:#a14040; }
     .shift-out{ background-color:#d325a5; }
     .shift-grey{ background-color:#b9b9b9; }
+    .shift-reply{ background-color:#d87b1b; }
     .shift-request{ background-color:#20a379; }
     .shift-rest{ background-color:#af9462; }
 
@@ -420,7 +420,7 @@
     .reserve_item div, .reserve_item span{ overflow:hidden; white-space: nowrap; font-size: 12px; line-height: 16px; color: #333333;}
     .reserve_item .sex { color: white; padding: 1px 2px;border-radius: 3px;}
     .reserve_item .sex_1 { background-color: #348add;}
-    .reserve_item .sex_1 { background-color: #954a4a;}
+    .reserve_item .sex2 { background-color: #954a4a;}
     .reserve_item .sel_staff_mark_blue{color: white; background-color: #3579cf; padding: 0px 1px;border-radius: 3px;}
     .reserve_item .sel_staff_mark_red{color: white; background-color: #d93790; padding: 0px 1px;border-radius: 3px;}
     .reserve-before .reserve_item span{ color: #eeeeee;}

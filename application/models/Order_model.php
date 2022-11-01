@@ -56,12 +56,15 @@ class Order_model extends Base_model
             $this->db->where("orders.from_time >= '". $cond['from_time'] . "'");
         }
         if (!empty($cond['to_time'])){
-            $this->db->where("orders.to_time < '". $cond['to_time'] . "'");
+            if (empty($cond['is_with_interval'])){
+                $this->db->where("orders.to_time < '". $cond['to_time'] . "'");
+            }else{
+                $this->db->where("date_add(orders.to_time, interval orders.`interval` minute)  < '". $cond['to_time'] . "'");
+            }
         }
 
         if (!empty($cond['in_from_time']) && !empty($cond['in_to_time'])){
-            $this->db->where("((to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."') || (from_time ='". $cond['in_from_time'] ."' and to_time ='". $cond['in_to_time'] ."'))" );
-
+            $this->db->where("to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."'" );
         }
 
         if (!empty($cond['select_time'])){
@@ -256,5 +259,34 @@ class Order_model extends Base_model
 
         $query = $this->db->get();
         return $query->result_array();
+    }
+
+    public function getPositionCountByPeriod($organ_id, $from_time, $to_time){
+        $this->db->select('count(table_position) as position_count');
+        $this->db->from($this->table);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("from_time < '$to_time'");
+        $this->db->where("to_time > '$from_time'");
+        $this->db->where("table_position is not null");
+
+        $this->db->group_by('table_position');
+
+        $query = $this->db->get();
+        $result = $query->row_array();
+        if (empty($result)) return 0;
+        return $result['position_count'];
+    }
+
+    public function isStaffInReserve($staff_id, $from_time, $to_time){
+        $this->db->from($this->table);
+        $this->db->where('select_staff_id', $staff_id);
+        $this->db->where("from_time < '$to_time'");
+        //$this->db->where("to_time > '$from_time'");
+
+        $this->db->where("date_add(orders.to_time, interval orders.`interval` minute)  > '". $from_time . "'");
+        $this->db->where('status in ('. ORDER_STATUS_RESERVE_REQUEST .','. ORDER_STATUS_RESERVE_APPLY.')');
+
+        $query = $this->db->get();
+        return !empty($query->row_array());
     }
 }

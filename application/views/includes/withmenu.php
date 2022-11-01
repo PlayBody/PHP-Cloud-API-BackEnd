@@ -69,7 +69,6 @@
             <li class="menu-list <?php if ($page == 'epark'){ echo 'active'; } ?>"><a href="#"><i class="icon-calendar"></i> <span>予定管理</span></a>
                 <ul class="sub-menu-list">
                     <li class="<?php if ($sub_page == 'receipt'){ echo 'active'; } ?>"><a href="<?php echo base_url(); ?>epark/receipt"> 予約受付</a></li>
-                    <li class="<?php if ($sub_page == 'shift'){ echo 'active'; } ?>"><a href="<?php echo base_url(); ?>epark/shift"> 月間シフト作成</a></li>
                 </ul>
             </li>
         </ul>

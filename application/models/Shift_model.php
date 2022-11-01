@@ -467,4 +467,41 @@ order by tmp.time
         return $query->result_array();
     }
 
+    public function isStaffInReject($staff_id, $organ_id, $from_time, $to_time){
+        $this->db->from($this->table);
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("from_time < '$to_time'");
+        $this->db->where("to_time > '$from_time'");
+
+        $this->db->where('shift_type in ('. SHIFT_STATUS_REJECT.','. SHIFT_STATUS_REST.','. SHIFT_STATUS_ME_REJECT.')');
+
+        $query = $this->db->get();
+        return !empty($query->row_array());
+    }
+    public function isStaffInRequest($staff_id, $organ_id, $from_time, $to_time){
+        $this->db->from($this->table);
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("from_time < '$to_time'");
+        $this->db->where("to_time > '$from_time'");
+
+        $this->db->where('shift_type in ('. SHIFT_STATUS_SUBMIT.','. SHIFT_STATUS_OUT.','. SHIFT_STATUS_ME_REPLY.')');
+
+        $query = $this->db->get();
+        return !empty($query->row_array());
+    }
+    public function isStaffInApply($staff_id, $organ_id, $from_time, $to_time){
+        $this->db->from($this->table);
+        $this->db->where('staff_id', $staff_id);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("from_time <= '$from_time'");
+        $this->db->where("to_time >= '$to_time'");
+
+        $this->db->where('shift_type in ('. SHIFT_STATUS_ME_APPLY.','. SHIFT_STATUS_APPLY.')');
+
+        $query = $this->db->get();
+        return !empty($query->row_array());
+    }
+
 }

@@ -46,4 +46,14 @@ class Organ_special_time_model extends Base_model
         return $query->result_array();
     }
 
+    public function isInOpenTime($organ_id, $from_time, $to_time){
+        $this->db->from($this->table);
+        $this->db->where('organ_id', $organ_id);
+        $this->db->where("from_time <= '".$from_time."'");
+        $this->db->where("to_time >= '".$to_time."'");
+
+        $query = $this->db->get();
+
+        return !empty($query->row_array());
+    }
 }
