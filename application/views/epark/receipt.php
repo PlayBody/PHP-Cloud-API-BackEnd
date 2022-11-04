@@ -134,8 +134,8 @@
                                 } ?>
 
                                 <div data="<?php echo $shift['shift_id']; ?>" class="div_shift <?php
-                                if($is_lock || $shift['shift_type']==SHIFT_STATUS_APPLY){
-                                    if($shift['shift_type']==SHIFT_STATUS_APPLY){
+                                if($is_lock){
+                                    if($shift['shift_type']==SHIFT_STATUS_APPLY || $shift['shift_type']==SHIFT_STATUS_ME_APPLY){
                                         echo 'shift-apply';
                                     }else {
                                         echo 'shift-grey';

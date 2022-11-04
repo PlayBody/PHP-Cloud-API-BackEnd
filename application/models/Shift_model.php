@@ -38,6 +38,7 @@ class Shift_model extends Base_model
         if (!empty($cond['in_from_time']) && !empty($cond['in_to_time'])){
             $this->db->where("((to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."') || (from_time ='". $cond['in_from_time'] ."' and to_time ='". $cond['in_to_time'] ."'))" );
         }
+
         if (!empty($cond['no_shift'])){
             $this->db->where("shift_id <>'". $cond['no_shift'] ."'");
         }
@@ -60,8 +61,13 @@ class Shift_model extends Base_model
             $this->db->where("shift_type in (".SHIFT_STATUS_SUBMIT.",".SHIFT_STATUS_REQUEST.",".SHIFT_STATUS_ME_REPLY.",".SHIFT_STATUS_ME_APPLY.",".SHIFT_STATUS_APPLY.")");
         }
 
+        if (!empty($cond['reserve_flag'])){
+            $this->db->where("shift_type in (".SHIFT_STATUS_OUT.",".SHIFT_STATUS_ME_APPLY.",".SHIFT_STATUS_APPLY.")");
+        }
+
         $this->db->where('visible', '1');
 
+        $this->db->order_by('from_time');
         $query = $this->db->get();
 
         return $query->result_array();
@@ -289,6 +295,7 @@ order by tmp.time
 
 //        $this->db->where('shift_type', '-3');
 
+        $this->db->order_by('from_time');
         $query = $this->db->get();
         return $query->result_array();
     }

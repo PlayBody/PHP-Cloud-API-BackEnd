@@ -70,6 +70,7 @@ class Setting_count_shift_model extends Base_model
             $this->db->where("id <> '". $setting_id ."'");
         }
 
+        $this->db->order_by("from_time");
         $query = $this->db->get();
 
         return $query->result_array();

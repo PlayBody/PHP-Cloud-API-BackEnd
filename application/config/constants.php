@@ -171,6 +171,10 @@ define('PAY_METHOD_CREDIT', 1);
 define('PAY_METHOD_CASH', 2);
 define('PAY_METHOD_OTHER', 3);
 
+define('RESERVE_CONDITION_OK', 1);
+define('RESERVE_CONDITION_ENABLE', 2);
+define('RESERVE_CONDITION_DISABLE', 3);
+
 define('SQUARE_ENDPOINT_HOST', 'https://connect.squareupsandbox.com/');
 
 $week_array = array('日', '月', '火', '水', '木', '金', '土');

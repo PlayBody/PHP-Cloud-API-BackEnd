@@ -82,7 +82,7 @@ class Receipt extends AdminController
                 'organ_id'=>$organ_id,
                 'in_from_time' => $select_date.' ' . ($i<10?'0':'') . $i .':00:00',
                 'in_to_time' => $select_date.' ' . ($i==23 ? '23:59:59' : (($i+1)<10?'0':'') . ($i+1) .':00:00'),
-                'status_array' => [ORDER_STATUS_RESERVE_APPLY],
+                'status_array' => [ORDER_STATUS_RESERVE_APPLY, ORDER_STATUS_RESERVE_REQUEST],
             ]);
 
             $reserve_counts[$i] = empty($reserves) ? 0 : count($reserves);
@@ -96,6 +96,28 @@ class Receipt extends AdminController
         //------------------------------------------------------------------
 
         $shifts = $this->shift_model->getDayShift($organ_id, $select_date);
+
+        foreach ($shifts as $shift){
+            $cond = [
+                'staff_id' => $shift['staff_id'],
+                'organ_id' => $shift['organ_id'],
+                'to_time' => $shift['from_time'],
+                'shift_type' => $shift['shift_type'],
+            ];
+            if ($shift['shift_type']==SHIFT_STATUS_REQUEST || $shift['shift_type']==SHIFT_STATUS_ME_REPLY){
+                $cond['old_shift'] = $shift['old_shift'];
+            }
+            $prev_shift = $this->shift_model->getOneByParam($cond);
+            if (!empty($prev_shift)){
+                $prev_shift['to_time'] = $shift['to_time'];
+                $this->shift_model->updateRecord($prev_shift, 'shift_id');
+                $this->shift_model->delete_force($shift['shift_id'], 'shift_id');
+            }
+        }
+
+        $shifts = $this->shift_model->getDayShift($organ_id, $select_date);
+
+
         $staffs = [];
         foreach ($shifts as $shift){
             $datetime1 = date_create($shift['from_time']);
@@ -145,6 +167,7 @@ class Receipt extends AdminController
             'from_time' => $select_date.' 00:00:00',
             'to_time' => $select_date.' 23:59:59',
         ]);
+
         if(!empty($orders)){
             foreach ($orders as $order){
                 $datetime1 = date_create($order['from_time']);
@@ -181,6 +204,7 @@ class Receipt extends AdminController
                 }
 
                 $staffs[$order['select_staff_id']]['reserves'] = $tmp_reserve;
+
             }
         }
 
@@ -204,7 +228,6 @@ class Receipt extends AdminController
                 $newstaffs[$key] = $staff;
             }
         }
-
 
         $isLock  = $this->shift_lock_model->isLockSelectDate($select_date, $organ_id);
 

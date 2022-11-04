@@ -65,4 +65,26 @@ class Staff_organ_model extends Base_model
         return $query->row_array();
     }
 
+    public function getStaffs($cond){
+        $this->db->select('staffs.*');
+        $this->db->from($this->table);
+        $this->db->join('staffs', 'staffs.staff_id = staff_organs.staff_id', 'left');
+
+        if (!empty($cond['organ_id'])){
+            $this->db->where('organ_id', $cond['organ_id']);
+        }
+        if (!empty($cond['staff_id'])){
+            $this->db->where('staffs.staff_id', $cond['staff_id']);
+        }
+        if (!empty($cond['staff_sex'])){
+            $this->db->where('staff_sex', $cond['staff_sex']);
+        }
+
+        $this->db->where('staff_auth > 0');
+
+        $query = $this->db->get();
+
+        return $query->result_array();
+    }
+
 }

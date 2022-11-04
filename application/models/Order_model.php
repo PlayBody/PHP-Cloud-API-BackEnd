@@ -64,7 +64,11 @@ class Order_model extends Base_model
         }
 
         if (!empty($cond['in_from_time']) && !empty($cond['in_to_time'])){
-            $this->db->where("to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."'" );
+            if (empty($cond['is_with_interval'])){
+                $this->db->where("to_time >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."'" );
+            }else{
+                $this->db->where("date_add(orders.to_time, interval orders.`interval` minute) >'". $cond['in_from_time'] ."' and from_time <'". $cond['in_to_time'] ."'" );
+            }
         }
 
         if (!empty($cond['select_time'])){
